@@ -1,10 +1,8 @@
 import timeAgo from '@/lib/time-ago'
 import Render from '@/lib/render'
 import Link from 'next/link'
-import converter from '@/lib/converter'
 import helper from '@/lib/helper'
 import Script from 'next/script'
-import { useMemo } from 'react'
 
 export default async function MessageDetail({ msgData, meta }) {
     const round = (str) => {
@@ -12,7 +10,6 @@ export default async function MessageDetail({ msgData, meta }) {
     }
 
     const msgActionDetail = msgData.action_detail ? JSON.parse(msgData.action_detail) : {}
-
     let msgAction = ''
     switch (msgData.action_type) {
         case 'Transfer':
