@@ -9,7 +9,6 @@
     "dev": "nodemon src/app.ts",
     "manual-run": "ts-node src/manual-run.ts",
     "test-notifications": "ts-node src/test-notifications.ts",
-    "setup-database": "ts-node src/setup-database.ts",
     "package": "npm run build && zip -r tx-indexer.zip dist/ node_modules/ package.json"
   },
   "dependencies": {
