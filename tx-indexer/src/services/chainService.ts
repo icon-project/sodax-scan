@@ -1,14 +1,11 @@
-import { getSuiTxByHash } from '../chains/sui';
-import { getSolanaTxByHash } from '../chains/solana';
 import { logger } from '../middlewares/logger';
+import { getAvaxTxByHash } from '../chains'
 
 export interface TransactionData {
   chain: string;
   txHash: string;
-  status: string;
   method: string;
   gasFee: number | string;
-  timestamp: string;
 }
 
 export interface ChainFetcher {
@@ -40,8 +37,7 @@ export class ChainService {
   ]);
 
   constructor() {
-    this.registerChain('sui', getSuiTxByHash);
-    this.registerChain('solana', getSolanaTxByHash);
+    this.registerChain('avax', getAvaxTxByHash);
   }
 
   registerChain(chainName: string, fetcher: ChainFetcher): void {
@@ -128,7 +124,6 @@ export class ChainService {
     return this.chainFetchers.has(chainName);
   }
 
-  // Convert network ID to chain name (for internal use)
   private getChainName(networkIdOrName: string): string | null {
     return this.networkIdToChain.get(networkIdOrName) || (this.chainFetchers.has(networkIdOrName) ? networkIdOrName : null);
   }

@@ -1,2 +1,1 @@
-export { getSuiTxByHash } from './sui';
-export { getSolanaTxByHash } from './solana';
+export { getAvaxTxByHash } from './avax';

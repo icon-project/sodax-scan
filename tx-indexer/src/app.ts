@@ -3,8 +3,9 @@ import dotenv from 'dotenv';
 import { processingService } from './services/processingService';
 import { chainService } from './services/chainService';
 import { databaseService } from './services/database';
-import { notificationService } from './services/notificationService';
+// import { notificationService } from './services/notificationService';
 import { logger } from './middlewares/logger';
+import { CRON_INTERVAL } from './config'
 
 dotenv.config();
 
@@ -18,7 +19,7 @@ class TxInfoService {
     logger.info(`Supported chains: ${chainService.getSupportedChains().join(', ')}`);
 
     // Step 1: Listen for new messages from database
-    await this.startDatabaseListener();
+    // await this.startDatabaseListener();
     
     // Step 2: Process existing messages and set up hourly backup
     await this.startBackupProcessing();
@@ -27,19 +28,19 @@ class TxInfoService {
     this.handleShutdown();
 
     logger.info('✅ Service started successfully');
-    logger.info('📡 Listening for new messages...');
+    // logger.info('📡 Listening for new messages...');
   }
 
   // Listen for database notifications when new messages arrive
-  private async startDatabaseListener(): Promise<void> {
-    await notificationService.connect();
-    
-    // When a new message arrives, process it immediately
-    notificationService.onMessage(async (messageId: string) => {
-      logger.info(`📥 New message received: ${messageId}`);
-      await this.processMessage(messageId);
-    });
-  }
+  // private async startDatabaseListener(): Promise<void> {
+  //   await notificationService.connect();
+  //
+  //   // When a new message arrives, process it immediately
+  //   notificationService.onMessage(async (messageId: string) => {
+  //     logger.info(`📥 New message received: ${messageId}`);
+  //     await this.processMessage(messageId);
+  //   });
+  // }
 
   // Process a single message
   private async processMessage(messageId: string): Promise<void> {
@@ -74,10 +75,7 @@ class TxInfoService {
       logger.error('❌ Initial processing failed:', error);
     }
 
-    // Schedule hourly backup processing
-    const hourly = '0 * * * *'; // Every hour at minute 0
-    
-    cron.schedule(hourly, async () => {
+    cron.schedule(CRON_INTERVAL, async () => {
       if (this.isShuttingDown) return;
       
       logger.info('🔄 Running backup processing...');
@@ -105,7 +103,7 @@ class TxInfoService {
       this.isShuttingDown = true;
 
       // Close connections
-      await notificationService.disconnect();
+      // await notificationService.disconnect();
       await databaseService.close();
 
       logger.info(`✅ Shutdown complete. Processed ${this.processedCount} messages`);

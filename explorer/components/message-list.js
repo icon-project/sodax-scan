@@ -2,26 +2,46 @@ import timeAgo from '@/lib/time-ago'
 import Link from 'next/link'
 import Pagination from './pagination'
 import Render from '@/lib/render'
-import { useCallback, useMemo } from 'react'
 
 export default function MessageList({ data, meta, showPagination }) {
 
-    const getAction = useCallback((tx) => {
-        console.log({tx})
-        switch (tx) {
+    let msgAction = ''
+        switch (data?.action_type) {
             case 'transfer':
-                return 'Transfer';
+                msgAction = 'Transfer';
+                break;
 
-            case 'recv_message':
-                return 'RecvMsg';
+            case 'deposit':
+                msgAction = 'Deposit';
+                break;
 
-            case 'send_message_ua':
-                return 'SendMsg';
+            case 'supply':
+                msgAction = 'Supply';
+                break;
+
+            case 'borrow':
+                msgAction = 'Borrow';
+                break;
+
+            case 'withdraw':
+                msgAction = 'Withdraw';
+                break;
+
+            case 'repay':
+                msgAction = 'Repay';
+                break;
+
+            case 'createIntent':
+                msgAction = 'Create Intent';
+                break;
+
+            case 'cancelIntent':
+                msgAction = 'Cancel Intent';
+                break;
 
             default:
-                return 'SendMsg'
+                msgAction = 'SendMsg'
         }
-    }, [data])
 
     return (
         <div className="py-2">
@@ -47,7 +67,7 @@ export default function MessageList({ data, meta, showPagination }) {
                                     {Render.renderHashLink(meta.urls.tx[item.src_network], item.src_network, item.src_tx_hash)}
                                 </div>
                                 <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">{Render.renderDestHashLink(item, meta)}</div>
-                                <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">{getAction(item.action_type)}</div>
+                                <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">{msgAction}</div>
                                 <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3 text-right tracking-tighter">{timeAgo(item.created_at * 1000)} ago</div>
                             </Link>
                         ))}
