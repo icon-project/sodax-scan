@@ -82,8 +82,40 @@ function renderHashLink(scanUrl, network, hash, isFull = false) {
     )
 }
 
+function renderActionType(action){
+    switch (action) {
+        case 'transfer':
+            return 'Transfer';
+
+        case 'deposit':
+            return 'Deposit';
+
+        case 'supply':
+            return 'Supply';
+
+        case 'borrow':
+            return 'Borrow';
+
+        case 'withdraw':
+            return 'Withdraw';
+
+        case 'repay':
+            return 'Repay';
+
+        case 'createIntent':
+            return 'Create Intent';
+
+        case 'cancelIntent':
+            return 'Cancel Intent';
+
+        default:
+            return 'SendMsg'
+    }
+}
+
 export default {
     renderMessageStatus,
     renderHashLink,
-    renderDestHashLink
+    renderDestHashLink,
+    renderActionType
 }

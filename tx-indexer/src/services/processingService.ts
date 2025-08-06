@@ -38,9 +38,9 @@ export class ProcessingService {
       logger.info(`Processing ${totalMessages} messages in batches...`);
 
       // Process messages in batches
-      let offset = 0;
-      while (offset < totalMessages) {
-        const messages = await databaseService.getMessagesWithMissingData(this.batchSize, offset);
+      let lastProcessedId: number | undefined;
+      while (true) {
+        const messages = await databaseService.getMessagesWithMissingData(this.batchSize, lastProcessedId);
         
         if (messages.length === 0) break;
 
@@ -51,7 +51,7 @@ export class ProcessingService {
         stats.failed += batchStats.failed;
         stats.skipped += batchStats.skipped;
 
-        offset += this.batchSize;
+        lastProcessedId = parseInt(messages[messages.length - 1].id);
         
         // Small delay between batches
         await new Promise(resolve => setTimeout(resolve, 500));

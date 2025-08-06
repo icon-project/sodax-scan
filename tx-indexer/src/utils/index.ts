@@ -24,10 +24,6 @@ function mapDecodedParams(fn: FunctionSignature, decoded: DecodedParams): Decode
         'withdraw': (d) => ({ function: 'withdraw', token: String(d[0]), amount: String(d[1]), to: String(d[2]) }),
         'borrow': (d) => ({ function: 'borrow', asset: String(d[0]), amount: String(d[1]), interestRateMode: String(d[2]), referralCode: Number(d[3]), onBehalfOf: String(d[4]) }),
         'repay': (d) => ({ function: 'repay', asset: String(d[0]), amount: String(d[1]), rateMode: String(d[2]), onBehalfOf: String(d[3]) }),
-        'permit': (d) => ({ function: 'permit', owner: String(d[0]), spender: String(d[1]), value: String(d[2]), deadline: String(d[3]) }),
-        'modifyLiquidities': (d) => ({ function: 'modifyLiquidities', liquidities: String(d[0]), amount: String(d[1]) }),
-        'depositUint': (d) => ({ function: 'deposit', amount: String(d[0]), to: String(d[1]) }),
-        'approve': (d) => ({ function: 'approve', sender: String(d[0]), amount: String(d[1]) }),
         'createIntent': (d) => ({ function: 'createIntent', intent: d[0] as object }),
         'cancelIntent': (d) => ({ function: 'cancelIntent', intent: d[0] as object })
     };

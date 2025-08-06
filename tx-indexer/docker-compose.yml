@@ -1,0 +1,12 @@
+services:
+  sodaxscan-tx-indexer:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: sodaxscan-tx-indexer-container
+#    ports:
+#      - "3100:3100"
+#      - "4100:4000"
+
+    command: sh -c "cd tx-indexer && pm2 start 'npm run start' --name tx-indexer && pm2 logs"
+

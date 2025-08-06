@@ -12,12 +12,8 @@ export const FUNCTION_SIGNATURES: FunctionSignature[] = [
     { name: 'withdraw', signature: 'withdraw(address,uint256,address)', params: ['address', 'uint256', 'address'] },
     { name: 'borrow', signature: 'borrow(address,uint256,uint256,uint16,address)', params: ['address', 'uint256', 'uint256', 'uint16', 'address'] },
     { name: 'repay', signature: 'repay(address,uint256,uint256,address)', params: ['address', 'uint256', 'uint256', 'address'] },
-    { name: 'permit', signature: 'approve(address,address,uint160,uint48)', params: ['address', 'address', 'uint160', 'uint48'] },
-    { name: 'modifyLiquidities', signature: 'modifyLiquidities(bytes,uint256)', params: ['bytes', 'uint256'] },
-    { name: 'depositUint', signature: 'deposit(uint256,address)', params: ['uint256', 'address'] },
     { name: 'createIntent', signature: 'createIntent((uint256,address,address,address,uint256,uint256,uint256,bool,uint256,uint256,bytes,bytes,address,bytes))', params: ['tuple(uint256,address,address,address,uint256,uint256,uint256,bool,uint256,uint256,bytes,bytes,address,bytes)'] },
     { name: 'cancelIntent', signature: 'cancelIntent((uint256,address,address,address,uint256,uint256,uint256,bool,uint256,uint256,bytes,bytes,address,bytes))', params: ['tuple(uint256,address,address,address,uint256,uint256,uint256,bool,uint256,uint256,bytes,bytes,address,bytes)'] },
-    { name: 'approve', signature: 'approve(address,uint256)', params: ['address', 'uint256'], selector: '0x095ea7b3' }
 ];
 
 export const PRIORITY_METHODS = [
@@ -29,5 +25,4 @@ export const PRIORITY_METHODS = [
     'createIntent',
     'cancelIntent',
     'transfer',
-    'sendMessage'
 ];

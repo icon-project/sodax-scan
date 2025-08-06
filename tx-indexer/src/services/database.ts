@@ -45,20 +45,15 @@ class DatabaseService {
     });
   }
 
-  async getMessagesWithMissingData(limit: number = 100, offset: number = 0): Promise<Message[]> {
-    const query = `
-      SELECT id, sn, src_network, dest_network, src_tx_hash, dest_tx_hash, 
-             response_tx_hash, rollback_tx_hash, fee, action_type, created_at, updated_at
-      FROM messages 
-      WHERE (fee IS NULL OR action_type IS NULL OR action_type = 'SendMsg')
-        AND (src_tx_hash IS NOT NULL OR dest_tx_hash IS NOT NULL OR 
-             response_tx_hash IS NOT NULL OR rollback_tx_hash IS NOT NULL)
-      ORDER BY created_at DESC
-      LIMIT $1 OFFSET $2
-    `;
+  async getMessagesWithMissingData(limit: number = 100, lastProcessedId?: number): Promise<Message[]> {
+    const query = lastProcessedId
+      ? `SELECT * FROM messages WHERE id > $1 ORDER BY id LIMIT $2`
+      : `SELECT * FROM messages ORDER BY id LIMIT $1`;
+    
+    const params = lastProcessedId ? [lastProcessedId, limit] : [limit];
     
     try {
-      const result = await this.pool.query(query, [limit, offset]);
+      const result = await this.pool.query(query, params);
       return result.rows;
     } catch (error) {
       logger.error('Error fetching messages with missing data:', error);

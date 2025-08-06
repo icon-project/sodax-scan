@@ -18,5 +18,5 @@ services:
     #   - "3000:3000"
     #   - "4000:4000"
 
-    command: sh -c "cd api && pm2 start 'npm run start' --name api && cd ../explorer && pm2 start 'npm run docker-start-testnet' --name explorer && cd ../tx-indexer && pm2 start 'npm run start' --name tx-indexer && pm2 logs"
+    command: sh -c "cd api && pm2 start 'npm run start' --name api && cd ../explorer && pm2 start 'npm run docker-start-testnet' --name explorer && pm2 logs"
 

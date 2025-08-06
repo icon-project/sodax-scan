@@ -2,9 +2,9 @@ import axios from 'axios';
 import { decodePayload } from "../utils";
 import { ethers } from 'ethers';
 import { AvaxTransactionResult, TransactionReceipt } from '../types/avax'
+import { fetchEvmTransactionReceipt } from '../utils/fetchEvmTransactionReceipt'
 
 // Constants
-const CROSS_CHAIN_EVENT_TOPIC = '0x0fcc8c448c97c08d0304a9eb321a5ffb209618d28a85dbc8d7a7a592124538ef';
 const DEFAULT_ACTION_TYPE = 'SendMsg';
 const WEI_TO_AVAX_DIVISOR = 1e18;
 
@@ -22,11 +22,6 @@ function calculateGasCost(receipt: TransactionReceipt): number {
     return totalWei / WEI_TO_AVAX_DIVISOR;
 }
 
-function findCrossChainLog(logs: TransactionReceipt['logs']) {
-    return logs.find(log =>
-        log.topics.includes(CROSS_CHAIN_EVENT_TOPIC)
-    );
-}
 
 function decodeLogData(logData: string): { function: string; [key: string]: string | number | boolean | object | undefined } | null {
     try {
@@ -52,50 +47,20 @@ function extractDecodedData(receipt: TransactionReceipt): { function: string; [k
         return null;
     }
 
-    const crossChainLog = findCrossChainLog(receipt.logs);
-    if (!crossChainLog) {
-        return null;
-    }
-
-    const decodedData = decodeLogData(crossChainLog.data);
-    if (decodedData) {
-        console.log({ decodedData });
-    }
-
-    return decodedData;
-}
-
-async function fetchTransactionReceipt(hash: string): Promise<TransactionReceipt> {
-    const AVAX_RPC_URL = process.env.AVAX_RPC_URL;
-
-    if (!AVAX_RPC_URL) {
-        throw new Error('AVAX_RPC_URL environment variable is not set');
-    }
-
-    const receiptBody = {
-        jsonrpc: '2.0',
-        id: 2,
-        method: 'eth_getTransactionReceipt',
-        params: [hash],
-    };
-
-    try {
-        const { data: receiptData } = await axios.post(AVAX_RPC_URL, receiptBody);
-
-        if (!receiptData.result) {
-            throw new Error(`Transaction receipt not found for hash: ${hash}`);
+    for (const log of receipt.logs) {
+        const decodedData = decodeLogData(log.data);
+        if (decodedData) {
+            return decodedData;
         }
-
-        return receiptData.result;
-    } catch (error) {
-        console.error('Error fetching transaction receipt:', error);
-        throw error;
     }
+
+    return null;
 }
 
 export async function getAvaxTxByHash(hash: string): Promise<AvaxTransactionResult | null> {
     try {
-        const receipt = await fetchTransactionReceipt(hash);
+        const URL = process.env.AVAX_RPC_URL
+        const receipt = await fetchEvmTransactionReceipt(hash, URL);
         const totalAvax = calculateGasCost(receipt);
         const decodedData = extractDecodedData(receipt);
 
