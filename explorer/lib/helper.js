@@ -179,7 +179,7 @@ const NETWORK_DETAILS = {
 }
 
 const MSG_ACTION_TYPES = {
-    SendMsg: 'SendMsg',
+    SendMessage: 'SendMessage',
     Transfer: 'Transfer',
     Borrow: 'Borrow',
     Supply: 'Supply',
