@@ -35,6 +35,9 @@ export class SuiHandler implements ChainHandler {
         const parsedResponse = (await axios.post(this.rpcUrl, jsonRpcRequest)).data;
         const totalGas = Number(parsedResponse.result.effects.gasUsed.computationCost) + Number(parsedResponse.result.effects.gasUsed.storageCost) - Number(parsedResponse.result.effects.gasUsed.storageRebate)
         for (const event of parsedResponse.result.events) {
+            if(event.type !== "0xf3b1e696a66d02cb776dc15aae73c68bc8f03adcb6ba0ec7f6332d9d90a6a3d2::connectionv3::Message"){
+                continue
+            }
             const parsedJson = event.parsedJson
             return {
                 txnFee: `${bigintDivisionToDecimalString(BigInt(totalGas),9)} SUI`,

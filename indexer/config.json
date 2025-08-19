@@ -1378,6 +1378,30 @@
             "0xddf6ad38f9c9451c1f4cdf369040f6869e37393e": {
                 "name": "legacy bnUSD",
                 "decimals": 18
+            },
+            "0x922d15d7f55c13fd790f6e54397470ec592caa2b508df292a2e8553f3d3b274f::msui::MSUI":{
+                "name": "mSUI",
+                "decimals": 9
+            },
+            "0xf325ce1300e8dac124071d3152c5c5ee6174914f8bc2161e88329cf579246efc::afsui::AFSUI":{
+                "name": "afSUI",
+                "decimals": 9
+            },
+            "0xbde4ba4c2e274a60ce15c1cfff9e5c42e41654ac8b6d906a57efa4bd3c29f47d::hasui::HASUI":{
+                "name": "haSUI",
+                "decimals": 9
+            },
+            "0x549e8b69270defbfafd4f94e17ec44cdbdd99820b33bda2278dea3b9a32d3f55::cert::CERT":{
+                "name": "vSUI",
+                "decimals": 9
+            },
+            "0x83f1bb8c91ecd1fd313344058b0eed94d63c54e41d8d1ae5bff1353443517d65::yap_sui::YAP_SUI":{
+                "name": "yapSUI",
+                "decimals": 9
+            },
+            "0x502867b177303bf1bf226245fcdd3403c177e78d175a55a56c0602c7ff51c7fa::trevin_sui::TREVIN_SUI":{
+                "name": "trevinSUI",
+                "decimals": 9
             }
         }
     },
