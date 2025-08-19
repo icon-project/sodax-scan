@@ -227,6 +227,10 @@
             "0x6958a4CBFe11406E2a1c1d3a71A1971aD8B3b92F": {
                 "name": "bnUSD",
                 "decimals": 18
+            },
+            "0xc7198437980c041c805a1edcba50c1ce5db95118":{
+                "name": "USDT",
+                "decimals": 6
             }
         }
     },
@@ -570,6 +574,10 @@
             "0xdb7bda65c3a1c51d64dc4444e418684677334109": {
                 "name": "USDC",
                 "decimals": 6
+            },
+            "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9": {
+                "name": "USDT",
+                "decimals": 6
             }
         }
     },
@@ -666,6 +674,10 @@
             },
             "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359": {
                 "name": "Circle USDC",
+                "decimals": 6
+            },
+            "0x3813e82e6f7098b9583fc0f33a962d02018b6803":{
+                "name": "USDT",
                 "decimals": 6
             }
         }
@@ -869,6 +881,10 @@
             "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c": {
                 "name": "Binance-Peg BTCB Token",
                 "decimals": 18
+            },
+            "0x55d398326f99059ff775485246999027b3197955":{
+                "name": "USDT",
+                "decimals": 6
             }
         }
     },
@@ -1248,6 +1264,10 @@
             },
             "0xc3f020057510ffe10ceb882e1b48238b43d78a5e": {
                 "name": "USDC",
+                "decimals": 6
+            },
+            "Es9vMFrzaC1H6zzggBqqEgakx4eCnmLmJtZNe5yW3sn":{
+                "name": "USDT",
                 "decimals": 6
             }
         }
