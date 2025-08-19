@@ -181,10 +181,12 @@ export const parsePayloadData = (data: string, srcChainId: string, dstChainId: s
         const rlp = RLP.decode(payloadBuffer);
         if (Array.isArray(rlp) && rlp.length === 5) {
             const tokenAddress = `0x${Buffer.from(rlp[0] as Uint8Array).toString('hex')}`.toLowerCase()
-            const tokenAmount = BigInt(`0x${Buffer.from(rlp[3] as Uint8Array).toString('hex')}`)
+            const tokenAmount = rlp[3] && (rlp[3] as Uint8Array).length > 0
+                ? BigInt(`0x${Buffer.from(rlp[3] as Uint8Array).toString('hex')}`)
+                : 0n
             const callDataHex = `0x${Buffer.from(rlp[4] as Uint8Array).toString('hex')}`;
             let denom = ""
-            
+
             if (dstChainId in chains) {
                 const assetsInformation = chains[dstChainId].Assets
                 if (tokenAddress in assetsInformation) {
