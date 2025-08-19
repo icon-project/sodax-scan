@@ -31,7 +31,7 @@ const processSodaxStream = async () => {
 async function parseTransactionEvent(response: SodaxScannerResponse) {
     for (const transaction of response.data) {
         const id = transaction.id;
-        if (lastScannedId !== 0 && id <= lastScannedId) {
+        if (lastScannedId !== 0 && id <= lastScannedId && transaction.action_detail !== 'SendMsg') {
             continue;
         }
         const srcChainId = transaction.src_network as string;
