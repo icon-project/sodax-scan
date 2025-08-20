@@ -64,14 +64,8 @@ export class EvmHandler implements ChainHandler {
           };
         }
       }
-    } else if (intentCancelled) {
-      return {
-        txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
-        intentCancelled,
-        actionText: intentCancelAction,
-        payload: "0x",
-      };
-    } else {
+    }
+    else {
       const { data: tx } = await axios.post(this.rpcUrl, {
         jsonrpc: '2.0',
         id: 1,
@@ -109,15 +103,20 @@ export class EvmHandler implements ChainHandler {
           outputToken = outputTokenInfo.name
           outputDecimals = outputTokenInfo.decimals
         }
-        const inputAmount = bigintDivisionToDecimalString(decodedIntentFill[1], decimals)
-        const outputAmount = bigintDivisionToDecimalString(decodedIntentFill[2], outputDecimals)
+        let inputAmount = bigintDivisionToDecimalString(decodedIntentFill[1], decimals)
+        let outputAmount = bigintDivisionToDecimalString(decodedIntentFill[2], outputDecimals)
+        if (intentCancelled) {
+          inputAmount = bigintDivisionToDecimalString(decoded[4], decimals)
+          outputAmount = bigintDivisionToDecimalString(decoded[5], outputDecimals)
+        }
         return {
           txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
           payload: "0x",
-          intentFilled,
+          intentFilled: intentFilled,
+          intentCancelled: intentCancelled,
           swapInputToken: decoded[2],
           swapOutputToken: decoded[3],
-          actionText: `IntentFilled ${inputAmount} ${inputToken} -> ${outputAmount} ${outputToken}`
+          actionText: intentFilled ? `IntentFilled ${inputAmount} ${inputToken} -> ${outputAmount} ${outputToken}` : `IntentCancelled ${inputAmount} ${inputToken} -> ${outputAmount} ${outputToken}`
         };
       } catch (err) {
         console.log("decode err", err)
