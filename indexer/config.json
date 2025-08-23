@@ -122,6 +122,22 @@
             "0xe801ca34e19abcbfea12025378d19c4fbe250131": {
                 "name": "bnUSD",
                 "decimals": 18
+            },
+            "0x039e2fb66102314ce7b64ce5ce3e5183bc94ad38":{
+                "name": "Wrapped Sonic",
+                "decimals": 18
+            },
+            "0x7c7d53eecda37a87ce0d5bf8e0b24512a48dc963":{
+                 "name": "soda",
+                 "decimals": 18
+            },
+            "0x6047828dc181963ba44974801ff68e538da5eaf9":{
+                "name": "USDT",
+                "decimals": 6
+            },
+            "0x50c42deacd8fc9773493ed674b675be577f2634b":{
+                "name": "wETH",
+                "decimals": 18
             }
         }
     },
