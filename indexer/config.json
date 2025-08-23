@@ -94,7 +94,7 @@
                 "name": "BALN",
                 "decimals": 18
             },
-            "0x730a6899f0153ea13c6910417a9f07f7d0f39a18": {
+            "cx1a29259a59f463a67bb2ef84398b30ca56b5830a": {
                 "name": "OMM",
                 "decimals": 18
             }
@@ -247,6 +247,14 @@
             "0xc7198437980c041c805a1edcba50c1ce5db95118":{
                 "name": "USDT",
                 "decimals": 6
+            },
+            "0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7": {
+                "name": "USDT",
+                "decimals": 6
+            },
+            "0x6958a4cbfe11406e2a1c1d3a71a1971ad8b3b92f": {
+                "name": "bnUSD",
+                "decimals": 18
             }
         }
     },
@@ -329,17 +337,9 @@
                 "name": "ETH",
                 "decimals": 18
             },
-            "0x70178089842be7f8e4726b33f0d1569db8021faa": {
-                "name": "ETH",
-                "decimals": 18
-            },
             "0x72e852545b024ddcbc5b70c1bcbdaa025164259c": {
                 "name": "USDC",
                 "decimals": 6
-            },
-            "0xacfab3f31c0a18559d78556bbf297ec29c6cf8aa": {
-                "name": "bnUSD",
-                "decimals": 18
             },
             "0x55e0ad45eb97493b3045eee417fb6726cb85dfd4": {
                 "name": "weETH",
@@ -353,9 +353,29 @@
                 "name": "cbBTC",
                 "decimals": 18
             },
+            "0x70178089842be7f8e4726b33f0d1569db8021faa": {
+                "name": "ETH",
+                "decimals": 18
+            },
+            "0xacfab3f31c0a18559d78556bbf297ec29c6cf8aa": {
+                "name": "bnUSD",
+                "decimals": 18
+            },
+            "0x04c0599ae5a44757c0af6f9ec3b93da8976c150a": {
+                "name": "weETH",
+                "decimals": 18
+            },
             "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913": {
                 "name": "Circle USDC",
                 "decimals": 6
+            },
+            "0xc1cba3fcea344f92d9239c08c0568f6f2f0ee452": {
+                "name": "wstETH",
+                "decimals": 18
+            },
+            "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf": {
+                "name": "cbBTC",
+                "decimals": 8
             }
         }
     },
@@ -466,7 +486,19 @@
                 "name": "weETH",
                 "decimals": 18
             },
-            "xc168067d95109003805aC865ae556e8476DC69bc": {
+            "0xc168067d95109003805aC865ae556e8476DC69bc": {
+                "name": "USDT",
+                "decimals": 6
+            },
+            "0x1f32b1c2345538c0c6f582fcb022739c4a194ebb": {
+                "name": "wstETH",
+                "decimals": 18
+            },
+            "0x5a7facb970d094b6c7ff1df0ea68d99e6e73cbff": {
+                "name": "weETH",
+                "decimals": 18
+            },
+            "0x94b008aa00579c1307b0ef2c499ad98a8ce58e58": {
                 "name": "USDT",
                 "decimals": 6
             }
@@ -594,7 +626,19 @@
             "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9": {
                 "name": "USDT",
                 "decimals": 6
-            }
+            },
+            "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f": {
+                "name": "wBTC",
+                "decimals": 8
+            },
+            "0x35751007a407ca6feffe80b3cb397736d2cf4dbe": {
+                "name": "weETH",
+                "decimals": 18
+            },
+            "0x6c84a8f1c29108f47a79964b5fe888d4f4d0de40": {
+                "name": "tBTC",
+                "decimals": 18
+            }          
         }
     },
     "polygon": {
@@ -788,6 +832,10 @@
             "0xe0064414c2c1a636a9424c7a17d86fbf7fd3f190": {
                 "name": "NIBI",
                 "decimals": 18
+            },            
+            "0x0829f361a05d993d5ceb035ca6df3446b060970b": {
+                "name": "USDC",
+                "decimals": 6
             }
         }
     },
@@ -901,7 +949,15 @@
             "0x55d398326f99059ff775485246999027b3197955":{
                 "name": "USDT",
                 "decimals": 6
-            }
+            },
+            "0x2170ed0880ac9a755fd29b2688956bd959f933f8": {
+                "name": "ETHB",
+                "decimals": 18
+            },
+            "0x9526eff3f808c7ed7da65939d66fe3e9ac1d6411": {
+                "name": "bnUSD",
+                "decimals": 18
+            }            
         }
     },
     "hyperliquid": {
@@ -977,6 +1033,14 @@
             },
             "0x0000000000000000000000000000000000000000": {
                 "name": "HYPE",
+                "decimals": 18
+            },
+              "0x7288622bc2d39553f34d5b81c88c3f979d91dbc7": {
+                "name": "HYPE",
+                "decimals": 18
+            },
+            "0xecef079897b633b04c5e9a290e1c567d399a8a4b": {
+                "name": "bnUSD",
                 "decimals": 18
             }
         }
@@ -1070,6 +1134,14 @@
             },
             "0xb5239140745067502ee35b4e2dc2869418db8309": {
                 "name": "bnUSD",
+                "decimals": 18
+            },
+            "0x29ee6138dd4c9815f46d34a4a1ed48f46758a402": {
+                "name": "USDC",
+                "decimals": 6
+            },
+            "0x6958a4cbfe11406e2a1c1d3a71a1971ad8b3b92f": {
+                "name": "SODA",
                 "decimals": 18
             }
         }
