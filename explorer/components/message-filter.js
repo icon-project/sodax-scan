@@ -30,7 +30,7 @@ const MessageFilter = (props) => {
                     return (
                         <DropdownItem
                             key={actType}
-                            className={`min-w-48 ${props.actionType == actType ? 'bg-gray-200' : ''}`}
+                            className={`min-w-48 ${props.actionType.includes(actType) ? 'bg-gray-200' : ''}`}
                             onClick={() => {
                                 props.actionTypeChanged(actType)
                             }}
