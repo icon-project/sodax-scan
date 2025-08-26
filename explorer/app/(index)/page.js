@@ -30,7 +30,7 @@ export default function Home() {
     const totalMsgRes = useSWR('statistics/total_messages', () => FetchData.getTotalMessages(), {
         refreshInterval: 2000
     })
-    
+
 
     return (
         <div>
@@ -59,7 +59,14 @@ export default function Home() {
                     setDestNetwork(helper.NETWORK_MAPPINGS[value])
                 }}
                 actionTypeChanged={(value) => {
-                    setActionType(value)
+                    setActionType((prev) => {
+                        if (!value) return '';
+                        const values = prev ? prev.split(",") : [];
+                        if (values.includes(value)) {
+                            return values.filter((v) => v !== value).join(",");
+                        }
+                        return [...values, value].join(",");
+                    });
                 }}
                 statusChanged={(value) => {
                     setStatus(value)

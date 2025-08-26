@@ -35,7 +35,15 @@ const MessageFilter = (props) => {
                                 props.actionTypeChanged(actType)
                             }}
                         >
+                            <input
+                                type="checkbox"
+                                checked={props.actionType?.includes(actType)}
+                                onChange={() => props.actionTypeChanged(actType)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="cursor-pointer px-2 mr-1"
+                            />
                             {actType}
+
                         </DropdownItem>
                     )
                 })}

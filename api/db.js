@@ -51,8 +51,9 @@ const buildWhereSql = (status, src_network, dest_network, src_address, dest_addr
         values.push(to_timestamp)
     }
     if (action_type) {
-        conditions.push(`action_type = $${conditions.length + 1}`)
-        values.push(action_type)
+        conditions.push(`action_type = ANY($${conditions.length + 1})`)
+        const types = action_type.split(",").map(t => t.trim()).filter(Boolean);
+        values.push(types)
     }
 
     return { conditions, values }
