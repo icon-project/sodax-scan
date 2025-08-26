@@ -53,10 +53,27 @@ export default function Home() {
                 destNetwork={destNetwork}
                 actionType={actionType}
                 srcNetworkChanged={(value) => {
-                    setSrcNetwork(helper.NETWORK_MAPPINGS[value])
+                    const networkId = helper.NETWORK_MAPPINGS[value]
+                    setSrcNetwork((prev) => {
+                        if (!networkId) return '';
+                        const values = prev ? prev.split(",") : [];
+                        if (values.includes(networkId)) {
+                            return values.filter((v) => v !== networkId).join(",");
+                        }
+                        return [...values, networkId].join(",");
+                    })
                 }}
                 destNetworkChanged={(value) => {
-                    setDestNetwork(helper.NETWORK_MAPPINGS[value])
+                    const networkId = helper.NETWORK_MAPPINGS[value]
+                    console.log("destNetworkChanged", value, networkId)
+                    setDestNetwork((prev) => {
+                        if (!networkId) return '';
+                        const values = prev ? prev.split(",") : [];
+                        if (values.includes(networkId)) {
+                            return values.filter((v) => v !== networkId).join(",");
+                        }
+                        return [...values, networkId].join(",");
+                    })
                 }}
                 actionTypeChanged={(value) => {
                     setActionType((prev) => {
