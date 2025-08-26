@@ -30,12 +30,20 @@ const MessageFilter = (props) => {
                     return (
                         <DropdownItem
                             key={actType}
-                            className={`min-w-48 ${props.actionType == actType ? 'bg-gray-100' : ''}`}
+                            className={`min-w-48 ${props.actionType == actType ? 'bg-gray-200' : ''}`}
                             onClick={() => {
                                 props.actionTypeChanged(actType)
                             }}
                         >
+                            {/* <input
+                                type="checkbox"
+                                checked={props.actionType?.includes(actType)}
+                                onChange={() => props.actionTypeChanged(actType)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="cursor-pointer px-2 mr-1"
+                            /> */}
                             {actType}
+
                         </DropdownItem>
                     )
                 })}
@@ -43,7 +51,7 @@ const MessageFilter = (props) => {
 
             <Dropdown label="Destination" inline className="rounded-md" theme={dropdownTheme}>
                 <DropdownItem
-                    className={`min-w-48 ${props.destNetwork == '' ? 'bg-gray-100' : ''}`}
+                    className={`min-w-48 ${props.destNetwork === '' ? 'bg-gray-100' : ''}`}
                     onClick={() => {
                         props.destNetworkChanged('')
                     }}
@@ -52,14 +60,22 @@ const MessageFilter = (props) => {
                 </DropdownItem>
 
                 {helper.getNetworks().map((network) => {
+                    const networkId = helper.NETWORK_MAPPINGS[network.id]
                     return (
                         <DropdownItem
                             key={network}
-                            className={`min-w-48 ${props.destNetwork == network.id ? 'bg-gray-100' : ''}`}
+                            className={`min-w-48 ${props.destNetwork?.split(',').map(v => v.trim()).includes(networkId) ? 'bg-gray-200' : ''}`}
                             onClick={() => {
                                 props.destNetworkChanged(network.id)
                             }}
                         >
+                            {/* <input
+                                type="checkbox"
+                                checked={props.destNetwork?.split(',').map(v => v.trim()).includes(networkId)}
+                                onChange={() => props.destNetworkChanged(network.id)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="cursor-pointer px-2 mr-1"
+                            /> */}
                             <Image className="relative inline-block mr-2 rounded-full bg-transparent" alt={network.name} src={network.logo} width={16} height={16} />
                             {network.name}
                         </DropdownItem>
@@ -69,7 +85,7 @@ const MessageFilter = (props) => {
 
             <Dropdown label="Source" inline className="rounded-md" theme={dropdownTheme}>
                 <DropdownItem
-                    className={`min-w-48 ${props.srcNetwork == '' ? 'bg-gray-100' : ''}`}
+                    className={`min-w-48 ${props.srcNetwork === '' ? 'bg-gray-100' : ''}`}
                     onClick={() => {
                         props.srcNetworkChanged('')
                     }}
@@ -77,15 +93,22 @@ const MessageFilter = (props) => {
                     All Networks
                 </DropdownItem>
                 {helper.getNetworks().map((network) => {
+                    const networkId = helper.NETWORK_MAPPINGS[network.id]
                     return (
                         <DropdownItem
                             key={network}
-                            className={`min-w-48 ${props.srcNetwork == network.id ? 'bg-gray-100' : ''}`}
+                            className={`min-w-48 ${props.srcNetwork?.split(',').map(v => v.trim()).includes(networkId) ? 'bg-gray-200' : ''}`}
                             onClick={() => {
-                                // setSrcNetwork(network.id)
                                 props.srcNetworkChanged(network.id)
                             }}
                         >
+                            {/* <input
+                                type="checkbox"
+                                checked={props.srcNetwork?.split(',').map(v => v.trim()).includes(networkId)}
+                                onChange={() => props.srcNetworkChanged(network.id)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="cursor-pointer px-2 mr-1"
+                            /> */}
                             <Image className="relative inline-block mr-2 rounded-full bg-transparent" alt={network.name} src={network.logo} width={16} height={16} />
                             {network.name}
                         </DropdownItem>
