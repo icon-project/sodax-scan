@@ -54,7 +54,7 @@ export class EvmHandler implements ChainHandler {
         reverseSwap = true
         const abi = ethers.AbiCoder.defaultAbiCoder();
         const decoded = abi.decode(['uint256', 'uint256'], log.data);
-        reverseSwapAction = `Migrated ${bigintDivisionToDecimalString(decoded[1], 18)} SODAX`
+        reverseSwapAction = `Migrated ${bigintDivisionToDecimalString(decoded[1], 18)} Soda`
       }
     }
     if (!intentFilled && !intentCancelled && !reverseSwap) {
