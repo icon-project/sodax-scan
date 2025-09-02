@@ -59,6 +59,10 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                 actionType.action = "CancelIntent";
                 actionType.actionText = payload.actionText;
             }
+            if (payload.reverseSwap) {
+                actionType.action = "Migration";
+                actionType.actionText = payload.actionText;
+            }
             const assetManager = chains[srcChainId].AssetManager;
             let assetsInformation = chains[srcChainId].Assets;
             if (srcChainId === sonic) {
