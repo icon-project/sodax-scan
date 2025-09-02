@@ -17,8 +17,8 @@ const SELECTORS = {
     aaveDeposit: calculateSelector('deposit(address,uint256,address,uint16)'),
     tokenDeposit: calculateSelector('deposit(uint256,address)'),
     createIntent: calculateSelector('createIntent((uint256,address,address,address,uint256,uint256,uint256,bool,uint256,uint256,bytes,bytes,address,bytes))'),
+    swap: calculateSelector('swap(uint256,address)'),
 };
-
 
 export const finalActionTypes = ["Supply", "Borrow", "Withdraw", "Repay", "CreateIntent", "CancelIntent"]
 export const decodeCallData = (callData: string, srcChainId: string, _: string): actionType => {
@@ -143,6 +143,15 @@ export const decodeCallData = (callData: string, srcChainId: string, _: string):
                     action: 'Deposit',
                     amount: deposit[1],
                     actionText: tokenAddress in assetsInformation ? `Deposit ${bigintDivisionToDecimalString(deposit[1], assetsInformation[tokenAddress].decimals)} ${assetsInformation[tokenAddress].name}` : `Deposit ${bigintDivisionToDecimalString(deposit[1], 18)} ${tokenAddress}`
+                };
+            }
+        case SELECTORS.swap:
+            {
+                const swap = abi.decode(['uint256','address'], data);
+                return {
+                    action: 'Migration',
+                    amount: swap[0],
+                    actionText: `Migrated ${bigintDivisionToDecimalString(swap[0], 18)} ICX`
                 };
             }
         default:

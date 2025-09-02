@@ -10,6 +10,7 @@ const calculateTopicHash = (signature: string) => ethers.keccak256(ethers.toUtf8
 const MESSAGE_EVENT_TOPIC = calculateTopicHash('Message(uint256,bytes,uint256,uint256,bytes,bytes)')
 const INTENT_FILLED_TOPIC = calculateTopicHash('IntentFilled(bytes32,(bool,uint256,uint256,bool))')
 const INTENT_CANCELLED_TOPIC = calculateTopicHash('IntentCancelled(bytes32)')
+const REVERSE_SWAP_TOPIC = calculateTopicHash('ReverseSwap(address,uint256,uint256)')
 
 
 export class EvmHandler implements ChainHandler {
@@ -35,7 +36,9 @@ export class EvmHandler implements ChainHandler {
     const txFee = gasUsed * effectiveGasPrice;
     let intentFilled = false
     let intentCancelled = false
+    let reverseSwap = false
     let intentCancelAction = ""
+    let reverseSwapAction = ""
     for (const log of tx.result.logs ?? []) {
       const topics: string[] = log.topics;
       if (topics.includes(INTENT_FILLED_TOPIC)) {
@@ -47,8 +50,14 @@ export class EvmHandler implements ChainHandler {
         const decoded = abi.decode(['bytes32'], log.data);
         intentCancelAction = `IntentCancelled ${decoded[0]}`
       }
+      if (topics.includes(REVERSE_SWAP_TOPIC)) {
+        reverseSwap = true
+        const abi = ethers.AbiCoder.defaultAbiCoder();
+        const decoded = abi.decode(['uint256', 'uint256'], log.data);
+        reverseSwapAction = `Migrated ${bigintDivisionToDecimalString(decoded[1], 18)} SODAX`
+      }
     }
-    if (!intentFilled && !intentCancelled) {
+    if (!intentFilled && !intentCancelled && !reverseSwap) {
       for (const log of tx.result.logs ?? []) {
         const topics: string[] = log.topics;
         if (topics.includes(MESSAGE_EVENT_TOPIC)) {
@@ -64,6 +73,14 @@ export class EvmHandler implements ChainHandler {
           };
         }
       }
+    }
+    else if (reverseSwap) {
+      return {
+        txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
+        payload: "0x",
+        reverseSwap: reverseSwap,
+        actionText: reverseSwapAction
+      };
     }
     else {
       const { data: tx } = await axios.post(this.rpcUrl, {

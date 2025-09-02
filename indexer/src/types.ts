@@ -1,5 +1,5 @@
 
-export type Action = "Supply" | "Borrow" | "Repay" | "Transfer" | "SendMsg" | "Deposit" | "Withdraw" | "CreateIntent" | "CancelIntent" | "IntentFilled"
+export type Action = "Supply" | "Borrow" | "Repay" | "Transfer" | "SendMsg" | "Deposit" | "Withdraw" | "CreateIntent" | "CancelIntent" | "IntentFilled" | "Migration"
 
 
 export const SendMessage = "SendMsg"
@@ -19,6 +19,7 @@ export interface TxPayload {
   payload: string
   intentFilled?: boolean
   intentCancelled?: boolean
+  reverseSwap?: boolean
   dstAddress?: string,
   swapInputToken?: string
   swapOutputToken?: string

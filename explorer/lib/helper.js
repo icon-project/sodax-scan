@@ -187,7 +187,8 @@ const MSG_ACTION_TYPES = {
     Withdraw: 'Withdraw',
     CreateIntent: 'CreateIntent',
     CancelIntent: 'CancelIntent',
-    IntentFilled: 'IntentFilled'
+    IntentFilled: 'IntentFilled',
+    Migration: 'Migration'
 }
 
 const getNativeAsset = (network) => {
