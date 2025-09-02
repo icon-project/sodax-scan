@@ -14,10 +14,14 @@ export class StellarHandler implements ChainHandler {
     }
 
     decodeAddress(address: string): string {
-        const cleanHex = address.startsWith("0x") ? address.slice(2) : address;
-        const scVal = xdr.ScVal.fromXDR(cleanHex, "hex");
-        const addr = Address.fromScVal(scVal);
-        return addr.toString();
+        try {
+            const cleanHex = address.startsWith("0x") ? address.slice(2) : address;
+            const scVal = xdr.ScVal.fromXDR(cleanHex, "hex");
+            const addr = Address.fromScVal(scVal);
+            return addr.toString();
+        } catch {
+            return address
+        }
     }
 
     async getTxnFee(txHash: string): Promise<string> {

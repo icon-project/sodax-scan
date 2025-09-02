@@ -14,8 +14,12 @@ export class SolanaHandler implements ChainHandler {
     }
 
     decodeAddress(address: string): string {
-        const bytes = Uint8Array.from(Buffer.from(address.replace(/^0x/, ""), "hex"));
-        return bs58.encode(bytes);
+        try {
+            const bytes = Uint8Array.from(Buffer.from(address.replace(/^0x/, ""), "hex"));
+            return bs58.encode(bytes);
+        } catch {
+            return address
+        }
     }
 
     async fetchPayload(txHash: string): Promise<TxPayload> {
