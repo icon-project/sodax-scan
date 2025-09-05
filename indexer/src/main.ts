@@ -34,7 +34,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
         if (lastScannedId !== 0 && id <= lastScannedId && transaction.action_type !== 'SendMsg') {
             continue;
         }
-        if (id in retries && retries[id] > 5) {
+        if (id in retries && retries[id] > 4) {
             continue
         }
         const srcChainId = transaction.src_network as string;
@@ -86,10 +86,15 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                 }
             }
             console.log(`Action: ${actionType.action} \nAction Details: ${actionType.actionText} \nTransaction Fee: ${payload.txnFee}\n\n`);
-            await updateTransactionInfo(id, payload.txnFee, actionType.action, actionType.actionText || "");
             if (actionType.action === "SendMsg") {
-                retries[id] = retries[id]++
+                if (id in retries) {
+                    retries[id] = retries[id] + 1
+                } else {
+                    retries[id] = 1
+                }
+
             }
+            await updateTransactionInfo(id, payload.txnFee, actionType.action, actionType.actionText || "");
         } catch (error) {
             const errMessage = error instanceof Error ? error.message : String(error);
             console.log("Failed updating transaction info for id", id, errMessage);
@@ -141,4 +146,4 @@ function cleanupRecords() {
 }
 
 main().catch(console.error)
-setInterval(() => cleanupRecords(), 1800);
+setInterval(() => cleanupRecords(), 1800 * 1000);
