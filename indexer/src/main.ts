@@ -21,7 +21,7 @@ const SODAXSCAN_CONFIG = {
 
 let lastScannedId = 0
 let isRunning = true;
-
+let retries: Record<string, number> = {}
 const processSodaxStream = async () => {
     const response: SodaxScannerResponse = (await axios.request(SODAXSCAN_CONFIG)).data satisfies SodaxScannerResponse;
     await parseTransactionEvent(response);
@@ -33,6 +33,9 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
         const id = transaction.id;
         if (lastScannedId !== 0 && id <= lastScannedId && transaction.action_type !== 'SendMsg') {
             continue;
+        }
+        if (id in retries && retries[id] > 5) {
+            continue
         }
         const srcChainId = transaction.src_network as string;
         const dstChainId = transaction.dest_network as string;
@@ -84,6 +87,9 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             }
             console.log(`Action: ${actionType.action} \nAction Details: ${actionType.actionText} \nTransaction Fee: ${payload.txnFee}\n\n`);
             await updateTransactionInfo(id, payload.txnFee, actionType.action, actionType.actionText || "");
+            if (actionType.action === "SendMsg") {
+                retries[id] = retries[id]++
+            }
         } catch (error) {
             const errMessage = error instanceof Error ? error.message : String(error);
             console.log("Failed updating transaction info for id", id, errMessage);
@@ -130,4 +136,9 @@ const main = async () => {
     }
 }
 
+function cleanupRecords() {
+    retries = {};
+}
+
 main().catch(console.error)
+setInterval(() => cleanupRecords(), 1800);
