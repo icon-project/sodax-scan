@@ -35,7 +35,8 @@ const NETWORK = {
     BSC: CONFIG_NETWORKS.bsc.nid,
     NIBIRU: CONFIG_NETWORKS.nibiru.nid,
     HYPERLIQUID: CONFIG_NETWORKS.hyperliquid.nid,
-    BOTANIX: CONFIG_NETWORKS.botanix.nid
+    BOTANIX: CONFIG_NETWORKS.botanix.nid,
+    LIGHTLINK: CONFIG_NETWORKS.lightlink.nid
 
 }
 
@@ -91,6 +92,7 @@ const META_URLS = {
         [NETWORK.NIBIRU]: USE_MAINNET ? 'https://nibiscan.io/tx/' : 'https://testnet.nibiscan.io/tx/',
         [NETWORK.HYPERLIQUID]: USE_MAINNET ? 'https://purrsec.com/tx/' : 'https://purrsec.com/tx/',
         [NETWORK.BOTANIX]: USE_MAINNET ? 'https://botanixscan.io/tx/' : 'https://botanixscan.io/tx/',
+        [NETWORK.LIGHTLINK]: USE_MAINNET ? 'https://phoenix.lightlink.io/tx/' : 'https://phoenix.lightlink.io/tx/',
     }
 }
 
