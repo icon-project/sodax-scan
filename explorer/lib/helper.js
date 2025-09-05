@@ -23,6 +23,7 @@ const NETWORK = {
     NIBIRU: 'nibiru',
     HYPERLIQUID: 'hyperliquid',
     BOTANIX: 'botanix',
+    LIGHTLINK: 'lightlink',
 }
 
 const NETWORK_MAPPINGS = {
@@ -44,6 +45,7 @@ const NETWORK_MAPPINGS = {
     [NETWORK.NIBIRU]: CONFIG_NETWORKS.nibiru.nid,
     [NETWORK.HYPERLIQUID]: CONFIG_NETWORKS.hyperliquid.nid,
     [NETWORK.BOTANIX]: CONFIG_NETWORKS.botanix.nid,
+    [NETWORK.LIGHTLINK]: CONFIG_NETWORKS.lightlink.nid,
 }
 
 const REV_NETWORK_MAPPINGS = {
@@ -65,6 +67,7 @@ const REV_NETWORK_MAPPINGS = {
     [CONFIG_NETWORKS.nibiru.nid]: [NETWORK.NIBIRU],
     [CONFIG_NETWORKS.hyperliquid.nid]: [NETWORK.HYPERLIQUID],
     [CONFIG_NETWORKS.botanix.nid]: [NETWORK.BOTANIX],
+    [CONFIG_NETWORKS.lightlink.nid]: [NETWORK.LIGHTLINK],
 }
 
 const NETWORK_DETAILS = {
@@ -175,6 +178,12 @@ const NETWORK_DETAILS = {
         name: 'botanix',
         logo: `/images/network-botanix.png`,
         nativeAsset: 'btc',
+    },
+    [NETWORK.LIGHTLINK]: {
+        id: NETWORK.LIGHTLINK,
+        name: 'lightlink',
+        logo: `/images/network-lightlink.png`,
+        nativeAsset: 'ETH',
     },
 }
 

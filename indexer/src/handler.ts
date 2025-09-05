@@ -20,6 +20,7 @@ const handlers: Record<string, ChainHandler> = {
     [polygon]: new EvmHandler({ rpcUrl: RPC_URLS[polygon], denom: "POL" }),
     [bsc]: new EvmHandler({ rpcUrl: RPC_URLS[bsc], denom: "BNB" }),
     [botanix]: new EvmHandler({ rpcUrl: RPC_URLS[botanix], denom: "BTC" }),
+    [lightlink]: new EvmHandler({ rpcUrl: RPC_URLS[lightlink], denom: "ETH" }),
     [stellar]: new StellarHandler({ rpcUrl: RPC_URLS[stellar] }),
     [icon]: new IconHandler({ rpcUrl: RPC_URLS[icon] }),
     [sui]: new SuiHandler({ rpcUrl: RPC_URLS[sui] }),
