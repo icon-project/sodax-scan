@@ -1610,5 +1610,14 @@
         "AssetManager": "nearAM",
         "Assets": {            
         }
+    },
+    "lightlink": {
+        "AssetManager": "nearAM",
+        "Assets": {            
+            "0x0000000000000000000000000000000000000000": {
+                "name": "ETH",
+                "decimals": 18
+            }
+        }
     }
 }
