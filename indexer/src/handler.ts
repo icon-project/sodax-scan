@@ -1,4 +1,4 @@
-import { arbitrum, avax, base, botanix, bsc, hyperliquid, icon, injective, near, nibiru, optimism, polygon, RPC_URLS, solana, sonic, stellar, sui } from './configs.ts';
+import { arbitrum, avax, base, botanix, bsc, hyperliquid, icon, injective, lightlink, near, nibiru, optimism, polygon, RPC_URLS, solana, sonic, stellar, sui } from './configs.ts';
 import { EvmHandler } from './chains/evm/index.ts';
 import { ChainHandler } from './types/ChainHandler';
 import { StellarHandler } from './chains/stellar/index.ts';
