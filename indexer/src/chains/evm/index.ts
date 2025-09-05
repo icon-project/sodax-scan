@@ -32,7 +32,7 @@ export class EvmHandler implements ChainHandler {
       params: [txHash],
     });
     const gasUsed = BigInt(tx.result.gasUsed);
-    const effectiveGasPrice = BigInt(tx.result.effectiveGasPrice);
+    const effectiveGasPrice = tx.result.effectiveGasPrice ? BigInt(tx.result.effectiveGasPrice): 100000000n;
     const txFee = gasUsed * effectiveGasPrice;
     let intentFilled = false
     let intentCancelled = false
