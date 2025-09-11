@@ -39,10 +39,14 @@ export class EvmHandler implements ChainHandler {
     let reverseSwap = false
     let intentCancelAction = ""
     let reverseSwapAction = ""
+    let intentFilledAction = ""
     for (const log of tx.result.logs ?? []) {
       const topics: string[] = log.topics;
       if (topics.includes(INTENT_FILLED_TOPIC)) {
         intentFilled = true
+        const abi = ethers.AbiCoder.defaultAbiCoder();
+        const decoded = abi.decode(['bytes32'], log.data);
+        intentFilledAction = `IntentFilled ${decoded[0]}`
       }
       if (topics.includes(INTENT_CANCELLED_TOPIC)) {
         intentCancelled = true
@@ -104,37 +108,48 @@ export class EvmHandler implements ChainHandler {
         const decoded = decodedIntentFill[0]
         const srcChainId = decoded[8]
         const dstChainId = decoded[9]
-        const assetsInformation = chains[srcChainId].Assets
-        let inputToken = decoded[2].toLowerCase()
-        let decimals = 18
-        if (inputToken in assetsInformation) {
-          const tokenInfo = assetsInformation[inputToken]
-          inputToken = tokenInfo.name
-          decimals = tokenInfo.decimals
+        try{
+          const assetsInformation = chains[srcChainId].Assets
+          let inputToken = decoded[2].toLowerCase()
+          let decimals = 18
+          if (inputToken in assetsInformation) {
+            const tokenInfo = assetsInformation[inputToken]
+            inputToken = tokenInfo.name
+            decimals = tokenInfo.decimals
+          }
+          const outputAssetsInformation = chains[dstChainId].Assets
+          let outputToken = decoded[3].toLowerCase()
+          let outputDecimals = 18
+          if (outputToken in outputAssetsInformation) {
+            const outputTokenInfo = outputAssetsInformation[outputToken]
+            outputToken = outputTokenInfo.name
+            outputDecimals = outputTokenInfo.decimals
+          }
+          let inputAmount = bigintDivisionToDecimalString(decodedIntentFill[1], decimals)
+          let outputAmount = bigintDivisionToDecimalString(decodedIntentFill[2], outputDecimals)
+          if (intentCancelled) {
+            inputAmount = bigintDivisionToDecimalString(decoded[4], decimals)
+            outputAmount = bigintDivisionToDecimalString(decoded[5], outputDecimals)
+          }
+          return {
+            txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
+            payload: "0x",
+            intentFilled: intentFilled,
+            intentCancelled: intentCancelled,
+            swapInputToken: decoded[2],
+            swapOutputToken: decoded[3],
+            actionText: intentFilled ? `IntentFilled ${inputAmount} ${inputToken} -> ${outputAmount} ${outputToken}` : `IntentCancelled ${inputAmount} ${inputToken} -> ${outputAmount} ${outputToken}`
+          };
+        }catch{
+          return {
+            txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
+            payload: "0x",
+            intentFilled: intentFilled,
+            intentCancelled: intentCancelled,
+            actionText: intentFilled ? intentFilledAction : intentCancelAction
+          };
         }
-        const outputAssetsInformation = chains[dstChainId].Assets
-        let outputToken = decoded[3].toLowerCase()
-        let outputDecimals = 18
-        if (outputToken in outputAssetsInformation) {
-          const outputTokenInfo = outputAssetsInformation[outputToken]
-          outputToken = outputTokenInfo.name
-          outputDecimals = outputTokenInfo.decimals
-        }
-        let inputAmount = bigintDivisionToDecimalString(decodedIntentFill[1], decimals)
-        let outputAmount = bigintDivisionToDecimalString(decodedIntentFill[2], outputDecimals)
-        if (intentCancelled) {
-          inputAmount = bigintDivisionToDecimalString(decoded[4], decimals)
-          outputAmount = bigintDivisionToDecimalString(decoded[5], outputDecimals)
-        }
-        return {
-          txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
-          payload: "0x",
-          intentFilled: intentFilled,
-          intentCancelled: intentCancelled,
-          swapInputToken: decoded[2],
-          swapOutputToken: decoded[3],
-          actionText: intentFilled ? `IntentFilled ${inputAmount} ${inputToken} -> ${outputAmount} ${outputToken}` : `IntentCancelled ${inputAmount} ${inputToken} -> ${outputAmount} ${outputToken}`
-        };
+        
       } catch (err) {
         console.log("decode err", err)
       }
