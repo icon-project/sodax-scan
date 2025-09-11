@@ -90,7 +90,7 @@ const META_URLS = {
         [NETWORK.ARCHWAY]: USE_MAINNET ? 'https://mintscan.io/archway/txs/' : 'https://www.mintscan.io/archway-testnet/tx/',
         [NETWORK.STACKS]: USE_MAINNET ? 'https://explorer.hiro.so/txid/{txHash}?chain=mainnet' : 'https://explorer.hiro.so/txid/{txHash}?chain=testnet',
         [NETWORK.NIBIRU]: USE_MAINNET ? 'https://nibiscan.io/tx/' : 'https://testnet.nibiscan.io/tx/',
-        [NETWORK.HYPERLIQUID]: USE_MAINNET ? 'https://purrsec.com/tx/' : 'https://purrsec.com/tx/',
+        [NETWORK.HYPERLIQUID]: USE_MAINNET ? 'https://liquidscan.io/tx/' : 'https://liquidscan.io/tx/',
         [NETWORK.BOTANIX]: USE_MAINNET ? 'https://botanixscan.io/tx/' : 'https://botanixscan.io/tx/',
         [NETWORK.LIGHTLINK]: USE_MAINNET ? 'https://phoenix.lightlink.io/tx/' : 'https://phoenix.lightlink.io/tx/',
     }
