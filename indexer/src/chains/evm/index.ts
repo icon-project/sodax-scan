@@ -104,11 +104,11 @@ export class EvmHandler implements ChainHandler {
           "uint256",
           "uint256"
         ];
-        const decodedIntentFill = abi.decode(intentFillTuple, input);
-        const decoded = decodedIntentFill[0]
-        const srcChainId = decoded[8]
-        const dstChainId = decoded[9]
         try{
+          const decodedIntentFill = abi.decode(intentFillTuple, input);
+          const decoded = decodedIntentFill[0]
+          const srcChainId = decoded[8]
+          const dstChainId = decoded[9]
           const assetsInformation = chains[srcChainId].Assets
           let inputToken = decoded[2].toLowerCase()
           let decimals = 18
