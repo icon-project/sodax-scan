@@ -236,15 +236,11 @@
                 "name": "USDT",
                 "decimals": 6
             },
-            "0x289cDa1043b4Ce26BDCa3c12E534f56b24308A5B": {
+            "0x289cda1043b4ce26bdca3c12e534f56b24308a5b": {
                 "name": "bnUSD",
                 "decimals": 18
             },
-            "0x6958a4CBFe11406E2a1c1d3a71A1971aD8B3b92F": {
-                "name": "bnUSD",
-                "decimals": 18
-            },
-            "0xc7198437980c041c805a1edcba50c1ce5db95118":{
+             "0xc7198437980c041c805a1edcba50c1ce5db95118":{
                 "name": "USDT",
                 "decimals": 6
             },
@@ -327,10 +323,6 @@
             },
             "0x21685e341de7844135329914be6bd8d16982d834": {
                 "name": "sodaSODA",
-                "decimals": 18
-            },
-            "0x4effB5813271699683C25c734F4daBc45B363709": {
-                "name": "sodaETH",
                 "decimals": 18
             },
             "0x0000000000000000000000000000000000000000": {
