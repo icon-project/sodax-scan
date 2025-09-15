@@ -1235,7 +1235,7 @@
             },
             "CD6YBFFWMU2UJHX2NGRJ7RN76IJVTCC7MRA46DUBXNB7E6W7H7JRJ2CX": {
                 "name": "bnUSD",
-                "decimals": 18
+                "decimals": 7
             },
             "0x8ac68af223907fb1b893086601a3d99e00f2fa9d": {
                 "name": "XLM",
@@ -1243,7 +1243,7 @@
             },
             "0x23225ab8e63fca4070296678cb46566d57e1bbe3": {
                 "name": "bnUSD",
-                "decimals": 18
+                "decimals": 7
             },
             "0x348007b53f25a9a857ab8ea81ec9e3ccbcf440f2": {
                 "name": "USDC",
@@ -1363,6 +1363,7 @@
     "sui": {
         "AssetManager": "0xa17a409164d1676db71b411ab50813ba2c7dd547d2df538c699049566f1ff922::asset_manager::0xcb7346339340b7f8dea40fcafb70721dc2fcfa7e8626a89fd954d46c1f928b61",
         "Assets": {
+
             "0x40cd41b35db9e5109ae7e54b44de8625db320e6b": {
                 "name": "sodaBNB",
                 "decimals": 18
@@ -1445,6 +1446,10 @@
             },
             "0xff4de2b2b57dd7611d2812d231a467d007b702a101fd5c7ad3b278257cddb507::bnusd::BNUSD": {
                 "name": "bnUSD",
+                "decimals": 9
+            },
+            "0x03917a812fe4a6d6bc779c5ab53f8a80ba741f8af04121193fc44e0f662e2ceb::balanced_dollar::BALANCED_DOLLAR":{
+                 "name": "bnUSD",
                 "decimals": 9
             },
             "0x4676b2a551b25c04e235553c1c81019337384673": {
