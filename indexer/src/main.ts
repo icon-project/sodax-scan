@@ -138,6 +138,7 @@ const main = async () => {
         const response: SodaxScannerResponse = (await axios.request(SINGLE_EVENT_SODAXSCAN_CONFIG)).data satisfies SodaxScannerResponse;
         await parseTransactionEvent(response);
         await pool.end();
+        process.exit(0);
     }
 }
 
