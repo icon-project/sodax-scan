@@ -36,7 +36,8 @@ const NETWORK = {
     NIBIRU: CONFIG_NETWORKS.nibiru.nid,
     HYPERLIQUID: CONFIG_NETWORKS.hyperliquid.nid,
     BOTANIX: CONFIG_NETWORKS.botanix.nid,
-    LIGHTLINK: CONFIG_NETWORKS.lightlink.nid
+    LIGHTLINK: CONFIG_NETWORKS.lightlink.nid,
+    ETHEREUM: CONFIG_NETWORKS.ETHEREUM.nid
 
 }
 
@@ -93,6 +94,7 @@ const META_URLS = {
         [NETWORK.HYPERLIQUID]: USE_MAINNET ? 'https://liquidscan.io/tx/' : 'https://liquidscan.io/tx/',
         [NETWORK.BOTANIX]: USE_MAINNET ? 'https://botanixscan.io/tx/' : 'https://botanixscan.io/tx/',
         [NETWORK.LIGHTLINK]: USE_MAINNET ? 'https://phoenix.lightlink.io/tx/' : 'https://phoenix.lightlink.io/tx/',
+        [NETWORK.ETHEREUM]: USE_MAINNET ? 'https://etherscan.io/tx/' : 'https://etherscan.io/tx/',
     }
 }
 

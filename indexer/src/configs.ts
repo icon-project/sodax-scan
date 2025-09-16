@@ -17,6 +17,7 @@ export const sui = "21"
 export const injective = "19"
 export const near = "15"
 export const lightlink = "27756"
+export const ethereum = "2"
 
 export type AssetInfo = {
   name: string;
@@ -53,6 +54,7 @@ const chainNameToIdMap: Record<string, string> = {
   injective: injective,
   near: near,
   lightlink: lightlink,
+  ethereum: ethereum,
 };
 
 export const idToChainNameMap: Record<string, string> = Object.fromEntries(
@@ -83,7 +85,8 @@ export const RPC_URLS: Record<string, string> = {
   [sui]: requireEnv("SUI_URL"),
   [solana]: requireEnv("SOLANA_URL"),
   [injective]: requireEnv("INJECTIVE_URL"),
-  [lightlink]: requireEnv("LIGHTLINK_URL")
+  [lightlink]: requireEnv("LIGHTLINK_URL"),
+  [ethereum]: requireEnv("ETHEREUM_URL")
 };
 
 type ChainsById = {

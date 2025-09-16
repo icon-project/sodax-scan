@@ -1,4 +1,4 @@
-import { arbitrum, avax, base, botanix, bsc, hyperliquid, icon, injective, lightlink, near, nibiru, optimism, polygon, RPC_URLS, solana, sonic, stellar, sui } from './configs.ts';
+import { arbitrum, avax, base, botanix, bsc, ethereum, hyperliquid, icon, injective, lightlink, near, nibiru, optimism, polygon, RPC_URLS, solana, sonic, stellar, sui } from './configs.ts';
 import { EvmHandler } from './chains/evm/index.ts';
 import { ChainHandler } from './types/ChainHandler';
 import { StellarHandler } from './chains/stellar/index.ts';
@@ -27,6 +27,7 @@ const handlers: Record<string, ChainHandler> = {
     [solana]: new SolanaHandler({ rpcUrl: RPC_URLS[solana] }),
     [injective]: new InjectiveHandler({ rpcUrl: RPC_URLS[injective] }),
     [near]: new NearHandler({ rpcUrl: RPC_URLS[near] }),
+    [ethereum]: new EvmHandler({ rpcUrl: RPC_URLS[ethereum], denom: "ETH"}),
 };
 
 export function getHandler(chain: string): ChainHandler {

@@ -24,6 +24,8 @@ const NETWORK = {
     HYPERLIQUID: 'hyperliquid',
     BOTANIX: 'botanix',
     LIGHTLINK: 'lightlink',
+    ETHEREUM: 'ethereum',
+
 }
 
 const NETWORK_MAPPINGS = {
@@ -46,6 +48,7 @@ const NETWORK_MAPPINGS = {
     [NETWORK.HYPERLIQUID]: CONFIG_NETWORKS.hyperliquid.nid,
     [NETWORK.BOTANIX]: CONFIG_NETWORKS.botanix.nid,
     [NETWORK.LIGHTLINK]: CONFIG_NETWORKS.lightlink.nid,
+    [NETWORK.ETHEREUM]: CONFIG_NETWORKS.ethereum.nid,
 }
 
 const REV_NETWORK_MAPPINGS = {
@@ -68,6 +71,7 @@ const REV_NETWORK_MAPPINGS = {
     [CONFIG_NETWORKS.hyperliquid.nid]: [NETWORK.HYPERLIQUID],
     [CONFIG_NETWORKS.botanix.nid]: [NETWORK.BOTANIX],
     [CONFIG_NETWORKS.lightlink.nid]: [NETWORK.LIGHTLINK],
+    [CONFIG_NETWORKS.ethereum.nid]: [NETWORK.ETHEREUM],
 }
 
 const NETWORK_DETAILS = {
@@ -183,6 +187,12 @@ const NETWORK_DETAILS = {
         id: NETWORK.LIGHTLINK,
         name: 'lightlink',
         logo: `/images/network-lightlink.png`,
+        nativeAsset: 'ETH',
+    },
+    [NETWORK.ETHEREUM]: {
+        id: NETWORK.ETHEREUM,
+        name: 'ethereum',
+        logo: `/images/network-ethereum.png`,
         nativeAsset: 'ETH',
     },
 }
