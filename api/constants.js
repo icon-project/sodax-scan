@@ -37,7 +37,7 @@ const NETWORK = {
     HYPERLIQUID: CONFIG_NETWORKS.hyperliquid.nid,
     BOTANIX: CONFIG_NETWORKS.botanix.nid,
     LIGHTLINK: CONFIG_NETWORKS.lightlink.nid,
-    ETHEREUM: CONFIG_NETWORKS.ETHEREUM.nid
+    ETHEREUM: CONFIG_NETWORKS.ethereum.nid
 
 }
 
