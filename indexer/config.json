@@ -932,7 +932,7 @@
             },
             "0x9d58508ad10d34048a11640735ca5075bba07b35": {
                 "name": "USDC",
-                "decimals": 6
+                "decimals": 18
             },
             "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c": {
                 "name": "Binance-Peg BTCB Token",
@@ -1620,24 +1620,48 @@
                 "name": "ETH",
                 "decimals": 18
             },
+            "0x14ab2ab7a76838b9205488efc3f700d0632ce8c7":{
+                "name": "bnUSD",
+                "decimals": 18
+            },
             "0x36134a03dcd03bbe858b8f7ed28a71aac608f9e7": {
                 "name": "bnUSD",
                 "decimals": 18
+            },
+            "0xe5159e2a89aeec2fc63d6c25adda3541670af101":{
+                "name": "USDC",
+                "decimals": 6
             },
             "0xbcf8c1b03bbdda88d579330bdf236b58f8bb2cfd": {
                 "name": "USDC",
                 "decimals": 6
             },
+            "0xe4faab621fb6716e32057b7ea7356219936519ac":{
+                "name": "SODA",
+                "decimals": 18
+            },
             "0x6bc8c37cba91f76e68c9e6d689a9c21e4d32079b": {
                 "name": "SODA",
+                "decimals": 18
+            },
+            "0x54582cdb0c145398b532e34f0851ffc1bbc88b4e":{
+                "name": "BTC.LL",
                 "decimals": 18
             },
             "0x5e921d8b7709b409132628258a53449d1fd82341": {
                 "name": "BTC.LL",
                 "decimals": 18
             },
+            "0x415ff3ea8c905ef65cd82665c5534d0e4ff9221a":{
+                "name": "AVAX.LL",
+                "decimals": 18
+            },
             "0x373d9c5390535e9e30185e52826d45b76df09abb": {
                 "name": "AVAX.LL",
+                "decimals": 18
+            },
+            "0xd32e524da9d64db4c37a50f1ee197b591e97dc05":{
+                "name": "BNB.LL",
                 "decimals": 18
             },
             "0xe80c2b7674dcdf47b199697e2c61730231b8da89": {
@@ -1648,24 +1672,52 @@
                 "name": "SOL.LL",
                 "decimals": 18
             },
+            "0xd70c16f1e2c4207dc4c44bc69c8a1b82b50cf9e2": {
+                "name": "SOL.LL",
+                "decimals": 18
+            },
+            "0x18008b18964bc2c90521a7596ff9988743c97fd4": {
+                "name": "XLM.LL",
+                "decimals": 18
+            },
             "0x03bedd719b6d8de11f5b2671b2f30085a626f8da": {
                 "name": "XLM.LL",
                 "decimals": 18
             },
-            "0x8a4c8b1a899fa9d9246a112e8d43ec0c97b77b8c": {
+            "0xb036daab0c772b080babb84b8695c3ca858925b6": {
                 "name": "INJ.LL",
+                "decimals": 18
+            },
+             "0x8a4c8b1a899fa9d9246a112e8d43ec0c97b77b8c": {
+                "name": "INJ.LL",
+                "decimals": 18
+            },
+            "0x425852cca84e5f44d7b8ebb964b21bde585b4571": {
+                "name": "SUI.LL",
                 "decimals": 18
             },
             "0x59e68e2f5147f74f27fd173397a7419c1e5d9999": {
                 "name": "SUI.LL",
                 "decimals": 18
             },
+            "0xb592d2631ccf245119532e025d11188cfadb6777": {
+                "name": "S.LL",
+                "decimals": 18
+            },
             "0xb3a47798cb6585ea0d31a7986f2a04b25c60247f": {
                 "name": "S.LL",
                 "decimals": 18
             },
-            "0xe963bfb4757fc8ae66bc68e11e636f8fbafafcb4": {
+            "0x15ba35f87f259b9b50d53a2fec271bb10020b090": {
                 "name": "POL.LL",
+                "decimals": 18
+            },
+             "0xe963bfb4757fc8ae66bc68e11e636f8fbafafcb4": {
+                "name": "POL.LL",
+                "decimals": 18
+            },
+            "0xea7e97b4597f724844426c32248ba80bd29c75f8": {
+                "name": "HYPE.LL",
                 "decimals": 18
             },
             "0x127b64fb645279f8aca786c507b94dde81f02d16": {
