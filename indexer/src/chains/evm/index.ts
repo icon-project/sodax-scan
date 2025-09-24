@@ -171,7 +171,7 @@ export class EvmHandler implements ChainHandler {
                   }
                   const inputAmount = bigintDivisionToDecimalString(result[4], decimals)
                   const outputAmount = bigintDivisionToDecimalString(result[5], outputDecimals)
-                  const actionText = `IntentSwap ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})`
+                  const actionText = `IntentFilled ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})`
                   return {
                     txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
                     payload: "0x",
