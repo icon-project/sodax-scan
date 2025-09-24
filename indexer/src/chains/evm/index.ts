@@ -2,7 +2,7 @@ import axios from "axios";
 import { ChainHandler } from "../../types/ChainHandler";
 import { ethers } from 'ethers';
 import { TxPayload } from "../../types";
-import { chains } from "../../configs";
+import { chains, idToChainNameMap } from "../../configs";
 import { bigintDivisionToDecimalString } from "../../utils";
 
 const calculateTopicHash = (signature: string) => ethers.keccak256(ethers.toUtf8Bytes(signature));
@@ -11,7 +11,7 @@ const MESSAGE_EVENT_TOPIC = calculateTopicHash('Message(uint256,bytes,uint256,ui
 const INTENT_FILLED_TOPIC = calculateTopicHash('IntentFilled(bytes32,(bool,uint256,uint256,bool))')
 const INTENT_CANCELLED_TOPIC = calculateTopicHash('IntentCancelled(bytes32)')
 const REVERSE_SWAP_TOPIC = calculateTopicHash('ReverseSwap(address,uint256,uint256)')
-
+const fillIntentSelector = "0xd971729f"
 
 export class EvmHandler implements ChainHandler {
   private rpcUrl: string;
@@ -32,7 +32,7 @@ export class EvmHandler implements ChainHandler {
       params: [txHash],
     });
     const gasUsed = BigInt(tx.result.gasUsed);
-    const effectiveGasPrice = tx.result.effectiveGasPrice ? BigInt(tx.result.effectiveGasPrice): 100000000n;
+    const effectiveGasPrice = tx.result.effectiveGasPrice ? BigInt(tx.result.effectiveGasPrice) : 100000000n;
     const txFee = gasUsed * effectiveGasPrice;
     let intentFilled = false
     let intentCancelled = false
@@ -104,7 +104,7 @@ export class EvmHandler implements ChainHandler {
           "uint256",
           "uint256"
         ];
-        try{
+        try {
           const decodedIntentFill = abi.decode(intentFillTuple, input);
           const decoded = decodedIntentFill[0]
           const srcChainId = decoded[8]
@@ -140,7 +140,52 @@ export class EvmHandler implements ChainHandler {
             swapOutputToken: decoded[3],
             actionText: intentFilled ? `IntentFilled ${inputAmount} ${inputToken} -> ${outputAmount} ${outputToken}` : `IntentCancelled ${inputAmount} ${inputToken} -> ${outputAmount} ${outputToken}`
           };
-        }catch{
+        } catch {
+          try {
+            const calls = this.decodeExecuteCalldata(inputData)
+            for (const c of calls) {
+              for (const arg of c.args) {
+                const selector = arg.slice(0, 10);
+                const intentInput = `0x${arg.slice(10)}`;
+                if (selector === fillIntentSelector) {
+                  const intentTuple = "(uint256,address,address,address,uint256,uint256,uint256,bool,uint256,uint256,bytes,bytes,address,bytes)";
+                  const intentDecoded = abi.decode([intentTuple], intentInput);
+                  const result = intentDecoded[0]
+                  const srcChainId = result[8]
+                  const dstChainId = result[9]
+                  const assetsInformation = chains[srcChainId].Assets
+                  let inputToken = result[2].toLowerCase()
+                  let decimals = 18
+                  if (inputToken in assetsInformation) {
+                    const inputTokenInfo = assetsInformation[inputToken]
+                    inputToken = inputTokenInfo.name
+                    decimals = inputTokenInfo.decimals
+                  }
+                  const outputAssetsInformation = chains[dstChainId].Assets
+                  let outputToken = result[3].toLowerCase()
+                  let outputDecimals = 18
+                  if (outputToken in outputAssetsInformation) {
+                    const outputTokenInfo = outputAssetsInformation[outputToken]
+                    outputToken = outputTokenInfo.name
+                    outputDecimals = outputTokenInfo.decimals
+                  }
+                  const inputAmount = bigintDivisionToDecimalString(result[4], decimals)
+                  const outputAmount = bigintDivisionToDecimalString(result[5], outputDecimals)
+                  const actionText = `IntentSwap ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})`
+                  return {
+                    txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
+                    payload: "0x",
+                    intentFilled: intentFilled,
+                    intentCancelled: intentCancelled,
+                    swapInputToken: result[2],
+                    swapOutputToken: result[3],
+                    actionText: intentFilled ? actionText : `IntentCancelled ${inputAmount} ${inputToken} -> ${outputAmount} ${outputToken}`
+                  }
+                }
+              }
+            }
+
+          } catch { }
           return {
             txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
             payload: "0x",
@@ -148,8 +193,9 @@ export class EvmHandler implements ChainHandler {
             intentCancelled: intentCancelled,
             actionText: intentFilled ? intentFilledAction : intentCancelAction
           };
+
         }
-        
+
       } catch (err) {
         console.log("decode err", err)
       }
@@ -158,5 +204,12 @@ export class EvmHandler implements ChainHandler {
       txnFee: "0",
       payload: "0x"
     }
+  }
+
+  decodeExecuteCalldata(calldata: string) {
+    const data = `0x${calldata.slice(10)}`;
+    const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+    const [calls] = abiCoder.decode(["tuple(address to, bytes[] args, bytes6 storeAs)[]"], data);
+    return calls as { to: string; args: string[] }[];
   }
 }
