@@ -138,7 +138,7 @@ export class EvmHandler implements ChainHandler {
             intentCancelled: intentCancelled,
             swapInputToken: decoded[2],
             swapOutputToken: decoded[3],
-            actionText: intentFilled ? `IntentFilled ${inputAmount} ${inputToken} -> ${outputAmount} ${outputToken}` : `IntentCancelled ${inputAmount} ${inputToken} -> ${outputAmount} ${outputToken}`
+            actionText: intentFilled ? `IntentFilled ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}` : `IntentCancelled ${inputAmount} ${inputToken} -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})`
           };
         } catch {
           try {
