@@ -40,13 +40,16 @@ export class EvmHandler implements ChainHandler {
     let intentCancelAction = ""
     let reverseSwapAction = ""
     let intentFilledAction = ""
+    let intentFilledValue = 0
     for (const log of tx.result.logs ?? []) {
       const topics: string[] = log.topics;
       if (topics.includes(INTENT_FILLED_TOPIC)) {
         intentFilled = true
         const abi = ethers.AbiCoder.defaultAbiCoder();
-        const decoded = abi.decode(['bytes32'], log.data);
+        const intentTuple = "(bytes32,bool,uint256,uint256,bool)";
+        const decoded = abi.decode([intentTuple], log.data);
         intentFilledAction = `IntentFilled ${decoded[0]}`
+        intentFilledValue = decoded[0][3]
       }
       if (topics.includes(INTENT_CANCELLED_TOPIC)) {
         intentCancelled = true
@@ -170,7 +173,7 @@ export class EvmHandler implements ChainHandler {
                     outputDecimals = outputTokenInfo.decimals
                   }
                   const inputAmount = bigintDivisionToDecimalString(result[4], decimals)
-                  const outputAmount = bigintDivisionToDecimalString(result[5], outputDecimals)
+                  const outputAmount = bigintDivisionToDecimalString(BigInt(intentFilledValue), outputDecimals)
                   const actionText = `IntentFilled ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})`
                   return {
                     txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
