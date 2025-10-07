@@ -1034,6 +1034,14 @@
             "0xecef079897b633b04c5e9a290e1c567d399a8a4b": {
                 "name": "bnUSD",
                 "decimals": 18
+            },
+            "0x0f78b995d113712deeb17d96638e9d7525d409c6": {
+                "name": "USDC",
+                "decimals": 6
+            },
+            "0xb88339cb7199b77e23db6e890353e22632ba630f": {
+                "name": "USDC",
+                "decimals": 6
             }
         }
     },
