@@ -24,7 +24,7 @@ export class EvmHandler implements ChainHandler {
   decodeAddress(address: string): string {
     return address
   }
-  async fetchPayload(txHash: string): Promise<TxPayload> {
+  async fetchPayload(txHash: string, txDstChainId: string): Promise<TxPayload> {
     const { data: tx } = await axios.post(this.rpcUrl, {
       jsonrpc: '2.0',
       id: 1,
@@ -90,14 +90,14 @@ export class EvmHandler implements ChainHandler {
       };
     }
     else {
-      const { data: tx } = await axios.post(this.rpcUrl, {
+      const { data: intx } = await axios.post(this.rpcUrl, {
         jsonrpc: '2.0',
         id: 1,
         method: 'eth_getTransactionByHash',
         params: [txHash],
       });
       try {
-        const inputData = tx.result.input
+        const inputData = intx.result.input
         const input = `0x${inputData.slice(10)}`;
         const abi = ethers.AbiCoder.defaultAbiCoder();
         const intentTuple = "(uint256,address,address,address,uint256,uint256,uint256,bool,uint256,uint256,bytes,bytes,address,bytes)";
@@ -156,6 +156,27 @@ export class EvmHandler implements ChainHandler {
                   const result = intentDecoded[0]
                   const srcChainId = result[8]
                   const dstChainId = result[9]
+                  if (BigInt(dstChainId) !== BigInt(txDstChainId)) {
+                    intentFilled = false
+                    for (const log of tx.result.logs ?? []) {
+                      const topics: string[] = log.topics;
+                      if (topics.includes(MESSAGE_EVENT_TOPIC)) {
+                        const abi = ethers.AbiCoder.defaultAbiCoder();
+                        const decoded = abi.decode(['uint256', 'bytes', 'uint256', 'uint256', 'bytes', 'bytes'], log.data);
+                        const payload = decoded[5];
+                        const dstChainPayload = decoded[3]
+                        if (BigInt(dstChainPayload).toString() !== BigInt(dstChainId).toString()) {
+                          return {
+                            txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
+                            payload: payload,
+                            intentFilled,
+                            intentCancelled,
+                            dstAddress: tx.result.to
+                          };
+                        }
+                      }
+                    }
+                  }
                   const assetsInformation = chains[srcChainId].Assets
                   let inputToken = result[2].toLowerCase()
                   let decimals = 18
