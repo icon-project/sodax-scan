@@ -1031,11 +1031,15 @@
                 "name": "HYPE",
                 "decimals": 18
             },
-              "0x7288622bc2d39553f34d5b81c88c3f979d91dbc7": {
+            "0x7288622bc2d39553f34d5b81c88c3f979d91dbc7": {
                 "name": "HYPE",
                 "decimals": 18
             },
             "0xecef079897b633b04c5e9a290e1c567d399a8a4b": {
+                "name": "bnUSD",
+                "decimals": 18
+            },
+             "0x19feaf3043dfa69b365d05495630e840a2b9a9dc": {
                 "name": "bnUSD",
                 "decimals": 18
             },
