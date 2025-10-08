@@ -2,8 +2,10 @@ import axios from "axios";
 import { ChainHandler } from "../../types/ChainHandler";
 import { ethers } from 'ethers';
 import { TxPayload } from "../../types";
-import { chains, idToChainNameMap } from "../../configs";
+import { chains, idToChainNameMap, sonic } from "../../configs";
 import { bigintDivisionToDecimalString } from "../../utils";
+import RLP from "rlp";
+import { getHandler } from "../../handler";
 
 const calculateTopicHash = (signature: string) => ethers.keccak256(ethers.toUtf8Bytes(signature));
 
@@ -24,7 +26,7 @@ export class EvmHandler implements ChainHandler {
   decodeAddress(address: string): string {
     return address
   }
-  async fetchPayload(txHash: string, txDstChainId: string): Promise<TxPayload> {
+  async fetchPayload(txHash: string, txConnSn: string): Promise<TxPayload> {
     const { data: tx } = await axios.post(this.rpcUrl, {
       jsonrpc: '2.0',
       id: 1,
@@ -156,16 +158,19 @@ export class EvmHandler implements ChainHandler {
                   const result = intentDecoded[0]
                   const srcChainId = result[8]
                   const dstChainId = result[9]
-                  if (BigInt(dstChainId) !== BigInt(txDstChainId)) {
-                    intentFilled = false
-                    for (const log of tx.result.logs ?? []) {
-                      const topics: string[] = log.topics;
-                      if (topics.includes(MESSAGE_EVENT_TOPIC)) {
-                        const abi = ethers.AbiCoder.defaultAbiCoder();
-                        const decoded = abi.decode(['uint256', 'bytes', 'uint256', 'uint256', 'bytes', 'bytes'], log.data);
-                        const payload = decoded[5];
-                        const dstChainPayload = decoded[3]
-                        if (BigInt(dstChainPayload).toString() !== BigInt(dstChainId).toString()) {
+                  const dstToken = result[3]
+                  for (const log of tx.result.logs ?? []) {
+                    const topics: string[] = log.topics;
+                    if (topics.includes(MESSAGE_EVENT_TOPIC)) {
+                      const abi = ethers.AbiCoder.defaultAbiCoder();
+                      const decoded = abi.decode(['uint256', 'bytes', 'uint256', 'uint256', 'bytes', 'bytes'], log.data);
+                      const payload = decoded[5];
+                      const connSn = decoded[2]
+                      const intentDenom = getTokenDenom(dstToken.toLowerCase(), srcChainId, dstChainId)
+                      const payloadDenom = this.parsePayloadData(payload, srcChainId, dstChainId)
+                      if (BigInt(connSn).toString() === BigInt(txConnSn).toString()) {
+                        if (intentDenom !== payloadDenom) {
+                          intentFilled = false
                           return {
                             txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
                             payload: payload,
@@ -236,4 +241,41 @@ export class EvmHandler implements ChainHandler {
     const [calls] = abiCoder.decode(["tuple(address to, bytes[] args, bytes6 storeAs)[]"], data);
     return calls as { to: string; args: string[] }[];
   }
+
+  parsePayloadData = (data: string, srcChainId: string, dstChainId: string): string => {
+    const payloadBuffer = Buffer.from(data.replace(/^0x/, ''), 'hex');
+    try {
+      const rlp = RLP.decode(payloadBuffer);
+      if (Array.isArray(rlp) && rlp.length === 5) {
+        const tokenAddress = `0x${Buffer.from(rlp[0] as Uint8Array).toString('hex')}`.toLowerCase()
+        const decodedAddress = decodeTokenAddress(tokenAddress, srcChainId, dstChainId)
+        return getTokenDenom(decodedAddress, srcChainId, dstChainId)
+      }
+    } catch {
+    }
+    return ""
+  };
+}
+
+function getTokenDenom(decodedAddress: string, srcChainId: string, dstChainId: string) {
+  let chainId = srcChainId
+  if (chainId === sonic) {
+    chainId = dstChainId
+  }
+  const srcAssetsInformation = chains[chainId].Assets
+  if (decodedAddress in srcAssetsInformation) {
+    const denom = srcAssetsInformation[decodedAddress].name
+    return denom
+  }
+  return ""
+}
+
+
+function decodeTokenAddress(
+  tokenAddress: string,
+  srcChainId: string,
+  dstChainId: string,
+): string {
+  const chainId = srcChainId === sonic ? dstChainId : srcChainId;
+  return getHandler(chainId).decodeAddress(tokenAddress);
 }

@@ -18,7 +18,7 @@ export class InjectiveHandler implements ChainHandler {
         return str.startsWith("0x") ? str : `0x${str}`;
     }
 
-    async fetchPayload(txHash: string,_dstChainId:string): Promise<TxPayload> {
+    async fetchPayload(txHash: string,_txConnSn:string): Promise<TxPayload> {
         const txHashWithHex = this.ensureHexPrefix(txHash)
         const tx = (await axios.get(`${this.rpcUrl}/tx?hash=${txHashWithHex}`)).data.result;
         let txFee = BigInt(0)

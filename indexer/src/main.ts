@@ -42,7 +42,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
         try {
             console.log("Processing txn", transaction.src_tx_hash);
             const txHash = transaction.src_tx_hash;
-            const payload = await getHandler(srcChainId).fetchPayload(txHash,dstChainId);
+            const payload = await getHandler(srcChainId).fetchPayload(txHash,transaction.sn);
             let actionType = parsePayloadData(payload.payload, srcChainId, dstChainId);
             if (actionType.action === SendMessage) {
                 if (srcChainId === solana) {

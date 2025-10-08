@@ -22,7 +22,7 @@ export class SolanaHandler implements ChainHandler {
         }
     }
 
-    async fetchPayload(txHash: string,_dstChainId:string): Promise<TxPayload> {
+    async fetchPayload(txHash: string,_txConnSn:string): Promise<TxPayload> {
         const jsonRpcRequest = {
             jsonrpc: "2.0",
             method: "getTransaction",
