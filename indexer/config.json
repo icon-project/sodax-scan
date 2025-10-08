@@ -593,7 +593,7 @@
             },
             "0xfb0acb1b2720b620935f50a6dd3f7fea52b2fcbe": {
                 "name": "wBTC",
-                "decimals": 18
+                "decimals": 8
             },
             "0x5979d7b546e38e414f7e9822514be443a4800529": {
                 "name": "wstETH",
