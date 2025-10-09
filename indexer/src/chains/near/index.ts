@@ -14,7 +14,7 @@ export class NearHandler implements ChainHandler {
         return Buffer.from(address.replace("0x", ""), 'hex').toString()
     }
 
-    async fetchPayload(txHash: string): Promise<TxPayload> {
+    async fetchPayload(txHash: string,_txConnSn:string): Promise<TxPayload> {
         const nearTxnRequest = {
             method: 'get',
             url: `${process.env.NEAR_URL}/txns/${txHash}`,

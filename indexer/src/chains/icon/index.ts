@@ -15,7 +15,7 @@ export class IconHandler implements ChainHandler {
         }
         return address.replace("0x00", "hx");
     }
-    async fetchPayload(txHash: string): Promise<TxPayload> {
+    async fetchPayload(txHash: string,_txConnSn:string): Promise<TxPayload> {
         const jsonRpcRequest = {
             "jsonrpc": "2.0",
             "method": "icx_getTransactionResult",
