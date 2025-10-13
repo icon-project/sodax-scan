@@ -97,6 +97,21 @@
             "cx1a29259a59f463a67bb2ef84398b30ca56b5830a": {
                 "name": "OMM",
                 "decimals": 18
+            },"0x039e2fb66102314ce7b64ce5ce3e5183bc94ad38":{
+                "name": "Wrapped Sonic",
+                "decimals": 18
+            },
+            "0x7c7d53eecda37a87ce0d5bf8e0b24512a48dc963":{
+                 "name": "soda",
+                 "decimals": 18
+            },
+            "0x6047828dc181963ba44974801ff68e538da5eaf9":{
+                "name": "USDT",
+                "decimals": 6
+            },
+            "0x50c42deacd8fc9773493ed674b675be577f2634b":{
+                "name": "wETH",
+                "decimals": 18
             }
         }
     },
@@ -251,6 +266,22 @@
             "0x6958a4cbfe11406e2a1c1d3a71a1971ad8b3b92f": {
                 "name": "bnUSD",
                 "decimals": 18
+            },
+            "0x039e2fb66102314ce7b64ce5ce3e5183bc94ad38":{
+                "name": "Wrapped Sonic",
+                "decimals": 18
+            },
+            "0x7c7d53eecda37a87ce0d5bf8e0b24512a48dc963":{
+                 "name": "soda",
+                 "decimals": 18
+            },
+            "0x6047828dc181963ba44974801ff68e538da5eaf9":{
+                "name": "USDT",
+                "decimals": 6
+            },
+            "0x50c42deacd8fc9773493ed674b675be577f2634b":{
+                "name": "wETH",
+                "decimals": 18
             }
         }
     },
@@ -368,6 +399,22 @@
             "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf": {
                 "name": "cbBTC",
                 "decimals": 8
+            },
+            "0x039e2fb66102314ce7b64ce5ce3e5183bc94ad38":{
+                "name": "Wrapped Sonic",
+                "decimals": 18
+            },
+            "0x7c7d53eecda37a87ce0d5bf8e0b24512a48dc963":{
+                 "name": "soda",
+                 "decimals": 18
+            },
+            "0x6047828dc181963ba44974801ff68e538da5eaf9":{
+                "name": "USDT",
+                "decimals": 6
+            },
+            "0x50c42deacd8fc9773493ed674b675be577f2634b":{
+                "name": "wETH",
+                "decimals": 18
             }
         }
     },
@@ -493,6 +540,22 @@
             "0x94b008aa00579c1307b0ef2c499ad98a8ce58e58": {
                 "name": "USDT",
                 "decimals": 6
+            },
+            "0x039e2fb66102314ce7b64ce5ce3e5183bc94ad38":{
+                "name": "Wrapped Sonic",
+                "decimals": 18
+            },
+            "0x7c7d53eecda37a87ce0d5bf8e0b24512a48dc963":{
+                 "name": "soda",
+                 "decimals": 18
+            },
+            "0x6047828dc181963ba44974801ff68e538da5eaf9":{
+                "name": "USDT",
+                "decimals": 6
+            },
+            "0x50c42deacd8fc9773493ed674b675be577f2634b":{
+                "name": "wETH",
+                "decimals": 18
             }
         }
     },
@@ -630,7 +693,23 @@
             "0x6c84a8f1c29108f47a79964b5fe888d4f4d0de40": {
                 "name": "tBTC",
                 "decimals": 18
-            }          
+            },
+            "0x039e2fb66102314ce7b64ce5ce3e5183bc94ad38":{
+                "name": "Wrapped Sonic",
+                "decimals": 18
+            },
+            "0x7c7d53eecda37a87ce0d5bf8e0b24512a48dc963":{
+                 "name": "soda",
+                 "decimals": 18
+            },
+            "0x6047828dc181963ba44974801ff68e538da5eaf9":{
+                "name": "USDT",
+                "decimals": 6
+            },
+            "0x50c42deacd8fc9773493ed674b675be577f2634b":{
+                "name": "wETH",
+                "decimals": 18
+            }        
         }
     },
     "polygon": {
@@ -731,6 +810,22 @@
             "0x3813e82e6f7098b9583fc0f33a962d02018b6803":{
                 "name": "USDT",
                 "decimals": 6
+            },
+            "0x039e2fb66102314ce7b64ce5ce3e5183bc94ad38":{
+                "name": "Wrapped Sonic",
+                "decimals": 18
+            },
+            "0x7c7d53eecda37a87ce0d5bf8e0b24512a48dc963":{
+                 "name": "soda",
+                 "decimals": 18
+            },
+            "0x6047828dc181963ba44974801ff68e538da5eaf9":{
+                "name": "USDT",
+                "decimals": 6
+            },
+            "0x50c42deacd8fc9773493ed674b675be577f2634b":{
+                "name": "wETH",
+                "decimals": 18
             }
         }
     },
@@ -828,6 +923,22 @@
             "0x0829f361a05d993d5ceb035ca6df3446b060970b": {
                 "name": "USDC",
                 "decimals": 6
+            },
+            "0x039e2fb66102314ce7b64ce5ce3e5183bc94ad38":{
+                "name": "Wrapped Sonic",
+                "decimals": 18
+            },
+            "0x7c7d53eecda37a87ce0d5bf8e0b24512a48dc963":{
+                 "name": "soda",
+                 "decimals": 18
+            },
+            "0x6047828dc181963ba44974801ff68e538da5eaf9":{
+                "name": "USDT",
+                "decimals": 6
+            },
+            "0x50c42deacd8fc9773493ed674b675be577f2634b":{
+                "name": "wETH",
+                "decimals": 18
             }
         }
     },
@@ -949,7 +1060,23 @@
             "0x9526eff3f808c7ed7da65939d66fe3e9ac1d6411": {
                 "name": "bnUSD",
                 "decimals": 18
-            }            
+            },
+            "0x039e2fb66102314ce7b64ce5ce3e5183bc94ad38":{
+                "name": "Wrapped Sonic",
+                "decimals": 18
+            },
+            "0x7c7d53eecda37a87ce0d5bf8e0b24512a48dc963":{
+                 "name": "soda",
+                 "decimals": 18
+            },
+            "0x6047828dc181963ba44974801ff68e538da5eaf9":{
+                "name": "USDT",
+                "decimals": 6
+            },
+            "0x50c42deacd8fc9773493ed674b675be577f2634b":{
+                "name": "wETH",
+                "decimals": 18
+            }    
         }
     },
     "hyperliquid": {
@@ -1046,6 +1173,22 @@
             "0xb88339cb7199b77e23db6e890353e22632ba630f": {
                 "name": "USDC",
                 "decimals": 6
+            },
+            "0x039e2fb66102314ce7b64ce5ce3e5183bc94ad38":{
+                "name": "Wrapped Sonic",
+                "decimals": 18
+            },
+            "0x7c7d53eecda37a87ce0d5bf8e0b24512a48dc963":{
+                 "name": "soda",
+                 "decimals": 18
+            },
+            "0x6047828dc181963ba44974801ff68e538da5eaf9":{
+                "name": "USDT",
+                "decimals": 6
+            },
+            "0x50c42deacd8fc9773493ed674b675be577f2634b":{
+                "name": "wETH",
+                "decimals": 18
             }
         }
     },
@@ -1146,6 +1289,22 @@
             },
             "0x6958a4cbfe11406e2a1c1d3a71a1971ad8b3b92f": {
                 "name": "SODA",
+                "decimals": 18
+            },
+            "0x039e2fb66102314ce7b64ce5ce3e5183bc94ad38":{
+                "name": "Wrapped Sonic",
+                "decimals": 18
+            },
+            "0x7c7d53eecda37a87ce0d5bf8e0b24512a48dc963":{
+                 "name": "soda",
+                 "decimals": 18
+            },
+            "0x6047828dc181963ba44974801ff68e538da5eaf9":{
+                "name": "USDT",
+                "decimals": 6
+            },
+            "0x50c42deacd8fc9773493ed674b675be577f2634b":{
+                "name": "wETH",
                 "decimals": 18
             }
         }
@@ -1256,6 +1415,22 @@
             "0x1559b52d2e165da1505a542ea37c543c9137f52a": {
                 "name": "legacy bnUSD",
                 "decimals": 18
+            },
+            "0x039e2fb66102314ce7b64ce5ce3e5183bc94ad38":{
+                "name": "Wrapped Sonic",
+                "decimals": 18
+            },
+            "0x7c7d53eecda37a87ce0d5bf8e0b24512a48dc963":{
+                 "name": "soda",
+                 "decimals": 18
+            },
+            "0x6047828dc181963ba44974801ff68e538da5eaf9":{
+                "name": "USDT",
+                "decimals": 6
+            },
+            "0x50c42deacd8fc9773493ed674b675be577f2634b":{
+                "name": "wETH",
+                "decimals": 18
             }
         }
     },
@@ -1361,6 +1536,22 @@
             "Es9vMFrzaC1H6zzggBqqEgakx4eCnmLmJtZNe5yW3sn":{
                 "name": "USDT",
                 "decimals": 6
+            },
+            "0x039e2fb66102314ce7b64ce5ce3e5183bc94ad38":{
+                "name": "Wrapped Sonic",
+                "decimals": 18
+            },
+            "0x7c7d53eecda37a87ce0d5bf8e0b24512a48dc963":{
+                 "name": "soda",
+                 "decimals": 18
+            },
+            "0x6047828dc181963ba44974801ff68e538da5eaf9":{
+                "name": "USDT",
+                "decimals": 6
+            },
+            "0x50c42deacd8fc9773493ed674b675be577f2634b":{
+                "name": "wETH",
+                "decimals": 18
             }
         }
     },
@@ -1519,6 +1710,22 @@
             "0x502867b177303bf1bf226245fcdd3403c177e78d175a55a56c0602c7ff51c7fa::trevin_sui::TREVIN_SUI":{
                 "name": "trevinSUI",
                 "decimals": 9
+            },
+            "0x039e2fb66102314ce7b64ce5ce3e5183bc94ad38":{
+                "name": "Wrapped Sonic",
+                "decimals": 18
+            },
+            "0x7c7d53eecda37a87ce0d5bf8e0b24512a48dc963":{
+                 "name": "soda",
+                 "decimals": 18
+            },
+            "0x6047828dc181963ba44974801ff68e538da5eaf9":{
+                "name": "USDT",
+                "decimals": 6
+            },
+            "0x50c42deacd8fc9773493ed674b675be577f2634b":{
+                "name": "wETH",
+                "decimals": 18
             }
         }
     },
@@ -1612,6 +1819,22 @@
             "0x4bc1211faa06fb50ff61a70331f56167ae511057": {
                 "name": "USDC",
                 "decimals": 6
+            },
+            "0x039e2fb66102314ce7b64ce5ce3e5183bc94ad38":{
+                "name": "Wrapped Sonic",
+                "decimals": 18
+            },
+            "0x7c7d53eecda37a87ce0d5bf8e0b24512a48dc963":{
+                 "name": "soda",
+                 "decimals": 18
+            },
+            "0x6047828dc181963ba44974801ff68e538da5eaf9":{
+                "name": "USDT",
+                "decimals": 6
+            },
+            "0x50c42deacd8fc9773493ed674b675be577f2634b":{
+                "name": "wETH",
+                "decimals": 18
             }
         }
     },
@@ -1738,6 +1961,22 @@
             },
             "0x127b64fb645279f8aca786c507b94dde81f02d16": {
                 "name": "HYPE.LL",
+                "decimals": 18
+            },
+            "0x039e2fb66102314ce7b64ce5ce3e5183bc94ad38":{
+                "name": "Wrapped Sonic",
+                "decimals": 18
+            },
+            "0x7c7d53eecda37a87ce0d5bf8e0b24512a48dc963":{
+                 "name": "soda",
+                 "decimals": 18
+            },
+            "0x6047828dc181963ba44974801ff68e538da5eaf9":{
+                "name": "USDT",
+                "decimals": 6
+            },
+            "0x50c42deacd8fc9773493ed674b675be577f2634b":{
+                "name": "wETH",
                 "decimals": 18
             }
         }
