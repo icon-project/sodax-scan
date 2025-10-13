@@ -282,6 +282,10 @@
             "0x50c42deacd8fc9773493ed674b675be577f2634b":{
                 "name": "wETH",
                 "decimals": 18
+            },
+            "0x390ceed555905ec225da330a188ea04e85570f00":{
+                "name": "Soda",
+                "decimals": 18
             }
         }
     },
@@ -321,7 +325,7 @@
                 "decimals": 18
             },
             "0xdc5b4b00f98347e95b9f94911213dab4c687e1e3": {
-                "name": "sodaSUI",
+                "name": "Soda",
                 "decimals": 18
             },
             "0xe801ca34e19abcbfea12025378d19c4fbe250131": {
@@ -1844,8 +1848,24 @@
         }
     },
     "ethereum": {
-        "AssetManager": "ethereumAM",
-        "Assets": {            
+        "AssetManager": "0x39e77f86c1b1f3fbab362a82b49d2e86c09659b4",
+        "Assets": {   
+            "0x0000000000000000000000000000000000000000": {
+                "name": "ETH",
+                "decimals": 18
+            },  
+            "0x1f22279c89b213944b7ea41dacb0a868ddcdfd13": {
+                "name": "bnUSD",
+                "decimals": 18
+            },
+            "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": {
+                "name": "USDC",
+                "decimals": 6
+            },   
+            "0x4a1c82744cddee675a255fb289cb0917a482e7c7": {
+                "name": "Soda",
+                "decimals": 18
+            }    
         }
     },
     "lightlink": {
