@@ -170,6 +170,9 @@ export class EvmHandler implements ChainHandler {
                       const payloadDenom = this.parsePayloadData(payload, BigInt(dstChainId).toString(), BigInt(srcChainId).toString())
                       if (BigInt(connSn).toString() === BigInt(txConnSn).toString()) {
                         if (intentDenom !== payloadDenom) {
+                          if(intentDenom.includes("USDC") && payloadDenom.includes("USDC")){
+                            continue
+                          }
                           intentFilled = false
                           return {
                             txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
