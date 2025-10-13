@@ -166,8 +166,8 @@ export class EvmHandler implements ChainHandler {
                       const decoded = abi.decode(['uint256', 'bytes', 'uint256', 'uint256', 'bytes', 'bytes'], log.data);
                       const payload = decoded[5];
                       const connSn = decoded[2]
-                      const intentDenom = getTokenDenom(dstToken.toLowerCase(), srcChainId, dstChainId)
-                      const payloadDenom = this.parsePayloadData(payload, srcChainId, dstChainId)
+                      const intentDenom = getTokenDenom(dstToken.toLowerCase(), BigInt(srcChainId).toString(), BigInt(dstChainId).toString())
+                      const payloadDenom = this.parsePayloadData(payload, BigInt(srcChainId).toString(), BigInt(dstChainId).toString())
                       if (BigInt(connSn).toString() === BigInt(txConnSn).toString()) {
                         if (intentDenom !== payloadDenom) {
                           intentFilled = false
