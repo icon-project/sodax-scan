@@ -130,7 +130,7 @@ const searchMessages = async (value) => {
             dest_network, dest_block_number, dest_block_timestamp, dest_tx_hash, dest_app as dest_address, dest_error, 
             response_block_number, response_block_timestamp, response_tx_hash, response_error, 
             rollback_block_number, rollback_block_timestamp, rollback_tx_hash, rollback_error, 
-            value, fee, created_at, updated_at 
+            value, fee, created_at, updated_at, action_type, action_detail 
         FROM messages 
         WHERE src_tx_hash = $1 OR dest_tx_hash = $1 OR response_tx_hash = $1 OR rollback_tx_hash = $1 OR sn = $2 
         ORDER BY src_block_timestamp DESC`,
