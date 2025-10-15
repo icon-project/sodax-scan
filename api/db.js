@@ -40,11 +40,11 @@ const buildWhereSql = (status, src_network, dest_network, src_address, dest_addr
         values.push(dest_address)
     }
     if (from_timestamp) {
-        conditions.push(`src_block_timestamp >= $${conditions.length + 1}`)
+        conditions.push(`created_at >= $${conditions.length + 1}`)
         values.push(from_timestamp)
     }
     if (to_timestamp) {
-        conditions.push(`(src_block_timestamp <= $${conditions.length + 1} OR 
+        conditions.push(`(created_at <= $${conditions.length + 1} OR 
                             dest_block_timestamp <= $${conditions.length + 1} OR 
                             response_block_timestamp <= $${conditions.length + 1} OR 
                             rollback_block_timestamp <= $${conditions.length + 1})`)
