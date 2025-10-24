@@ -173,6 +173,9 @@ export class EvmHandler implements ChainHandler {
                           if(intentDenom.includes("USDC") && payloadDenom.includes("USDC")){
                             continue
                           }
+                          if(intentDenom.includes("BTCB") && payloadDenom.includes("BTCB")){
+                            continue
+                          }
                           intentFilled = false
                           return {
                             txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
