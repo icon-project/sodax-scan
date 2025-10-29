@@ -18,6 +18,7 @@ export const injective = "19"
 export const near = "15"
 export const lightlink = "27756"
 export const ethereum = "2"
+export const redbelly = "726564"
 
 export type AssetInfo = {
   name: string;
@@ -55,6 +56,7 @@ const chainNameToIdMap: Record<string, string> = {
   near: near,
   lightlink: lightlink,
   ethereum: ethereum,
+  redbelly: redbelly,
 };
 
 export const idToChainNameMap: Record<string, string> = Object.fromEntries(
@@ -86,7 +88,8 @@ export const RPC_URLS: Record<string, string> = {
   [solana]: requireEnv("SOLANA_URL"),
   [injective]: requireEnv("INJECTIVE_URL"),
   [lightlink]: requireEnv("LIGHTLINK_URL"),
-  [ethereum]: requireEnv("ETHEREUM_URL")
+  [ethereum]: requireEnv("ETHEREUM_URL"),
+  [redbelly]: requireEnv("REDBELLY_URL")
 };
 
 type ChainsById = {
