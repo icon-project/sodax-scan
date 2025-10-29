@@ -37,7 +37,8 @@ const NETWORK = {
     HYPERLIQUID: CONFIG_NETWORKS.hyperliquid.nid,
     BOTANIX: CONFIG_NETWORKS.botanix.nid,
     LIGHTLINK: CONFIG_NETWORKS.lightlink.nid,
-    ETHEREUM: CONFIG_NETWORKS.ethereum.nid
+    ETHEREUM: CONFIG_NETWORKS.ethereum.nid,
+    REDBELLY: CONFIG_NETWORKS.redbelly.nid
 
 }
 
@@ -95,6 +96,7 @@ const META_URLS = {
         [NETWORK.BOTANIX]: USE_MAINNET ? 'https://botanixscan.io/tx/' : 'https://botanixscan.io/tx/',
         [NETWORK.LIGHTLINK]: USE_MAINNET ? 'https://phoenix.lightlink.io/tx/' : 'https://phoenix.lightlink.io/tx/',
         [NETWORK.ETHEREUM]: USE_MAINNET ? 'https://etherscan.io/tx/' : 'https://etherscan.io/tx/',
+        [NETWORK.REDBELLY]: USE_MAINNET ? 'https://redbelly.routescan.io/tx/' : 'https://redbelly.routescan.io/tx/',
     }
 }
 

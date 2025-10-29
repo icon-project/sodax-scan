@@ -1872,6 +1872,11 @@
             }    
         }
     },
+    "redbelly": {
+        "AssetManager": "redbellyAM",
+        "Assets": {            
+        }
+    },
     "lightlink": {
         "AssetManager": "0x4a1c82744cddee675a255fb289cb0917a482e7c7",
         "Assets": {     

@@ -25,6 +25,7 @@ const NETWORK = {
     BOTANIX: 'botanix',
     LIGHTLINK: 'lightlink',
     ETHEREUM: 'ethereum',
+    REDBELLY: 'redbelly',
 
 }
 
@@ -49,6 +50,7 @@ const NETWORK_MAPPINGS = {
     [NETWORK.BOTANIX]: CONFIG_NETWORKS.botanix.nid,
     [NETWORK.LIGHTLINK]: CONFIG_NETWORKS.lightlink.nid,
     [NETWORK.ETHEREUM]: CONFIG_NETWORKS.ethereum.nid,
+    [NETWORK.REDBELLY]: CONFIG_NETWORKS.redbelly.nid,
 }
 
 const REV_NETWORK_MAPPINGS = {
@@ -72,6 +74,7 @@ const REV_NETWORK_MAPPINGS = {
     [CONFIG_NETWORKS.botanix.nid]: [NETWORK.BOTANIX],
     [CONFIG_NETWORKS.lightlink.nid]: [NETWORK.LIGHTLINK],
     [CONFIG_NETWORKS.ethereum.nid]: [NETWORK.ETHEREUM],
+    [CONFIG_NETWORKS.redbelly.nid]: [NETWORK.REDBELLY],
 }
 
 const NETWORK_DETAILS = {
@@ -194,6 +197,12 @@ const NETWORK_DETAILS = {
         name: 'ethereum',
         logo: `/images/network-ethereum.png`,
         nativeAsset: 'ETH',
+    },
+    [NETWORK.REDBELLY]: {
+        id: NETWORK.REDBELLY,
+        name: 'redbelly',
+        logo: `/images/network-redbelly.png`,
+        nativeAsset: 'RBNT',
     },
 }
 

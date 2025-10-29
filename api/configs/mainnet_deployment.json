@@ -59,6 +59,9 @@
         },
         "ethereum":{
             "nid":"2"
+        },
+        "redbelly":{
+            "nid":"726564"
         }
 
     }
