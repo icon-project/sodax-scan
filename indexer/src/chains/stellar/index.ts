@@ -1,8 +1,8 @@
 import axios from "axios";
 import { ChainHandler } from "../../types/ChainHandler";
-import { getMessageFromValue, stringToEncodedScVal } from "./utils";
+import {  scvMapToMap } from "./utils";
 import { Message } from "./types";
-import { Address, xdr } from "@stellar/stellar-sdk";
+import { Address, scValToNative, StrKey, xdr } from "@stellar/stellar-sdk";
 import { TxPayload } from "../../types";
 import { bigintDivisionToDecimalString } from "../../utils";
 
@@ -41,7 +41,25 @@ export class StellarHandler implements ChainHandler {
 
     }
 
-    async fetchPayload(txHash: string,_txConnSn:string): Promise<TxPayload> {
+    contractEventData(contractEvent: string) {
+        const event = xdr.ContractEvent.fromXDR(contractEvent, "base64");
+        // Extract fields
+        const contractAddress = StrKey.encodeContract(event.contractId() as Buffer)
+
+        const type = event.type().name; // e.g. CONTRACT, SYSTEM
+        const body = event.body().v0();
+
+        const topics = body.topics().map((t) => scValToNative(t));
+        const data = body.data();
+        return {
+            contractAddress,
+            type,
+            topics,
+            data,
+        };
+    }
+
+    async fetchPayload(txHash: string, _txConnSn: string): Promise<TxPayload> {
         const jsonRpcRequest = {
             "jsonrpc": "2.0",
             "id": crypto.randomUUID(),
@@ -51,35 +69,35 @@ export class StellarHandler implements ChainHandler {
             }
         };
         const response = (await axios.post(this.rpcUrl, jsonRpcRequest)).data;
-        const txLedger = response.result.ledger
-        const jsonEventRequest = {
-            "id": crypto.randomUUID(),
-            "jsonrpc": "2.0",
-            "method": "getEvents",
-            "params": {
-                "startLedger": txLedger,
-                "pagination": {
-                    "limit": 1
-                },
-                "filters": [
-                    {
-                        "type": "contract",
-                        "topics": [
-                            [
-                                stringToEncodedScVal("Message")
-                            ]
-                        ]
+        const txEvents = response.result.events.contractEventsXdr
+        if (txEvents) {
+            for (const contractEvents of txEvents) {
+                for (const contractEvent of contractEvents) {
+                    const eventData = this.contractEventData(contractEvent)
+                    if (eventData) {
+                        const isMessageEvent = eventData.topics.includes("Message")
+                        if (isMessageEvent) {
+                            const map = scvMapToMap(eventData.data)
+                            const msg: Message = {
+                                srcChainId: map.get("src_chain_id") as string,
+                                srcAddress: map.get("src_address") as string,
+                                dstAddress: map.get("dst_address") as string,
+                                connSn: map.get("conn_sn") as string,
+                                dstChainId: map.get("dst_chain_id") as string,
+                                payload: map.get("payload") as string,
+                                txHash: txHash
+                            }
+                            return {
+                                txnFee: await this.getTxnFee(txHash),
+                                payload: Buffer.from(msg.payload, 'base64').toString('hex')
+                            }
+                        }
+
                     }
-                ]
+                }
             }
-        };
-        const events = (await axios.post(this.rpcUrl, jsonEventRequest)).data;
-        for (const event of events.result.events) {
-            const msg: Message = getMessageFromValue(txHash, event.value)
-            return {
-                txnFee: await this.getTxnFee(txHash),
-                payload: Buffer.from(msg.payload, 'base64').toString('hex')
-            }
+
+
         }
         return {
             txnFee: "0",
