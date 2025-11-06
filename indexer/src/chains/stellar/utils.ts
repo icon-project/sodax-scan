@@ -34,7 +34,7 @@ function decodeSingleScVal(scval: xdr.ScVal): string {
 }
 
 
-function scvMapToMap(scVal: xdr.ScVal): Map<string, string> {
+export function scvMapToMap(scVal: xdr.ScVal): Map<string, string> {
     if (scVal.switch() === xdr.ScValType.scvMap()) {
         const scMap = scVal.map(); 
         const map = new Map<string, string>();
