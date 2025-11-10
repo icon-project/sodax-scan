@@ -1869,12 +1869,72 @@
             "0x4a1c82744cddee675a255fb289cb0917a482e7c7": {
                 "name": "Soda",
                 "decimals": 18
+            },
+            "0x0921799cb1d702148131024d18fcde022129dc73": {
+                "name": "LL",
+                "decimals": 18
             }    
         }
     },
     "redbelly": {
-        "AssetManager": "redbellyAM",
-        "Assets": {            
+        "AssetManager": "0x39e77f86c1b1f3fbab362a82b49d2e86c09659b4",
+        "Assets": {    
+            "0x0000000000000000000000000000000000000000": {
+                "name": "RBNT",
+                "decimals": 18
+            },
+            "0xf4f7dc27c17470a26d0de9039cf0ea5045f100e8": {
+                "name": "bnUSD",
+                "decimals": 18
+            },
+            "0x5034479da62ec95360165bb45ead266a48519e85": {
+                "name": "Soda",
+                "decimals": 18
+            },
+            "0x8201c02d4ab2214471e8c3ad6475c8b0cd9f2d06": {
+                "name": "USDC",
+                "decimals": 6
+            },
+            "0xb5239140745067502ee35b4e2dc2869418db8309": {
+                "name": "rETH",
+                "decimals": 18
+            },
+            "0x79f9b344bb64af1e89b0c3d20ded4f299f4ff262": {
+                "name": "rBTC",
+                "decimals": 18
+            },
+            "0x6958a4cbfe11406e2a1c1d3a71a1971ad8b3b92f": {
+                "name": "rSOL",
+                "decimals": 18
+            },
+            "0x674a76be36ee36f201df3f918fe0d30ac969ffab": {
+                "name": "rBNB",
+                "decimals": 18
+            },
+            "0x30e603f6f4a0642579a9eb87f39e97c3d63c5185": {
+                "name": "rHYPE",
+                "decimals": 18
+            },
+            "0xdea692287e2ce8cb08fa52917be0f16b1dacdc87": {
+                "name": "rAVAX",
+                "decimals": 18
+            },
+            "0xd6728c68158f8b1c2dd9c2c075b7ec14be82b056": {
+                "name": "rXLM",
+                "decimals": 18
+            },
+            "0x5a075872cb75f68668364fa9295ecfce9a1114e2": {
+                "name": "rSUI",
+                "decimals": 18
+            },
+            "0xd891190a2382c75e3091bbff3a119e4c578e8ebb": {
+                "name": "rS",
+                "decimals": 18
+            },
+            "0x390ceed555905ec225da330a188ea04e85570f00": {
+                "name": "rPOL",
+                "decimals": 18
+            }        
         }
     },
     "lightlink": {
