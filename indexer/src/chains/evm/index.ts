@@ -166,10 +166,11 @@ export class EvmHandler implements ChainHandler {
                       const decoded = abi.decode(['uint256', 'bytes', 'uint256', 'uint256', 'bytes', 'bytes'], log.data);
                       const payload = decoded[5];
                       const connSn = decoded[2]
+                      const msgDstChainId = decoded[3]
                       const intentDenom = getTokenDenom(dstToken.toLowerCase(), BigInt(dstChainId).toString(), BigInt(srcChainId).toString())
                       const payloadDenom = this.parsePayloadData(payload, BigInt(dstChainId).toString(), BigInt(srcChainId).toString())
                       if (BigInt(connSn).toString() === BigInt(txConnSn).toString()) {
-                        if (intentDenom !== payloadDenom) {
+                        if (intentDenom !== payloadDenom || msgDstChainId !== dstChainId) {
                           if(intentDenom.includes("USDC") && payloadDenom.includes("USDC")){
                             continue
                           }
@@ -221,6 +222,7 @@ export class EvmHandler implements ChainHandler {
             }
 
           } catch { }
+          
           return {
             txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
             payload: "0x",
