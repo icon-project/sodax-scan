@@ -1130,6 +1130,10 @@
                 "name": "bnUSD",
                 "decimals": 18
             },
+            "0x506ba7c8d91dadf7a91ee677a205d9687b751579":{
+                "name": "bnUSD",
+                "decimals": 18
+            },
             "0xabbb91c0617090f0028bdc27597cd0d038f3a833": {
                 "name": "sodaUSDC",
                 "decimals": 18
