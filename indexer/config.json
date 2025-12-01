@@ -419,6 +419,10 @@
             "0x50c42deacd8fc9773493ed674b675be577f2634b":{
                 "name": "wETH",
                 "decimals": 18
+            },
+            "0x23889bd0e8e718d47a72fdd8b82da39ec856240f":{
+                "name": "USDT",
+                "decimals": 6
             }
         }
     },
@@ -564,6 +568,10 @@
             "0x50c42deacd8fc9773493ed674b675be577f2634b":{
                 "name": "wETH",
                 "decimals": 18
+            },
+            "0xc168067d95109003805ac865ae556e8476dc69bc":{
+                "name": "USDT",
+                "decimals": 6
             }
         }
     },
@@ -834,6 +842,10 @@
             "0x50c42deacd8fc9773493ed674b675be577f2634b":{
                 "name": "wETH",
                 "decimals": 18
+            },
+            "0xc5dfa58a0f80646d1067d894920acd870ff1888b":{
+                "name": "USDT",
+                "decimals": 6
             }
         }
     },
@@ -1201,6 +1213,10 @@
             "0x50c42deacd8fc9773493ed674b675be577f2634b":{
                 "name": "wETH",
                 "decimals": 18
+            },
+            "0x87f73744d919447e6f8220f268bcbbfa0cbfafa3":{
+                "name": "USDT",
+                "decimals": 6
             }
         }
     },
@@ -1564,6 +1580,10 @@
             "0x50c42deacd8fc9773493ed674b675be577f2634b":{
                 "name": "wETH",
                 "decimals": 18
+            },
+            "0x891c7ab9047eb087b5a988a2638e7056f67adc5c":{
+                "name": "USDT",
+                "decimals": 6
             }
         }
     },
