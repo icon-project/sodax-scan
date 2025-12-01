@@ -1882,6 +1882,10 @@
                 "name": "ETH",
                 "decimals": 18
             },  
+            "0xaeafa26e43f46cd83efe89b1e57c858eb5685a24":{
+                "name": "ETH",
+                "decimals": 18
+            },
             "0x1f22279c89b213944b7ea41dacb0a868ddcdfd13": {
                 "name": "bnUSD",
                 "decimals": 18
