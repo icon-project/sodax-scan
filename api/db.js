@@ -16,7 +16,7 @@ pool.on('error', function (error, client) {
     logger.error(error)
 })
 
-const buildWhereSql = (status, src_network, dest_network, src_address, dest_address, from_timestamp, to_timestamp, action_type) => {
+const buildWhereSql = (status, src_network, dest_network, src_address, dest_address, from_timestamp, to_timestamp, action_type, intent_tx_hash) => {
     let values = []
     let conditions = []
     if (status) {
@@ -54,11 +54,15 @@ const buildWhereSql = (status, src_network, dest_network, src_address, dest_addr
         conditions.push(`action_type = any(string_to_array($${conditions.length + 1},','))`)
         values.push(action_type)
     }
+    if (intent_tx_hash) {
+        conditions.push(`intent_tx_hash = $${conditions.length + 1}`)
+        values.push(intent_tx_hash)
+    }
 
     return { conditions, values }
 }
 
-const getMessages = async (skip, limit, status, src_network, dest_network, src_address, dest_address, from_timestamp, to_timestamp, action_type) => {
+const getMessages = async (skip, limit, status, src_network, dest_network, src_address, dest_address, from_timestamp, to_timestamp, action_type, intent_tx_hash) => {
     // build sql
     let { conditions, values } = buildWhereSql(
         status,
@@ -68,7 +72,8 @@ const getMessages = async (skip, limit, status, src_network, dest_network, src_a
         dest_address,
         from_timestamp,
         to_timestamp,
-        action_type
+        action_type,
+        intent_tx_hash
     )
 
     let sqlTotal = `SELECT count(*) FROM messages`
@@ -132,7 +137,7 @@ const searchMessages = async (value) => {
             rollback_block_number, rollback_block_timestamp, rollback_tx_hash, rollback_error, 
             value, fee, created_at, updated_at, action_type, action_detail 
         FROM messages 
-        WHERE src_tx_hash = $1 OR dest_tx_hash = $1 OR response_tx_hash = $1 OR rollback_tx_hash = $1 OR sn = $2 
+        WHERE src_tx_hash = $1 OR dest_tx_hash = $1 OR response_tx_hash = $1 OR rollback_tx_hash = $1 OR sn = $2 OR intent_tx_hash = $1
         ORDER BY src_block_timestamp DESC`,
         [value, value.startsWith('0x') || !Number.isInteger(Number(value)) ? '0' : value]
     )
