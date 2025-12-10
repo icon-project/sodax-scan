@@ -106,8 +106,8 @@ export const decodeCallData = (callData: string, srcChainId: string, _: string):
                     action: 'CreateIntent',
                     swapInputToken: result[2],
                     swapOutputToken: result[3],
-                    actionText: actionText
-
+                    actionText: actionText,
+                    intentTxHash: result[0].toString()
                 }
             }
         // case SELECTORS.cancelIntent:

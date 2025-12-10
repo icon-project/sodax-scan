@@ -78,7 +78,8 @@ export class EvmHandler implements ChainHandler {
             payload: payload,
             intentFilled,
             intentCancelled,
-            dstAddress: tx.result.to
+            dstAddress: tx.result.to,
+            ...(intentCancelled ? { intentTxHash: decoded[0].toString() } : {})
           };
         }
       }
@@ -143,11 +144,13 @@ export class EvmHandler implements ChainHandler {
             intentCancelled: intentCancelled,
             swapInputToken: decoded[2],
             swapOutputToken: decoded[3],
+            ...(intentCancelled ? { intentTxHash: decoded[0].toString() } : {}),
             actionText: intentFilled ? `IntentFilled ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})` : `IntentCancelled ${inputAmount} ${inputToken} -> ${outputAmount}`
           };
         } catch {
           try {
             const calls = this.decodeExecuteCalldata(inputData)
+            let intentMinOutput = 0n
             for (const c of calls) {
               for (const arg of c.args) {
                 const selector = arg.slice(0, 10);
@@ -158,6 +161,7 @@ export class EvmHandler implements ChainHandler {
                   const result = intentDecoded[0]
                   const srcChainId = result[8]
                   const dstChainId = result[9]
+                  intentMinOutput = result[5]
                   const dstToken = result[3]
                   for (const log of tx.result.logs ?? []) {
                     const topics: string[] = log.topics;
@@ -171,10 +175,10 @@ export class EvmHandler implements ChainHandler {
                       const payloadDenom = this.parsePayloadData(payload, BigInt(dstChainId).toString(), BigInt(srcChainId).toString())
                       if (BigInt(connSn).toString() === BigInt(txConnSn).toString()) {
                         if (intentDenom !== payloadDenom || msgDstChainId !== dstChainId) {
-                          if(intentDenom.includes("USDC") && payloadDenom.includes("USDC")){
+                          if (intentDenom.includes("USDC") && payloadDenom.includes("USDC")) {
                             continue
                           }
-                          if(intentDenom.includes("BTCB") && payloadDenom.includes("BTCB")){
+                          if (intentDenom.includes("BTCB") && payloadDenom.includes("BTCB")) {
                             continue
                           }
                           intentFilled = false
@@ -183,7 +187,8 @@ export class EvmHandler implements ChainHandler {
                             payload: payload,
                             intentFilled,
                             intentCancelled,
-                            dstAddress: tx.result.to
+                            dstAddress: tx.result.to,
+                            intentTxHash: result[0].toString()
                           };
                         }
                       }
@@ -207,6 +212,7 @@ export class EvmHandler implements ChainHandler {
                   }
                   const inputAmount = bigintDivisionToDecimalString(result[4], decimals)
                   const outputAmount = bigintDivisionToDecimalString(BigInt(intentFilledValue), outputDecimals)
+                  const slippageScaled = this.slippagePercent(intentMinOutput, BigInt(intentFilledValue))
                   const actionText = `IntentFilled ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})`
                   return {
                     txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
@@ -215,14 +221,16 @@ export class EvmHandler implements ChainHandler {
                     intentCancelled: intentCancelled,
                     swapInputToken: result[2],
                     swapOutputToken: result[3],
-                    actionText: intentFilled ? actionText : `IntentCancelled ${inputAmount} ${inputToken} -> ${outputAmount} ${outputToken}`
+                    actionText: intentFilled ? actionText : `IntentCancelled ${inputAmount} ${inputToken} -> ${outputAmount} ${outputToken}`,
+                    slippage: slippageScaled,
+                    intentTxHash: result[0].toString()
                   }
                 }
               }
             }
 
           } catch { }
-          
+
           return {
             txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
             payload: "0x",
@@ -241,6 +249,21 @@ export class EvmHandler implements ChainHandler {
       txnFee: "0",
       payload: "0x"
     }
+  }
+
+  slippagePercent(expected: bigint, actual: bigint): string {
+    const decimals = 4
+    const diff = actual - expected;
+    const SCALE = BigInt(10 ** decimals);
+    const scaled = (diff * SCALE * 100n) / expected;
+    const s = scaled.toString();
+    if (s.length <= decimals) {
+      const padded = s.padStart(decimals + 1, '0');
+      return `0.${padded}%`;
+    }
+    const intPart = s.slice(0, s.length - decimals);
+    const decPart = s.slice(s.length - decimals);
+    return `${intPart}.${decPart}%`;
   }
 
   decodeExecuteCalldata(calldata: string) {

@@ -1,6 +1,7 @@
 import pool from './db';
 
-export async function updateTransactionInfo(id:number,fee:string,actionType:string,actionText:string): Promise<void> {
+export async function updateTransactionInfo(id: number, fee: string, actionType: string, actionText: string, intentTxHash: string, slippage = ''): Promise<void> {
+  console.log([fee, actionType, actionText, intentTxHash, slippage, id])
   const client = await pool.connect();
 
   try {
@@ -9,10 +10,13 @@ export async function updateTransactionInfo(id:number,fee:string,actionType:stri
       UPDATE messages
       SET fee = $1,
         action_type = $2,
-        action_detail = $3
-      WHERE id = $4     
+        action_detail = $3,
+        slippage = $4,
+        intent_tx_hash = $5
+      WHERE id = $6     
     `;
-    await client.query(updateQuery, [fee, actionType,actionText,id]);
+    console.log(updateQuery)
+    await client.query(updateQuery, [fee, actionType, actionText, intentTxHash, slippage, id]);
 
     await client.query('COMMIT');
   } catch (err) {

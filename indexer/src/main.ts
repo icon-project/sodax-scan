@@ -42,8 +42,11 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
         try {
             console.log("Processing txn", transaction.src_tx_hash);
             const txHash = transaction.src_tx_hash;
-            const payload = await getHandler(srcChainId).fetchPayload(txHash,transaction.sn);
+            const payload = await getHandler(srcChainId).fetchPayload(txHash, transaction.sn);
             let actionType = parsePayloadData(payload.payload, srcChainId, dstChainId);
+            if (actionType.intentTxHash) {
+                payload.intentTxHash = actionType.intentTxHash
+            }
             if (actionType.action === SendMessage) {
                 if (srcChainId === solana) {
                     const payload = await parseSolanaTransaction(transaction.src_tx_hash, transaction.sn)
@@ -61,6 +64,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             if (payload.intentCancelled) {
                 actionType.action = "CancelIntent";
                 actionType.actionText = payload.actionText;
+                console.log(payload)
             }
             if (payload.reverseSwap) {
                 actionType.action = "Migration";
@@ -94,7 +98,8 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                 }
 
             }
-            await updateTransactionInfo(id, payload.txnFee, actionType.action, actionType.actionText || "");
+            await updateTransactionInfo(id, payload.txnFee, actionType.action,
+                actionType.actionText || "", payload.intentTxHash ?? '', payload.slippage ?? '');
         } catch (error) {
             const errMessage = error instanceof Error ? error.message : String(error);
             console.log("Failed updating transaction info for id", id, errMessage);
