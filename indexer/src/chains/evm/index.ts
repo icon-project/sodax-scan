@@ -54,7 +54,7 @@ export class EvmHandler implements ChainHandler {
         return {
           txnFee: '0',
           payload: '0x',          
-          intentTxHash: decoded[0]
+          intentTxHash: decoded[0][0]
         }
       }
       if (topics.includes(INTENT_FILLED_TOPIC)) {

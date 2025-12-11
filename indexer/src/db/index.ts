@@ -11,8 +11,8 @@ export async function updateTransactionInfo(id: number, fee: string, actionType:
       SET fee = $1,
         action_type = $2,
         action_detail = $3,
-        slippage = $4,
-        intent_tx_hash = $5
+        intent_tx_hash = $4,
+        slippage = $5
       WHERE id = $6     
     `;
     console.log(updateQuery)
