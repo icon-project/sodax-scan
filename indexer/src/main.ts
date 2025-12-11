@@ -31,7 +31,9 @@ const processSodaxStream = async () => {
 async function parseTransactionEvent(response: SodaxScannerResponse) {
     for (const transaction of response.data) {
         const id = transaction.id;
-        if (lastScannedId !== 0 && id <= lastScannedId && transaction.action_type !== 'SendMsg') {
+        if (lastScannedId !== 0 && id <= lastScannedId
+            && (transaction.action_type !== 'SendMsg' 
+                && (transaction.action_type !== "CreateIntent" || transaction.intent_tx_hash !== null))) {
             continue;
         }
         if (id in retries && retries[id] > 4) {
@@ -98,6 +100,12 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                 }
 
             }
+            if (actionType.action === "CreateIntent") {
+                const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn);
+                payload.intentTxHash = dstPayload.intentTxHash
+
+            }
+            // console.log(transaction.src_tx_hash,"payload.intentTxHash", payload.intentTxHash)
             await updateTransactionInfo(id, payload.txnFee, actionType.action,
                 actionType.actionText || "", payload.intentTxHash ?? '', payload.slippage ?? '');
         } catch (error) {

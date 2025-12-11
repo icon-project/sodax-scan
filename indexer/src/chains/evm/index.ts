@@ -12,6 +12,7 @@ const calculateTopicHash = (signature: string) => ethers.keccak256(ethers.toUtf8
 const MESSAGE_EVENT_TOPIC = calculateTopicHash('Message(uint256,bytes,uint256,uint256,bytes,bytes)')
 const INTENT_FILLED_TOPIC = calculateTopicHash('IntentFilled(bytes32,(bool,uint256,uint256,bool))')
 const INTENT_CANCELLED_TOPIC = calculateTopicHash('IntentCancelled(bytes32)')
+const INTENT_CREATED_TOPIC = calculateTopicHash('IntentCreated(bytes32,(uint256,address,address,address,uint256,uint256,uint256,bool,uint256,uint256,bytes,bytes,address,bytes))')
 const REVERSE_SWAP_TOPIC = calculateTopicHash('ReverseSwap(address,uint256,uint256)')
 const fillIntentSelector = "0xd971729f"
 
@@ -43,8 +44,19 @@ export class EvmHandler implements ChainHandler {
     let reverseSwapAction = ""
     let intentFilledAction = ""
     let intentFilledValue = 0
+    let intentHash = ""
     for (const log of tx.result.logs ?? []) {
       const topics: string[] = log.topics;
+      if (topics.includes(INTENT_CREATED_TOPIC)) {
+        const abi = ethers.AbiCoder.defaultAbiCoder();
+        const intentTuple = "(bytes32)";
+        const decoded = abi.decode([intentTuple], log.data);
+        return {
+          txnFee: '0',
+          payload: '0x',          
+          intentTxHash: decoded[0]
+        }
+      }
       if (topics.includes(INTENT_FILLED_TOPIC)) {
         intentFilled = true
         const abi = ethers.AbiCoder.defaultAbiCoder();
@@ -52,12 +64,14 @@ export class EvmHandler implements ChainHandler {
         const decoded = abi.decode([intentTuple], log.data);
         intentFilledAction = `IntentFilled ${decoded[0]}`
         intentFilledValue = decoded[0][3]
+        intentHash = decoded[0][0]
       }
       if (topics.includes(INTENT_CANCELLED_TOPIC)) {
         intentCancelled = true
         const abi = ethers.AbiCoder.defaultAbiCoder();
         const decoded = abi.decode(['bytes32'], log.data);
         intentCancelAction = `IntentCancelled ${decoded[0]}`
+        intentHash = decoded[0]
       }
       if (topics.includes(REVERSE_SWAP_TOPIC)) {
         reverseSwap = true
@@ -144,7 +158,7 @@ export class EvmHandler implements ChainHandler {
             intentCancelled: intentCancelled,
             swapInputToken: decoded[2],
             swapOutputToken: decoded[3],
-            ...(intentCancelled ? { intentTxHash: decoded[0].toString() } : {}),
+            ...(intentCancelled ? { intentTxHash: intentHash } : {}),
             actionText: intentFilled ? `IntentFilled ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})` : `IntentCancelled ${inputAmount} ${inputToken} -> ${outputAmount}`
           };
         } catch {
@@ -188,7 +202,7 @@ export class EvmHandler implements ChainHandler {
                             intentFilled,
                             intentCancelled,
                             dstAddress: tx.result.to,
-                            intentTxHash: result[0].toString()
+                            intentTxHash: intentHash
                           };
                         }
                       }
@@ -223,7 +237,7 @@ export class EvmHandler implements ChainHandler {
                     swapOutputToken: result[3],
                     actionText: intentFilled ? actionText : `IntentCancelled ${inputAmount} ${inputToken} -> ${outputAmount} ${outputToken}`,
                     slippage: slippageScaled,
-                    intentTxHash: result[0].toString()
+                    intentTxHash: intentHash
                   }
                 }
               }

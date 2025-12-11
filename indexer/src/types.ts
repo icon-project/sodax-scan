@@ -49,4 +49,5 @@ export interface Datum {
   action_detail:            string;
   created_at:               string;
   updated_at:               string;
+  intent_tx_hash:           string;
 }

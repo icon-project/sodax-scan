@@ -80,7 +80,7 @@ const getMessages = async (skip, limit, status, src_network, dest_network, src_a
     const selectFields = ` id, sn, status, src_network, src_block_number, src_block_timestamp, src_tx_hash, src_app as src_address, src_error, 
                                 dest_network, dest_block_number, dest_block_timestamp, dest_tx_hash, dest_app as dest_address, dest_error, 
                                 response_block_number, response_block_timestamp, response_tx_hash, response_error, 
-                                rollback_block_number, rollback_block_timestamp, rollback_tx_hash, rollback_error, action_type, created_at,updated_at `
+                                rollback_block_number, rollback_block_timestamp, rollback_tx_hash, rollback_error, action_type, created_at,updated_at,intent_tx_hash `
     let sqlMessages = `SELECT ${selectFields} 
                         FROM messages ORDER BY created_at DESC OFFSET $1 LIMIT $2`
     if (conditions.length > 0) {
