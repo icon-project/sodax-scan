@@ -15,7 +15,6 @@ export async function updateTransactionInfo(id: number, fee: string, actionType:
         slippage = $5
       WHERE id = $6     
     `;
-    console.log(updateQuery)
     await client.query(updateQuery, [fee, actionType, actionText, intentTxHash, slippage, id]);
 
     await client.query('COMMIT');
