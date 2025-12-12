@@ -92,8 +92,7 @@ export class EvmHandler implements ChainHandler {
             payload: payload,
             intentFilled,
             intentCancelled,
-            dstAddress: tx.result.to,
-            ...(intentCancelled ? { intentTxHash: decoded[0].toString() } : {})
+            dstAddress: tx.result.to
           };
         }
       }
