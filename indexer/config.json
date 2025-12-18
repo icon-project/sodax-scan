@@ -1871,8 +1871,28 @@
         }
     },
     "near": {
-        "AssetManager": "nearAM",
-        "Assets": {            
+        "AssetManager": "asset-manager.sodax.near",
+        "Assets": {    
+            "0xda7a39b44d5aa0b99bd3c16110f79fa43d3bf4a4":{
+                "name": "NEAR",
+                "decimals": 24
+            },
+            "0x1979904d6d5ef1178e242471f7091f36d79f8ab4":{
+                "name": "bnUSD",
+                "decimals": 24
+            },
+            "0x4edaa15e106910dbf2b73e6a36828755ebd38668":{
+                "name": "soda",
+                "decimals": 24
+            },
+             "0x0d7209e6a6922a9f8e42bf04dc263dcdd0a0c20a":{
+                "name": "USDC",
+                "decimals": 6
+            },
+             "0x54e3c4b335caff41577e187fb9be1c2b35a1e151":{
+                "name": "USDT",
+                "decimals": 24
+            }
         }
     },
     "ethereum": {
@@ -1901,7 +1921,35 @@
             "0x0921799cb1d702148131024d18fcde022129dc73": {
                 "name": "LL",
                 "decimals": 18
-            }    
+            },
+            "0x46bd0ce9b2b455ac4377cd142ecb8b719715197d":{
+                "name": "USDC",
+                "decimals": 6
+            },
+            "0x13df82eb4c6b7d4bb85669d227e6d24342e4f588":{
+                "name": "bnUSD",
+                "decimals": 18
+            },
+            "0xd1a1c0ae27f661887fe76b0fd609eb2f6846a8b3":{
+                "name": "USDT",
+                "decimals": 6
+            },
+            "0x37a3e4ae512b7132c139643a5ac4b7148997d0e8":{
+                "name": "weETH",
+                "decimals": 18
+            },
+            "0xa2b668c577ab44301ebb820cb29c2a233d1607ab":{
+                "name": "wstETH",
+                "decimals": 18
+            },
+            "0xee6236c791db0755c9bc333b4c7c85ab754f2a0a":{
+                "name": "LL",
+                "decimals": 18
+            },
+            "0x12affee59ceb8be6788a25f9b36149a717795a51":{
+                "name": "Soda",
+                "decimals": 18
+            }
         }
     },
     "redbelly": {
