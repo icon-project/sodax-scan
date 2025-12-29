@@ -49,6 +49,20 @@ export default async function MessageDetail({ msgData, meta }) {
                             </div>
                         </div>
 
+                        {msgData.slippage && (<div className="table-row bg-white border-b">
+                            <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Slippage:</div>
+                            <div className="table-cell px-3 py-2 xl:px-6 xl:py-4">
+                                {msgData.slippage}
+                            </div>
+                        </div>)}
+
+                        {msgData.intent_tx_hash && (<div className="table-row bg-white border-b">
+                            <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Intent Hash:</div>
+                            <div className="table-cell px-3 py-2 xl:px-6 xl:py-4">
+                                {msgData.intent_tx_hash}
+                            </div>
+                        </div>)}
+
                         <div className="table-row bg-white border-b">
                             <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Action:</div>
                             <div className="table-cell px-3 py-2 xl:px-6 xl:py-4">

@@ -12,6 +12,7 @@ export type actionType = {
   swapInputToken?: string
   swapOutputToken?: string
   actionText?: string
+  intentTxHash?: string
 }
 
 export interface TxPayload {
@@ -24,6 +25,8 @@ export interface TxPayload {
   swapInputToken?: string
   swapOutputToken?: string
   actionText?: string
+  slippage?: string
+  intentTxHash?: string
 }
 
 export interface SodaxScannerResponse {
@@ -46,4 +49,5 @@ export interface Datum {
   action_detail:            string;
   created_at:               string;
   updated_at:               string;
+  intent_tx_hash:           string;
 }

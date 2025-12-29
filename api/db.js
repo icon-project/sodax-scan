@@ -16,7 +16,7 @@ pool.on('error', function (error, client) {
     logger.error(error)
 })
 
-const buildWhereSql = (status, src_network, dest_network, src_address, dest_address, from_timestamp, to_timestamp, action_type) => {
+const buildWhereSql = (status, src_network, dest_network, src_address, dest_address, from_timestamp, to_timestamp, action_type, intent_tx_hash) => {
     let values = []
     let conditions = []
     if (status) {
@@ -54,11 +54,15 @@ const buildWhereSql = (status, src_network, dest_network, src_address, dest_addr
         conditions.push(`action_type = any(string_to_array($${conditions.length + 1},','))`)
         values.push(action_type)
     }
+    if (intent_tx_hash) {
+        conditions.push(`intent_tx_hash = $${conditions.length + 1}`)
+        values.push(intent_tx_hash)
+    }
 
     return { conditions, values }
 }
 
-const getMessages = async (skip, limit, status, src_network, dest_network, src_address, dest_address, from_timestamp, to_timestamp, action_type) => {
+const getMessages = async (skip, limit, status, src_network, dest_network, src_address, dest_address, from_timestamp, to_timestamp, action_type, intent_tx_hash) => {
     // build sql
     let { conditions, values } = buildWhereSql(
         status,
@@ -68,14 +72,15 @@ const getMessages = async (skip, limit, status, src_network, dest_network, src_a
         dest_address,
         from_timestamp,
         to_timestamp,
-        action_type
+        action_type,
+        intent_tx_hash
     )
 
     let sqlTotal = `SELECT count(*) FROM messages`
     const selectFields = ` id, sn, status, src_network, src_block_number, src_block_timestamp, src_tx_hash, src_app as src_address, src_error, 
                                 dest_network, dest_block_number, dest_block_timestamp, dest_tx_hash, dest_app as dest_address, dest_error, 
                                 response_block_number, response_block_timestamp, response_tx_hash, response_error, 
-                                rollback_block_number, rollback_block_timestamp, rollback_tx_hash, rollback_error, action_type, created_at,updated_at `
+                                rollback_block_number, rollback_block_timestamp, rollback_tx_hash, rollback_error, action_type, created_at,updated_at,intent_tx_hash,slippage `
     let sqlMessages = `SELECT ${selectFields} 
                         FROM messages ORDER BY created_at DESC OFFSET $1 LIMIT $2`
     if (conditions.length > 0) {
@@ -110,7 +115,7 @@ const getMessageById = async (id) => {
                     dest_network, dest_block_number, dest_block_timestamp, dest_tx_hash, dest_app as dest_address, dest_error, 
                     response_block_number, response_block_timestamp, response_tx_hash, response_error, 
                     rollback_block_number, rollback_block_timestamp, rollback_tx_hash, rollback_error, 
-                    value, fee, action_type, action_detail, action_amount_usd, created_at, updated_at 
+                    value, fee, action_type, action_detail, action_amount_usd, created_at, updated_at,slippage,intent_tx_hash 
                 FROM messages WHERE id = $1`
     const messagesRs = await pool.query(sql, [id])
     return {
@@ -130,9 +135,9 @@ const searchMessages = async (value) => {
             dest_network, dest_block_number, dest_block_timestamp, dest_tx_hash, dest_app as dest_address, dest_error, 
             response_block_number, response_block_timestamp, response_tx_hash, response_error, 
             rollback_block_number, rollback_block_timestamp, rollback_tx_hash, rollback_error, 
-            value, fee, created_at, updated_at, action_type, action_detail 
+            value, fee, created_at, updated_at, action_type, action_detail ,intent_tx_hash,slippage
         FROM messages 
-        WHERE src_tx_hash = $1 OR dest_tx_hash = $1 OR response_tx_hash = $1 OR rollback_tx_hash = $1 OR sn = $2 
+        WHERE src_tx_hash = $1 OR dest_tx_hash = $1 OR response_tx_hash = $1 OR rollback_tx_hash = $1 OR sn = $2 OR intent_tx_hash = $1
         ORDER BY src_block_timestamp DESC`,
         [value, value.startsWith('0x') || !Number.isInteger(Number(value)) ? '0' : value]
     )
