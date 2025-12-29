@@ -59,7 +59,7 @@ export default async function MessageDetail({ msgData, meta }) {
                         {msgData.intent_tx_hash && (<div className="table-row bg-white border-b">
                             <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Intent Hash:</div>
                             <div className="table-cell px-3 py-2 xl:px-6 xl:py-4">
-                                <Link href={`/messages/search?value=${msgData.intent_tx_hash}`}>
+                                <Link className="hover:underline underline-offset-2 text-sm pr-2" href={`/messages/search?value=${msgData.intent_tx_hash}`}>
                                     {msgData.intent_tx_hash}
                                 </Link>
                             </div>
