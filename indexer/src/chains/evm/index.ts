@@ -54,7 +54,8 @@ export class EvmHandler implements ChainHandler {
         return {
           txnFee: '0',
           payload: '0x',          
-          intentTxHash: decoded[0][0]
+          intentTxHash: decoded[0][0],
+          blockNumber: Number.parseInt(tx.result.blockNumber,16)
         }
       }
       if (topics.includes(INTENT_FILLED_TOPIC)) {
@@ -92,7 +93,8 @@ export class EvmHandler implements ChainHandler {
             payload: payload,
             intentFilled,
             intentCancelled,
-            dstAddress: tx.result.to
+            dstAddress: tx.result.to,
+            blockNumber: Number.parseInt(tx.result.blockNumber,16)
           };
         }
       }
@@ -102,7 +104,8 @@ export class EvmHandler implements ChainHandler {
         txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
         payload: "0x",
         reverseSwap: reverseSwap,
-        actionText: reverseSwapAction
+        actionText: reverseSwapAction,
+        blockNumber: Number.parseInt(tx.result.blockNumber,16)
       };
     }
     else {
@@ -158,7 +161,8 @@ export class EvmHandler implements ChainHandler {
             swapInputToken: decoded[2],
             swapOutputToken: decoded[3],
             ...(intentCancelled ? { intentTxHash: intentHash } : {}),
-            actionText: intentFilled ? `IntentFilled ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})` : `IntentCancelled ${inputAmount} ${inputToken} -> ${outputAmount}`
+            actionText: intentFilled ? `IntentFilled ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})` : `IntentCancelled ${inputAmount} ${inputToken} -> ${outputAmount}`,
+            blockNumber: Number.parseInt(tx.result.blockNumber,16)
           };
         } catch {
           try {
@@ -201,7 +205,8 @@ export class EvmHandler implements ChainHandler {
                             intentFilled,
                             intentCancelled,
                             dstAddress: tx.result.to,
-                            intentTxHash: intentHash
+                            intentTxHash: intentHash,
+                            blockNumber: Number.parseInt(tx.result.blockNumber,16)
                           };
                         }
                       }
@@ -236,7 +241,8 @@ export class EvmHandler implements ChainHandler {
                     swapOutputToken: result[3],
                     actionText: intentFilled ? actionText : `IntentCancelled ${inputAmount} ${inputToken} -> ${outputAmount} ${outputToken}`,
                     slippage: slippageScaled,
-                    intentTxHash: intentHash
+                    intentTxHash: intentHash,
+                    blockNumber: Number.parseInt(tx.result.blockNumber,16)
                   }
                 }
               }
@@ -249,7 +255,8 @@ export class EvmHandler implements ChainHandler {
             payload: "0x",
             intentFilled: intentFilled,
             intentCancelled: intentCancelled,
-            actionText: intentFilled ? intentFilledAction : intentCancelAction
+            actionText: intentFilled ? intentFilledAction : intentCancelAction,
+            blockNumber: Number.parseInt(tx.result.blockNumber,16)
           };
 
         }
@@ -260,7 +267,8 @@ export class EvmHandler implements ChainHandler {
     }
     return {
       txnFee: "0",
-      payload: "0x"
+      payload: "0x",
+      blockNumber: 0
     }
   }
 

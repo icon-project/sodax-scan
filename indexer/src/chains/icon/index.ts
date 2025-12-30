@@ -38,11 +38,13 @@ export class IconHandler implements ChainHandler {
             return {
                 txnFee: `${bigintDivisionToDecimalString(fee,18)} ICX`,
                 payload: event.data[2],
+                blockNumber: Number.parseInt(response.result.blockHeight,16)
             };
         }
         return {
             txnFee: "0",
-            payload: "0x"
+            payload: "0x",
+            blockNumber:0
         }
     }
 }

@@ -55,6 +55,7 @@ export class SolanaHandler implements ChainHandler {
                     return {
                         txnFee: `${bigintDivisionToDecimalString(BigInt(parsedResponse.result.meta.fee), 9)} SOL`,
                         payload: payload,
+                        blockNumber: parsedResponse.result.slot
                     };
                 } catch (err) {
                     console.log(err)
@@ -63,7 +64,8 @@ export class SolanaHandler implements ChainHandler {
         }
         return {
             txnFee: "0",
-            payload: "0x"
+            payload: "0x",
+            blockNumber: 0
         }
     }
 }
