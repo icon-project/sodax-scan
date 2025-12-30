@@ -27,6 +27,7 @@ export interface TxPayload {
   actionText?: string
   slippage?: string
   intentTxHash?: string
+  blockNumber: number
 }
 
 export interface SodaxScannerResponse {

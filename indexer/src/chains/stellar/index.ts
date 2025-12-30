@@ -89,7 +89,8 @@ export class StellarHandler implements ChainHandler {
                             }
                             return {
                                 txnFee: await this.getTxnFee(txHash),
-                                payload: Buffer.from(msg.payload, 'base64').toString('hex')
+                                payload: Buffer.from(msg.payload, 'base64').toString('hex'),
+                                blockNumber: response.result.ledger
                             }
                         }
 
@@ -101,7 +102,8 @@ export class StellarHandler implements ChainHandler {
         }
         return {
             txnFee: "0",
-            payload: "0x"
+            payload: "0x",
+            blockNumber: 0
 
         }
     }

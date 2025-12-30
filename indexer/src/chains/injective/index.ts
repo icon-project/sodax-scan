@@ -37,7 +37,8 @@ export class InjectiveHandler implements ChainHandler {
                     if (attr.key === "payload") {
                         return {
                             txnFee: `${bigintDivisionToDecimalString(txFee, 18)} INJ`,
-                            payload: attr.value
+                            payload: attr.value,
+                            blockNumber: 0
                         }
                     }
                 }
@@ -45,7 +46,8 @@ export class InjectiveHandler implements ChainHandler {
         }
         return {
             txnFee: "0",
-            payload: "0x"
+            payload: "0x",
+            blockNumber: 0
         }
     }
 }

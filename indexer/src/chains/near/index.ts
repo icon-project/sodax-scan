@@ -14,7 +14,7 @@ export class NearHandler implements ChainHandler {
         return Buffer.from(address.replace("0x", ""), 'hex').toString()
     }
 
-    async fetchPayload(txHash: string,_txConnSn:string): Promise<TxPayload> {
+    async fetchPayload(txHash: string, _txConnSn: string): Promise<TxPayload> {
         const nearTxnRequest = {
             method: 'get',
             url: `${process.env.NEAR_URL}/txns/${txHash}`,
@@ -36,6 +36,8 @@ export class NearHandler implements ChainHandler {
                 return {
                     txnFee: `${bigintDivisionToDecimalString(BigInt(totalGas), 24)} Near`,
                     payload: Buffer.from(dataBytes).toString("hex"),
+                    blockNumber: parsedResponse.txns[0].block.block_height
+
                 };
             }
             if ("payload" in argsStr) {
@@ -43,17 +45,20 @@ export class NearHandler implements ChainHandler {
                 return {
                     txnFee: `${bigintDivisionToDecimalString(BigInt(totalGas), 24)} Near`,
                     payload: Buffer.from(dataBytes).toString("hex"),
+                    blockNumber: parsedResponse.txns[0].block.block_height
                 };
             }
             const dataBytes = argsStr.data;
             return {
                 txnFee: `${bigintDivisionToDecimalString(BigInt(totalGas), 24)} Near`,
                 payload: Buffer.from(dataBytes).toString("hex"),
+                blockNumber: parsedResponse.txns[0].block.block_height
             };
         }
         return {
             txnFee: "0",
-            payload: "0x"
+            payload: "0x",
+            blockNumber: 0
         }
     }
 }

@@ -42,11 +42,13 @@ export class SuiHandler implements ChainHandler {
             return {
                 txnFee: `${bigintDivisionToDecimalString(BigInt(totalGas),9)} SUI`,
                 payload: Buffer.from(parsedJson.payload).toString("hex"),
+                blockNumber: Number(parsedResponse.result.checkpoint)
             };
         }
         return {
             txnFee: "0",
-            payload: "0x"
+            payload: "0x",
+            blockNumber: 0
         }
     }
 }

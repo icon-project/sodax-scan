@@ -107,7 +107,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             }
             // console.log(transaction.src_tx_hash,"payload.intentTxHash", payload.intentTxHash)
             await updateTransactionInfo(id, payload.txnFee, actionType.action,
-                actionType.actionText || "", payload.intentTxHash ?? '', payload.slippage ?? '');
+                actionType.actionText || "", payload.intentTxHash ?? '', payload.slippage ?? '',payload.blockNumber);
         } catch (error) {
             const errMessage = error instanceof Error ? error.message : String(error);
             console.log("Failed updating transaction info for id", id, errMessage);
