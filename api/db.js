@@ -82,7 +82,7 @@ const getMessages = async (skip, limit, status, src_network, dest_network, src_a
                                 response_block_number, response_block_timestamp, response_tx_hash, response_error, 
                                 rollback_block_number, rollback_block_timestamp, rollback_tx_hash, rollback_error, action_type, created_at,updated_at,intent_tx_hash,slippage `
     let sqlMessages = `SELECT ${selectFields} 
-                        FROM messages ORDER BY created_at,action_type DESC OFFSET $1 LIMIT $2`
+                        FROM messages ORDER BY created_at,sn DESC OFFSET $1 LIMIT $2`
     if (conditions.length > 0) {
         sqlTotal = `SELECT count(*) FROM messages WHERE ${conditions.join(' AND ')} `
         sqlMessages = `SELECT ${selectFields}  
