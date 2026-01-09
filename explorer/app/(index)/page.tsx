@@ -56,11 +56,12 @@ export default function Home() {
                     const networkId = helper.NETWORK_MAPPINGS[value]
                     setSrcNetwork((prev) => {
                         if (!networkId) return '';
+                        const networkIdStr = String(networkId);
                         const values = prev ? prev.split(",") : [];
-                        if (values.includes(networkId)) {
-                            return values.filter((v) => v !== networkId).join(",");
+                        if (values.includes(networkIdStr)) {
+                            return values.filter((v) => v !== networkIdStr).join(",");
                         }
-                        return [...values, networkId].join(",");
+                        return [...values, networkIdStr].join(",");
                     })
                 }}
                 destNetworkChanged={(value) => {
@@ -68,11 +69,12 @@ export default function Home() {
                     console.log("destNetworkChanged", value, networkId)
                     setDestNetwork((prev) => {
                         if (!networkId) return '';
+                        const networkIdStr = String(networkId);
                         const values = prev ? prev.split(",") : [];
-                        if (values.includes(networkId)) {
-                            return values.filter((v) => v !== networkId).join(",");
+                        if (values.includes(networkIdStr)) {
+                            return values.filter((v) => v !== networkIdStr).join(",");
                         }
-                        return [...values, networkId].join(",");
+                        return [...values, networkIdStr].join(",");
                     })
                 }}
                 actionTypeChanged={(value) => {
@@ -97,7 +99,7 @@ export default function Home() {
             />
 
             {/* Message List */}
-            {messagesRes.isLoading ? <SkeletonTable /> : <MessageList data={messagesRes.data?.data} meta={messagesRes.data?.meta}></MessageList>}
+            {messagesRes.isLoading ? <SkeletonTable /> : <MessageList data={messagesRes.data?.data} meta={messagesRes.data?.meta} showPagination={false}></MessageList>}
 
             {/* Paging */}
             {!messagesRes.isLoading && (

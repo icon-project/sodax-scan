@@ -2,8 +2,9 @@ import timeAgo from '@/lib/time-ago'
 import Link from 'next/link'
 import Pagination from './pagination'
 import Render from '@/lib/render'
+import type { MessageListProps } from '@/types'
 
-export default function MessageList({ data, meta, showPagination }) {
+export default function MessageList({ data, meta, showPagination }: MessageListProps) {
     return (
         <div className="py-2">
             <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
@@ -25,7 +26,7 @@ export default function MessageList({ data, meta, showPagination }) {
                                 <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">{Render.renderMessageStatus(item.status)}</div>
                                 <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">{item.sn}</div>
                                 <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">
-                                    {Render.renderHashLink(meta.urls.tx[item.src_network], item.src_network, item.src_tx_hash)}
+                                    {Render.renderHashLink(meta?.urls.tx[item.src_network], item.src_network, item.src_tx_hash)}
                                 </div>
                                 <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">{Render.renderDestHashLink(item, meta)}</div>
                                 <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">{item.action_type}</div>
@@ -47,7 +48,7 @@ export default function MessageList({ data, meta, showPagination }) {
                     </div>
                 )} */}
 
-                {showPagination && <Pagination totalPages={meta.pagination.total} pageNumber={meta.pagination.number} pageSize={meta.pagination.size} />}
+                {showPagination && meta && <Pagination totalPages={meta.pagination.total} pageNumber={meta.pagination.number} pageSize={meta.pagination.size} />}
             </div>
         </div>
     )
