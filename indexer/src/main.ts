@@ -100,7 +100,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                 }
 
             }
-            if (actionType.action === "CreateIntent") {
+            if (actionType.action === "CreateIntent" && transaction.dest_tx_hash) {
                 const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn);
                 payload.intentTxHash = dstPayload.intentTxHash
 
