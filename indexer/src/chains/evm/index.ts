@@ -161,7 +161,7 @@ export class EvmHandler implements ChainHandler {
             swapInputToken: decoded[2],
             swapOutputToken: decoded[3],
             ...(intentCancelled ? { intentTxHash: intentHash } : {}),
-            actionText: intentFilled ? `IntentFilled ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})` : `IntentCancelled ${inputAmount} ${inputToken} -> ${outputAmount}`,
+            actionText: intentFilled ? `IntentFilled ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})` : `IntentCancelled ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})`,
             blockNumber: Number.parseInt(tx.result.blockNumber,16)
           };
         } catch {
@@ -231,7 +231,6 @@ export class EvmHandler implements ChainHandler {
                   const inputAmount = bigintDivisionToDecimalString(result[4], decimals)
                   const outputAmount = bigintDivisionToDecimalString(BigInt(intentFilledValue), outputDecimals)
                   const slippageScaled = this.slippagePercent(intentMinOutput, BigInt(intentFilledValue))
-                  const actionText = `IntentFilled ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})`
                   return {
                     txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
                     payload: "0x",
@@ -239,7 +238,7 @@ export class EvmHandler implements ChainHandler {
                     intentCancelled: intentCancelled,
                     swapInputToken: result[2],
                     swapOutputToken: result[3],
-                    actionText: intentFilled ? actionText : `IntentCancelled ${inputAmount} ${inputToken} -> ${outputAmount} ${outputToken}`,
+                    actionText: intentFilled ? `IntentFilled ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})` : `IntentCancelled ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})`,
                     slippage: slippageScaled,
                     intentTxHash: intentHash,
                     blockNumber: Number.parseInt(tx.result.blockNumber,16)
