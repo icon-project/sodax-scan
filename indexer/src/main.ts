@@ -32,7 +32,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
     for (const transaction of response.data) {
         const id = transaction.id;
         if (lastScannedId !== 0 && id <= lastScannedId
-            && (transaction.action_type !== 'SendMsg' 
+            && (transaction.action_type !== 'SendMsg'
                 && (transaction.action_type !== "CreateIntent" || transaction.intent_tx_hash !== null))) {
             continue;
         }
@@ -100,14 +100,17 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                 }
 
             }
-            if (actionType.action === "CreateIntent" && transaction.dest_tx_hash) {
-                const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn);
-                payload.intentTxHash = dstPayload.intentTxHash
-
+            if (actionType.action === "CreateIntent") {
+                if (transaction.dest_tx_hash) {
+                    const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn);
+                    payload.intentTxHash = dstPayload.intentTxHash
+                } else {
+                    payload.intentTxHash = undefined
+                }
             }
             // console.log(transaction.src_tx_hash,"payload.intentTxHash", payload.intentTxHash)
             await updateTransactionInfo(id, payload.txnFee, actionType.action,
-                actionType.actionText || "", payload.intentTxHash ?? '', payload.slippage ?? '',payload.blockNumber);
+                actionType.actionText || "", payload.intentTxHash ?? '', payload.slippage ?? '', payload.blockNumber);
         } catch (error) {
             const errMessage = error instanceof Error ? error.message : String(error);
             console.log("Failed updating transaction info for id", id, errMessage);
