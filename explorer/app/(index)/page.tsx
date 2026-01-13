@@ -52,6 +52,7 @@ export default function Home() {
                 srcNetwork={srcNetwork}
                 destNetwork={destNetwork}
                 actionType={actionType}
+                status={status}
                 srcNetworkChanged={(value) => {
                     const networkId = helper.NETWORK_MAPPINGS[value]
                     setSrcNetwork((prev) => {
