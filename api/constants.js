@@ -97,7 +97,7 @@ const META_URLS = {
         [NETWORK.LIGHTLINK]: USE_MAINNET ? 'https://phoenix.lightlink.io/tx/' : 'https://phoenix.lightlink.io/tx/',
         [NETWORK.ETHEREUM]: USE_MAINNET ? 'https://etherscan.io/tx/' : 'https://etherscan.io/tx/',
         [NETWORK.REDBELLY]: USE_MAINNET ? 'https://redbelly.routescan.io/tx/' : 'https://redbelly.routescan.io/tx/',
-        [NETWORK.KAIA]: USE_MAINNET ? 'https://kaiascan.io/tx' : 'https://kaiascan.io/tx',
+        [NETWORK.KAIA]: USE_MAINNET ? 'https://kaiascan.io/tx/' : 'https://kaiascan.io/tx/',
     }
 }
 
