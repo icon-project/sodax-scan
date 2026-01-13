@@ -26,7 +26,7 @@ const NETWORK = {
     LIGHTLINK: 'lightlink',
     ETHEREUM: 'ethereum',
     REDBELLY: 'redbelly',
-
+    KAIA: 'kaia',
 }
 
 const NETWORK_MAPPINGS = {
@@ -51,6 +51,7 @@ const NETWORK_MAPPINGS = {
     [NETWORK.LIGHTLINK]: CONFIG_NETWORKS.lightlink.nid,
     [NETWORK.ETHEREUM]: CONFIG_NETWORKS.ethereum.nid,
     [NETWORK.REDBELLY]: CONFIG_NETWORKS.redbelly.nid,
+    [NETWORK.KAIA]: CONFIG_NETWORKS.kaia.nid,
 }
 
 const REV_NETWORK_MAPPINGS = {
@@ -75,6 +76,7 @@ const REV_NETWORK_MAPPINGS = {
     [CONFIG_NETWORKS.lightlink.nid]: [NETWORK.LIGHTLINK],
     [CONFIG_NETWORKS.ethereum.nid]: [NETWORK.ETHEREUM],
     [CONFIG_NETWORKS.redbelly.nid]: [NETWORK.REDBELLY],
+    [CONFIG_NETWORKS.kaia.nid]: [NETWORK.KAIA],
 }
 
 const NETWORK_DETAILS = {
@@ -203,6 +205,12 @@ const NETWORK_DETAILS = {
         name: 'redbelly',
         logo: `/images/network-redbelly.png`,
         nativeAsset: 'RBNT',
+    },
+    [NETWORK.KAIA]: {
+        id: NETWORK.KAIA,
+        name: 'kaia',
+        logo: `/images/network-kaia.png`,
+        nativeAsset: 'KAIA',
     },
 }
 
