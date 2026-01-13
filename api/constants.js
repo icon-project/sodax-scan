@@ -38,8 +38,8 @@ const NETWORK = {
     BOTANIX: CONFIG_NETWORKS.botanix.nid,
     LIGHTLINK: CONFIG_NETWORKS.lightlink.nid,
     ETHEREUM: CONFIG_NETWORKS.ethereum.nid,
-    REDBELLY: CONFIG_NETWORKS.redbelly.nid
-
+    REDBELLY: CONFIG_NETWORKS.redbelly.nid,
+    KAIA: CONFIG_NETWORKS.kaia.nid
 }
 
 const buildProviderUrls = (urls) => {
@@ -97,6 +97,7 @@ const META_URLS = {
         [NETWORK.LIGHTLINK]: USE_MAINNET ? 'https://phoenix.lightlink.io/tx/' : 'https://phoenix.lightlink.io/tx/',
         [NETWORK.ETHEREUM]: USE_MAINNET ? 'https://etherscan.io/tx/' : 'https://etherscan.io/tx/',
         [NETWORK.REDBELLY]: USE_MAINNET ? 'https://redbelly.routescan.io/tx/' : 'https://redbelly.routescan.io/tx/',
+        [NETWORK.KAIA]: USE_MAINNET ? 'https://kaiascan.io/tx' : 'https://kaiascan.io/tx',
     }
 }
 

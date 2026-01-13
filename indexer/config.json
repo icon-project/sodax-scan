@@ -2145,5 +2145,26 @@
                 "decimals": 18
             }
         }
+    },
+    "kaia": {
+        "AssetManager": "0x6D2126DB97dd88AfA85127253807D04A066b6746",
+        "Assets": {
+            "0xf8d13cacb8e2b6ba8396dba35a7365ef6b603cd6": {
+                "name": "bnUSD",
+                "decimals": 18
+            },
+            "0x772ffe538e45b2cddfb5823041ec26c44815b9ab": {
+                "name": "SODA",
+                "decimals": 18
+            },
+            "0x1950c088bc12398240224808167a166f220c8d0e": {
+                "name": "Kaia",
+                "decimals": 18
+            },
+            "0xd077a400968890eacc75cdc901f0356c943e4fdb": {
+                "name": "USDT",
+                "decimals": 6
+            }
+        }
     }
 }
