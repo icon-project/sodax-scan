@@ -1,13 +1,44 @@
 'use client'
 
+import { useState } from 'react'
 import { Dropdown, DropdownItem } from 'flowbite-react'
 import helper from '@/lib/helper'
 import Render from '@/lib/render'
 import Image from 'next/image'
 
-const MessageFilter = (props) => {
+interface Network {
+    id: string
+    name: string
+    logo: string
+    nativeAsset: string
+}
+
+interface MessageFilterProps {
+    srcNetwork: string
+    destNetwork: string
+    actionType: string
+    status: string
+    srcNetworkChanged: (value: string) => void
+    destNetworkChanged: (value: string) => void
+    actionTypeChanged: (value: string) => void
+    statusChanged: (value: string) => void
+    resetClicked: () => void
+}
+
+const MessageFilter = (props: MessageFilterProps) => {
+    const [srcFilter, setSrcFilter] = useState<string>('')
+    const [destFilter, setDestFilter] = useState<string>('')
+
     const dropdownTheme = {
         inlineWrapper: 'flex items-center hover:text-gray-300'
+    }
+
+    const filterNetworks = (networks: Network[], filterText: string): Network[] => {
+        if (!filterText) return networks
+        const lowerFilter = filterText.toLowerCase()
+        return networks.filter(network => 
+            network.name.toLowerCase().includes(lowerFilter)
+        )
     }
 
     return (
@@ -50,6 +81,19 @@ const MessageFilter = (props) => {
             </Dropdown>
 
             <Dropdown label="Destination" inline className="rounded-md" theme={dropdownTheme}>
+                <div className="p-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} onKeyPress={(e) => e.stopPropagation()}>
+                    <input
+                        type="text"
+                        placeholder="Filter networks..."
+                        value={destFilter}
+                        onChange={(e) => setDestFilter(e.target.value)}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        onKeyPress={(e) => e.stopPropagation()}
+                        onKeyUp={(e) => e.stopPropagation()}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                </div>
                 <DropdownItem
                     className={`min-w-48 ${props.destNetwork === '' ? 'bg-gray-100' : ''}`}
                     onClick={() => {
@@ -59,12 +103,12 @@ const MessageFilter = (props) => {
                     All Networks
                 </DropdownItem>
 
-                {helper.getNetworks().map((network) => {
+                {filterNetworks(helper.getNetworks(), destFilter).map((network) => {
                     const networkId = helper.NETWORK_MAPPINGS[network.id]
                     return (
                         <DropdownItem
-                            key={network}
-                            className={`min-w-48 ${props.destNetwork?.split(',').map(v => v.trim()).includes(networkId) ? 'bg-gray-200' : ''}`}
+                            key={network.id}
+                            className={`min-w-48 ${props.destNetwork?.split(',').map(v => v.trim()).includes(String(networkId)) ? 'bg-gray-200' : ''}`}
                             onClick={() => {
                                 props.destNetworkChanged(network.id)
                             }}
@@ -84,6 +128,19 @@ const MessageFilter = (props) => {
             </Dropdown>
 
             <Dropdown label="Source" inline className="rounded-md" theme={dropdownTheme}>
+                <div className="p-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} onKeyPress={(e) => e.stopPropagation()}>
+                    <input
+                        type="text"
+                        placeholder="Filter networks..."
+                        value={srcFilter}
+                        onChange={(e) => setSrcFilter(e.target.value)}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        onKeyPress={(e) => e.stopPropagation()}
+                        onKeyUp={(e) => e.stopPropagation()}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                </div>
                 <DropdownItem
                     className={`min-w-48 ${props.srcNetwork === '' ? 'bg-gray-100' : ''}`}
                     onClick={() => {
@@ -92,12 +149,12 @@ const MessageFilter = (props) => {
                 >
                     All Networks
                 </DropdownItem>
-                {helper.getNetworks().map((network) => {
+                {filterNetworks(helper.getNetworks(), srcFilter).map((network) => {
                     const networkId = helper.NETWORK_MAPPINGS[network.id]
                     return (
                         <DropdownItem
-                            key={network}
-                            className={`min-w-48 ${props.srcNetwork?.split(',').map(v => v.trim()).includes(networkId) ? 'bg-gray-200' : ''}`}
+                            key={network.id}
+                            className={`min-w-48 ${props.srcNetwork?.split(',').map(v => v.trim()).includes(String(networkId)) ? 'bg-gray-200' : ''}`}
                             onClick={() => {
                                 props.srcNetworkChanged(network.id)
                             }}
