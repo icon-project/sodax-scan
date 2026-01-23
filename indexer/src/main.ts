@@ -33,7 +33,8 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
         const id = transaction.id;
         if (lastScannedId !== 0 && id <= lastScannedId
             && (transaction.action_type !== 'SendMsg'
-                && (transaction.action_type !== "CreateIntent" || transaction.intent_tx_hash !== null))) {
+                 && (transaction.action_type !== "CreateIntent" || 
+                    (transaction.intent_tx_hash !== null && transaction.intent_tx_hash !== "")))){
             continue;
         }
         if (id in retries && retries[id] > 4) {
