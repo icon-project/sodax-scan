@@ -274,16 +274,17 @@ export class EvmHandler implements ChainHandler {
   slippagePercent(expected: bigint, actual: bigint): string {
     const decimals = 4
     const diff = actual - expected;
+    const isNegative = diff < 0n; 
+    const absDiff = diff < 0n ? -diff : diff;
     const SCALE = BigInt(10 ** decimals);
-    const scaled = (diff * SCALE * 100n) / expected;
-    const s = scaled.toString();
-    if (s.length <= decimals) {
-      const padded = s.padStart(decimals + 1, '0');
-      return `0.${padded}%`;
+    const scaled = (absDiff * SCALE * 100n) / expected;
+    let s = scaled.toString();
+    if (s.length <= decimals) { 
+      s = s.padStart(decimals + 1, "0"); 
     }
     const intPart = s.slice(0, s.length - decimals);
     const decPart = s.slice(s.length - decimals);
-    return `${intPart}.${decPart}%`;
+    return `${isNegative ? "-" : ""}${intPart}.${decPart}%`;
   }
 
   decodeExecuteCalldata(calldata: string) {
