@@ -20,7 +20,7 @@ const SELECTORS = {
     swap: calculateSelector('swap(uint256,address)'),
 };
 
-export const finalActionTypes = ["Supply", "Borrow", "Withdraw", "Repay", "CreateIntent", "CancelIntent"]
+export const finalActionTypes = ["Supply", "Borrow", "Withdraw", "Repay", "CreateIntent", "CancelIntent", "Reverted"]
 export const decodeCallData = (callData: string, srcChainId: string, _: string): actionType => {
     const abi = ethers.AbiCoder.defaultAbiCoder();
     const selector = callData.slice(0, 10);

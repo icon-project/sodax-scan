@@ -31,12 +31,19 @@ const processSodaxStream = async () => {
 async function parseTransactionEvent(response: SodaxScannerResponse) {
     for (const transaction of response.data) {
         const id = transaction.id;
-        if (lastScannedId !== 0 && id <= lastScannedId
-            && (transaction.action_type !== 'SendMsg'
-                 && (transaction.action_type !== "CreateIntent" || 
-                    (transaction.intent_tx_hash !== null && transaction.intent_tx_hash !== "")))){
+
+        // Skip only if we've already seen this message and have nothing left to do for it.
+        const alreadySeen = lastScannedId !== 0 && id <= lastScannedId;
+        const hasIntentTxHash = transaction.intent_tx_hash != null && transaction.intent_tx_hash !== '';
+        const createIntentDone = transaction.action_type !== 'CreateIntent' || hasIntentTxHash;
+        const needsNoMoreWork =
+            transaction.action_type !== 'SendMsg' &&
+            transaction.action_type !== 'Reverted' &&
+            createIntentDone;
+        if (alreadySeen && needsNoMoreWork) {
             continue;
         }
+
         if (id in retries && retries[id] > 4) {
             continue
         }
@@ -107,6 +114,14 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                     payload.intentTxHash = dstPayload.intentTxHash
                 } else {
                     payload.intentTxHash = undefined
+                }
+            }
+            // Todo: when Bitcoin is supported, include that also in the check
+            if (actionType.action === SendMessage && srcChainId === solana && transaction.dest_tx_hash) {
+                const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn);
+                if (dstPayload.storedCallReverted) {
+                    actionType.action = "Reverted";
+                    actionType.actionText = "StoredCallReverted";
                 }
             }
             // console.log(transaction.src_tx_hash,"payload.intentTxHash", payload.intentTxHash)

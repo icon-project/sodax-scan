@@ -14,6 +14,7 @@ const INTENT_FILLED_TOPIC = calculateTopicHash('IntentFilled(bytes32,(bool,uint2
 const INTENT_CANCELLED_TOPIC = calculateTopicHash('IntentCancelled(bytes32)')
 const INTENT_CREATED_TOPIC = calculateTopicHash('IntentCreated(bytes32,(uint256,address,address,address,uint256,uint256,uint256,bool,uint256,uint256,bytes,bytes,address,bytes))')
 const REVERSE_SWAP_TOPIC = calculateTopicHash('ReverseSwap(address,uint256,uint256)')
+const STORED_CALL_REVERTED_TOPIC = calculateTopicHash('StoredCallReverted(bytes32)')
 const fillIntentSelector = "0xd971729f"
 
 export class EvmHandler implements ChainHandler {
@@ -34,6 +35,8 @@ export class EvmHandler implements ChainHandler {
       method: 'eth_getTransactionReceipt',
       params: [txHash],
     });
+    const logs = tx.result?.logs ?? [];
+    const storedCallReverted = logs.some((log: { topics?: string[] }) => log.topics?.[0] === STORED_CALL_REVERTED_TOPIC);
     const gasUsed = BigInt(tx.result.gasUsed);
     const effectiveGasPrice = tx.result.effectiveGasPrice ? BigInt(tx.result.effectiveGasPrice) : 100000000n;
     const txFee = gasUsed * effectiveGasPrice;
@@ -53,9 +56,10 @@ export class EvmHandler implements ChainHandler {
         const decoded = abi.decode([intentTuple], log.data);
         return {
           txnFee: '0',
-          payload: '0x',          
+          payload: '0x',
           intentTxHash: decoded[0][0],
-          blockNumber: Number.parseInt(tx.result.blockNumber,16)
+          blockNumber: Number.parseInt(tx.result.blockNumber, 16),
+          storedCallReverted,
         }
       }
       if (topics.includes(INTENT_FILLED_TOPIC)) {
@@ -94,7 +98,8 @@ export class EvmHandler implements ChainHandler {
             intentFilled,
             intentCancelled,
             dstAddress: tx.result.to,
-            blockNumber: Number.parseInt(tx.result.blockNumber,16)
+            blockNumber: Number.parseInt(tx.result.blockNumber, 16),
+            storedCallReverted,
           };
         }
       }
@@ -105,7 +110,8 @@ export class EvmHandler implements ChainHandler {
         payload: "0x",
         reverseSwap: reverseSwap,
         actionText: reverseSwapAction,
-        blockNumber: Number.parseInt(tx.result.blockNumber,16)
+        blockNumber: Number.parseInt(tx.result.blockNumber, 16),
+        storedCallReverted,
       };
     }
     else {
@@ -162,7 +168,8 @@ export class EvmHandler implements ChainHandler {
             swapOutputToken: decoded[3],
             ...(intentCancelled ? { intentTxHash: intentHash } : {}),
             actionText: intentFilled ? `IntentFilled ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})` : `IntentCancelled ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})`,
-            blockNumber: Number.parseInt(tx.result.blockNumber,16)
+            blockNumber: Number.parseInt(tx.result.blockNumber, 16),
+            storedCallReverted,
           };
         } catch {
           try {
@@ -206,7 +213,8 @@ export class EvmHandler implements ChainHandler {
                             intentCancelled,
                             dstAddress: tx.result.to,
                             intentTxHash: intentHash,
-                            blockNumber: Number.parseInt(tx.result.blockNumber,16)
+                            blockNumber: Number.parseInt(tx.result.blockNumber, 16),
+                            storedCallReverted,
                           };
                         }
                       }
@@ -241,7 +249,8 @@ export class EvmHandler implements ChainHandler {
                     actionText: intentFilled ? `IntentFilled ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})` : `IntentCancelled ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})`,
                     slippage: slippageScaled,
                     intentTxHash: intentHash,
-                    blockNumber: Number.parseInt(tx.result.blockNumber,16)
+                    blockNumber: Number.parseInt(tx.result.blockNumber, 16),
+                    storedCallReverted,
                   }
                 }
               }
@@ -255,7 +264,8 @@ export class EvmHandler implements ChainHandler {
             intentFilled: intentFilled,
             intentCancelled: intentCancelled,
             actionText: intentFilled ? intentFilledAction : intentCancelAction,
-            blockNumber: Number.parseInt(tx.result.blockNumber,16)
+            blockNumber: Number.parseInt(tx.result.blockNumber, 16),
+            storedCallReverted,
           };
 
         }
@@ -267,7 +277,8 @@ export class EvmHandler implements ChainHandler {
     return {
       txnFee: "0",
       payload: "0x",
-      blockNumber: 0
+      blockNumber: 0,
+      storedCallReverted: false,
     }
   }
 
