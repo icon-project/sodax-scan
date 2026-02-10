@@ -36,10 +36,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
         const alreadySeen = lastScannedId !== 0 && id <= lastScannedId;
         const hasIntentTxHash = transaction.intent_tx_hash != null && transaction.intent_tx_hash !== '';
         const createIntentDone = transaction.action_type !== 'CreateIntent' || hasIntentTxHash;
-        const needsNoMoreWork =
-            transaction.action_type !== 'SendMsg' &&
-            transaction.action_type !== 'Reverted' &&
-            createIntentDone;
+        const needsNoMoreWork = transaction.action_type !== 'SendMsg' && createIntentDone;
         if (alreadySeen && needsNoMoreWork) {
             continue;
         }
