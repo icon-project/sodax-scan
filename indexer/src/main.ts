@@ -5,7 +5,7 @@ import { parsePayloadData, parseSolanaTransaction } from "./action";
 import { updateTransactionInfo } from "./db";
 import dotenv from 'dotenv';
 import { SendMessage, SodaxScannerResponse, Transfer } from "./types";
-import { bigintDivisionToDecimalString, multiplyDecimalBy10Pow18 } from "./utils";
+import { bigintDivisionToDecimalString, multiplyDecimalBy10Pow18, srcHasHashedPayload } from "./utils";
 import pool from './db/db';
 
 dotenv.config();
@@ -104,6 +104,18 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                     retries[id] = 1
                 }
 
+                if (srcHasHashedPayload(srcChainId) && transaction.dest_tx_hash) {
+                    // todo: remove when verified that this is working
+                    console.log("Checking for reverted transaction", transaction.dest_tx_hash, transaction.sn, dstChainId);
+                    const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn);
+                    if (dstPayload.storedCallReverted) {
+                        actionType.action = "Reverted";
+                        actionType.actionText = "StoredCallReverted";
+                        console.log("Reverted transaction found", dstPayload);
+                    } else {
+                        console.log("No reverted transaction found", dstPayload);
+                    }
+                }
             }
             if (actionType.action === "CreateIntent") {
                 if (transaction.dest_tx_hash) {
@@ -113,14 +125,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                     payload.intentTxHash = undefined
                 }
             }
-            // Todo: when Bitcoin is supported, include that also in the check
-            if (actionType.action === SendMessage && srcChainId === solana && transaction.dest_tx_hash) {
-                const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn);
-                if (dstPayload.storedCallReverted) {
-                    actionType.action = "Reverted";
-                    actionType.actionText = "StoredCallReverted";
-                }
-            }
+
             // console.log(transaction.src_tx_hash,"payload.intentTxHash", payload.intentTxHash)
             await updateTransactionInfo(id, payload.txnFee, actionType.action,
                 actionType.actionText || "", payload.intentTxHash ?? '', payload.slippage ?? '', payload.blockNumber);

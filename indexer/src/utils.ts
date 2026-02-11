@@ -1,3 +1,5 @@
+import { solana } from "./configs";
+
 export function bigintDivisionToDecimalString(num: bigint, decimals: number) {
     const denom = BigInt(10 ** decimals)
     const integerPart = num / denom;
@@ -24,4 +26,11 @@ export function multiplyDecimalBy10Pow18(decimalStr: string): bigint {
     adjusted = noDot + "0".repeat(scale - decimals);
   }
   return BigInt(adjusted);
+}
+
+/**
+ * For some chains, like Solana, the relay payload is hashed. 
+ */
+export function srcHasHashedPayload(srcChainId: string): boolean {
+  return srcChainId === solana; // todo: add bitcoin when supported
 }
