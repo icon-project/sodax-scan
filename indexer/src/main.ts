@@ -46,6 +46,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
         }
         const srcChainId = transaction.src_network as string;
         const dstChainId = transaction.dest_network as string;
+        let lastUpdateArgs: { id: number; fee: unknown; actionType: unknown; actionText: unknown; intentTxHash: unknown; slippage: unknown; blockNumber: unknown } | null = null;
         try {
             console.log("Processing txn", transaction.src_tx_hash);
             const txHash = transaction.src_tx_hash;
@@ -133,6 +134,15 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             const DEBUG_ID = 156988;
             const isDebugTx = txHash === DEBUG_TX_HASH || id === DEBUG_ID;
             if (feeValid && blockNumberValid) {
+                lastUpdateArgs = {
+                    id,
+                    fee: payload.txnFee,
+                    actionType: actionType.action,
+                    actionText: actionType.actionText ?? '',
+                    intentTxHash: payload.intentTxHash ?? '',
+                    slippage: payload.slippage ?? '',
+                    blockNumber: payload.blockNumber,
+                };
                 if (isDebugTx) {
                     const updateArgs = [
                         ['id', id],
@@ -161,7 +171,13 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             }
         } catch (error) {
             const errMessage = error instanceof Error ? error.message : String(error);
-            console.log("Failed updating transaction info for id", id, errMessage);
+            const firstFailure = !(id in retries);
+            if (firstFailure) {
+                console.log("Failed updating transaction info for id", id, errMessage);
+                if (lastUpdateArgs && lastUpdateArgs.id === id) {
+                    console.log("  -> updateTransactionInfo args we tried to pass:", JSON.stringify(lastUpdateArgs, (_, v) => (v === undefined ? '<undefined>' : v)));
+                }
+            }
             // Count failed attempts so we eventually skip this message (avoids endless retry on parse/DB errors)
             if (id in retries) {
                 retries[id] = retries[id] + 1;

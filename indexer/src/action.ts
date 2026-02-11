@@ -254,7 +254,9 @@ export const parsePayloadData = (data: string, srcChainId: string, dstChainId: s
         }
     } catch (err) {
         const errMessage = err instanceof Error ? err.message : String(err);
-        console.log("error with fallback ABI decode" + fromLabel, errMessage)
+        const dataPreview = data.length > 200 ? data.slice(0, 200) + '...' : data;
+        console.log("error with fallback ABI decode" + fromLabel, errMessage);
+        console.log("  -> data we tried to parse: length=" + data.length + " hex=" + dataPreview);
         try {
             const innerCalls = abi.decode(['(address,uint256,bytes)[]'], payloadBuffer);
             for (const call of innerCalls[0]) {
@@ -294,7 +296,9 @@ export const parsePayloadData = (data: string, srcChainId: string, dstChainId: s
             // }
         } catch (err) {
             const errMessage = err instanceof Error ? err.message : String(err);
-            console.log("error occurred parsing payload" + fromLabel, errMessage)
+            const dataPreview = data.length > 200 ? data.slice(0, 200) + '...' : data;
+            console.log("error occurred parsing payload" + fromLabel, errMessage);
+            console.log("  -> data we tried to parse: length=" + data.length + " hex=" + dataPreview);
             return {
                 action: SendMessage
             }
