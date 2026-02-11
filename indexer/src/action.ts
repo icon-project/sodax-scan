@@ -180,7 +180,8 @@ export const parseSolanaTransaction = async (txnHash: string, connSn: string): P
     return "0x"
 }
 
-export const parsePayloadData = (data: string, srcChainId: string, dstChainId: string): actionType => {
+export const parsePayloadData = (data: string, srcChainId: string, dstChainId: string, callSite?: string): actionType => {
+    const fromLabel = callSite ? ` [${callSite}]` : '';
     const abi = ethers.AbiCoder.defaultAbiCoder();
     const payloadBuffer = Buffer.from(data.replace(/^0x/, ''), 'hex');
     let tmpResult: actionType = {
@@ -253,7 +254,7 @@ export const parsePayloadData = (data: string, srcChainId: string, dstChainId: s
         }
     } catch (err) {
         const errMessage = err instanceof Error ? err.message : String(err);
-        console.log("error with fallback ABI decode", errMessage)
+        console.log("error with fallback ABI decode" + fromLabel, errMessage)
         try {
             const innerCalls = abi.decode(['(address,uint256,bytes)[]'], payloadBuffer);
             for (const call of innerCalls[0]) {
@@ -293,7 +294,7 @@ export const parsePayloadData = (data: string, srcChainId: string, dstChainId: s
             // }
         } catch (err) {
             const errMessage = err instanceof Error ? err.message : String(err);
-            console.log("error occurred parsing payload", errMessage)
+            console.log("error occurred parsing payload" + fromLabel, errMessage)
             return {
                 action: SendMessage
             }

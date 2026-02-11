@@ -50,7 +50,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             console.log("Processing txn", transaction.src_tx_hash);
             const txHash = transaction.src_tx_hash;
             const payload = await getHandler(srcChainId).fetchPayload(txHash, transaction.sn);
-            let actionType = parsePayloadData(payload.payload, srcChainId, dstChainId);
+            let actionType = parsePayloadData(payload.payload, srcChainId, dstChainId, 'initial');
             if (actionType.intentTxHash) {
                 payload.intentTxHash = actionType.intentTxHash
             }
@@ -58,7 +58,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                 if (srcChainId === solana) {
                     const payload = await parseSolanaTransaction(transaction.src_tx_hash, transaction.sn)
                     if (payload !== "0x") {
-                        actionType = parsePayloadData(payload, srcChainId, dstChainId);
+                        actionType = parsePayloadData(payload, srcChainId, dstChainId, 'Solana fallback');
                     }
                 }
             }
@@ -129,9 +129,11 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             // Only update DB when we have valid data (avoids JSON/undefined errors from bad payloads)
             const feeValid = typeof payload.txnFee === 'string';
             const blockNumberValid = typeof payload.blockNumber === 'number';
+            const DEBUG_TX_HASH = '2SASERdAfFVYhqxZoFGSFozQif3Ar8MAThPcSAFr2FrLn1dnAMbPqZfpgaAxeCwKzehRv4uwxFxJSSp6XVKzXHnR';
+            const DEBUG_ID = 156988;
+            const isDebugTx = txHash === DEBUG_TX_HASH || id === DEBUG_ID;
             if (feeValid && blockNumberValid) {
-                const DEBUG_ID = 156988;
-                if (id === DEBUG_ID) {
+                if (isDebugTx) {
                     const updateArgs = [
                         ['id', id],
                         ['fee', payload.txnFee],
@@ -142,7 +144,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                         ['blockNumber', payload.blockNumber],
                     ] as const;
                     console.log(
-                        'updateTransactionInfo args (id ' + id + ', attempt ' + (retries[id] ?? 1) + '):',
+                        '[DEBUG] updateTransactionInfo args id=' + id + ' txHash=' + txHash.slice(0, 12) + '... attempt=' + (retries[id] ?? 1) + ':',
                         updateArgs.map(([name, v]) => `${name}=${typeof v === 'undefined' ? 'undefined' : JSON.stringify(v)}`).join(', ')
                     );
                 }
@@ -151,8 +153,11 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             } else {
                 if (id in retries) retries[id] = retries[id] + 1;
                 else retries[id] = 1;
-                // debug, print id, fee and block number
-                console.log("Invalid data for id", id, "fee", payload.txnFee, "blockNumber", payload.blockNumber);
+                if (isDebugTx) {
+                    console.log("[DEBUG] Skipped update (invalid data) id=" + id + " txHash=" + txHash.slice(0, 12) + "... feeValid=" + feeValid + " blockNumberValid=" + blockNumberValid + " fee=" + payload.txnFee + " blockNumber=" + payload.blockNumber);
+                } else {
+                    console.log("Invalid data for id", id, "fee", payload.txnFee, "blockNumber", payload.blockNumber);
+                }
             }
         } catch (error) {
             const errMessage = error instanceof Error ? error.message : String(error);
