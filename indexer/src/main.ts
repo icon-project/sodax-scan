@@ -51,7 +51,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             console.log("Processing txn", transaction.src_tx_hash);
             const txHash = transaction.src_tx_hash;
             const payload = await getHandler(srcChainId).fetchPayload(txHash, transaction.sn);
-            let actionType = parsePayloadData(payload.payload, srcChainId, dstChainId, 'initial');
+            let actionType = parsePayloadData(payload.payload, srcChainId, dstChainId);
             if (actionType.intentTxHash) {
                 payload.intentTxHash = actionType.intentTxHash
             }
@@ -60,7 +60,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                     console.log("*** Parsing Solana transaction", transaction.src_tx_hash, transaction.sn);
                     const payload = await parseSolanaTransaction(transaction.src_tx_hash, transaction.sn)
                     if (payload !== "0x") {
-                        actionType = parsePayloadData(payload, srcChainId, dstChainId, 'Solana fallback');
+                        actionType = parsePayloadData(payload, srcChainId, dstChainId);
                     }
                     console.log("***Parsed Solana transaction", payload);
                     console.log("*** Action type", actionType);
