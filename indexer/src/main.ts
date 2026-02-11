@@ -126,12 +126,27 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                 }
             }
 
-            // console.log(transaction.src_tx_hash,"payload.intentTxHash", payload.intentTxHash)
-            await updateTransactionInfo(id, payload.txnFee, actionType.action,
-                actionType.actionText || "", payload.intentTxHash ?? '', payload.slippage ?? '', payload.blockNumber);
+            // Only update DB when we have valid data (avoids JSON/undefined errors from bad payloads)
+            const feeValid = typeof payload.txnFee === 'string';
+            const blockNumberValid = typeof payload.blockNumber === 'number';
+            if (feeValid && blockNumberValid) {
+                await updateTransactionInfo(id, payload.txnFee, actionType.action,
+                    actionType.actionText || "", payload.intentTxHash ?? '', payload.slippage ?? '', payload.blockNumber);
+            } else {
+                if (id in retries) retries[id] = retries[id] + 1;
+                else retries[id] = 1;
+                // debug, print id, fee and block number
+                console.log("Invalid data for id", id, "fee", payload.txnFee, "blockNumber", payload.blockNumber);
+            }
         } catch (error) {
             const errMessage = error instanceof Error ? error.message : String(error);
             console.log("Failed updating transaction info for id", id, errMessage);
+            // Count failed attempts so we eventually skip this message (avoids endless retry on parse/DB errors)
+            if (id in retries) {
+                retries[id] = retries[id] + 1;
+            } else {
+                retries[id] = 1;
+            }
         }
     }
 }
