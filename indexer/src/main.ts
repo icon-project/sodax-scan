@@ -130,8 +130,8 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             const feeValid = typeof payload.txnFee === 'string';
             const blockNumberValid = typeof payload.blockNumber === 'number';
             if (feeValid && blockNumberValid) {
-                const DEBUG_TX_HASH = '2SASERdAfFVYhqxZoFGSFozQif3Ar8MAThPcSAFr2FrLn1dnAMbPqZfpgaAxeCwKzehRv4uwxFxJSSp6XVKzXHnR';
-                if (txHash === DEBUG_TX_HASH) {
+                const DEBUG_ID = 156988;
+                if (id === DEBUG_ID) {
                     const updateArgs = [
                         ['id', id],
                         ['fee', payload.txnFee],
@@ -142,7 +142,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                         ['blockNumber', payload.blockNumber],
                     ] as const;
                     console.log(
-                        'updateTransactionInfo args (id ' + id + '):',
+                        'updateTransactionInfo args (id ' + id + ', attempt ' + (retries[id] ?? 1) + '):',
                         updateArgs.map(([name, v]) => `${name}=${typeof v === 'undefined' ? 'undefined' : JSON.stringify(v)}`).join(', ')
                     );
                 }
