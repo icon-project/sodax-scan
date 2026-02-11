@@ -130,6 +130,22 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             const feeValid = typeof payload.txnFee === 'string';
             const blockNumberValid = typeof payload.blockNumber === 'number';
             if (feeValid && blockNumberValid) {
+                const DEBUG_TX_HASH = '2SASERdAfFVYhqxZoFGSFozQif3Ar8MAThPcSAFr2FrLn1dnAMbPqZfpgaAxeCwKzehRv4uwxFxJSSp6XVKzXHnR';
+                if (txHash === DEBUG_TX_HASH) {
+                    const updateArgs = [
+                        ['id', id],
+                        ['fee', payload.txnFee],
+                        ['actionType', actionType.action],
+                        ['actionText', actionType.actionText ?? ''],
+                        ['intentTxHash', payload.intentTxHash ?? ''],
+                        ['slippage', payload.slippage ?? ''],
+                        ['blockNumber', payload.blockNumber],
+                    ] as const;
+                    console.log(
+                        'updateTransactionInfo args (id ' + id + '):',
+                        updateArgs.map(([name, v]) => `${name}=${typeof v === 'undefined' ? 'undefined' : JSON.stringify(v)}`).join(', ')
+                    );
+                }
                 await updateTransactionInfo(id, payload.txnFee, actionType.action,
                     actionType.actionText || "", payload.intentTxHash ?? '', payload.slippage ?? '', payload.blockNumber);
             } else {
