@@ -58,12 +58,16 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             if (actionType.action === SendMessage) {
                 if (srcChainId === solana) {
                     console.log("*** Parsing Solana transaction", transaction.src_tx_hash, transaction.sn);
+                    try {
                     const payload = await parseSolanaTransaction(transaction.src_tx_hash, transaction.sn)
-                    if (payload !== "0x") {
-                        actionType = parsePayloadData(payload, srcChainId, dstChainId);
+                        if (payload !== "0x") {
+                            actionType = parsePayloadData(payload, srcChainId, dstChainId);
+                        }
+                        console.log("***Parsed Solana transaction", payload);
+                        console.log("*** Action type", actionType);
+                    } catch (error) {
+                        console.log("Error parsing Solana transaction", error);
                     }
-                    console.log("***Parsed Solana transaction", payload);
-                    console.log("*** Action type", actionType);
                 }
             }
             if (payload.intentFilled) {
