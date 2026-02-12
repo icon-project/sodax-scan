@@ -1,5 +1,5 @@
 
-export type Action = "Supply" | "Borrow" | "Repay" | "Transfer" | "SendMsg" | "Deposit" | "Withdraw" | "CreateIntent" | "CancelIntent" | "IntentFilled" | "Migration"
+export type Action = "Supply" | "Borrow" | "Repay" | "Transfer" | "SendMsg" | "Deposit" | "Withdraw" | "CreateIntent" | "CancelIntent" | "IntentFilled" | "Migration" | "Reverted"
 
 
 export const SendMessage = "SendMsg"
@@ -28,6 +28,8 @@ export interface TxPayload {
   slippage?: string
   intentTxHash?: string
   blockNumber: number
+  /** True if the tx logs contain StoredCallReverted(bytes32) */
+  storedCallReverted?: boolean
 }
 
 export interface SodaxScannerResponse {

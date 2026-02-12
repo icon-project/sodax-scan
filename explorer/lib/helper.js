@@ -224,7 +224,8 @@ const MSG_ACTION_TYPES = {
     CreateIntent: 'CreateIntent',
     CancelIntent: 'CancelIntent',
     IntentFilled: 'IntentFilled',
-    Migration: 'Migration'
+    Migration: 'Migration',
+    Reverted: 'Reverted',
 }
 
 const getNativeAsset = (network) => {

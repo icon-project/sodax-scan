@@ -5,7 +5,7 @@ import { parsePayloadData, parseSolanaTransaction } from "./action";
 import { updateTransactionInfo } from "./db";
 import dotenv from 'dotenv';
 import { SendMessage, SodaxScannerResponse, Transfer } from "./types";
-import { bigintDivisionToDecimalString, multiplyDecimalBy10Pow18 } from "./utils";
+import { bigintDivisionToDecimalString, multiplyDecimalBy10Pow18, srcHasHashedPayload } from "./utils";
 import pool from './db/db';
 
 dotenv.config();
@@ -31,12 +31,16 @@ const processSodaxStream = async () => {
 async function parseTransactionEvent(response: SodaxScannerResponse) {
     for (const transaction of response.data) {
         const id = transaction.id;
-        if (lastScannedId !== 0 && id <= lastScannedId
-            && (transaction.action_type !== 'SendMsg'
-                 && (transaction.action_type !== "CreateIntent" || 
-                    (transaction.intent_tx_hash !== null && transaction.intent_tx_hash !== "")))){
+
+        // Skip only if we've already seen this message and have nothing left to do for it.
+        const alreadySeen = lastScannedId !== 0 && id <= lastScannedId;
+        const hasIntentTxHash = transaction.intent_tx_hash != null && transaction.intent_tx_hash !== '';
+        const createIntentDone = transaction.action_type !== 'CreateIntent' || hasIntentTxHash;
+        const needsNoMoreWork = transaction.action_type !== 'SendMsg' && createIntentDone;
+        if (alreadySeen && needsNoMoreWork) {
             continue;
         }
+
         if (id in retries && retries[id] > 4) {
             continue
         }
@@ -52,9 +56,13 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             }
             if (actionType.action === SendMessage) {
                 if (srcChainId === solana) {
-                    const payload = await parseSolanaTransaction(transaction.src_tx_hash, transaction.sn)
-                    if (payload !== "0x") {
-                        actionType = parsePayloadData(payload, srcChainId, dstChainId);
+                    try {
+                        const payload = await parseSolanaTransaction(transaction.src_tx_hash, transaction.sn)
+                        if (payload !== "0x") {
+                            actionType = parsePayloadData(payload, srcChainId, dstChainId);
+                        }
+                    } catch (error) {
+                        console.log("Error parsing Solana transaction", error);
                     }
                 }
             }
@@ -100,6 +108,16 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                     retries[id] = 1
                 }
 
+                if (srcHasHashedPayload(srcChainId) && transaction.dest_tx_hash) {
+                    const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn);
+                    if (dstPayload.storedCallReverted) {
+                        actionType.action = "Reverted";
+                        actionType.actionText = "StoredCallReverted";
+                        console.log("Reverted transaction found", dstPayload);
+                    } else {
+                        console.log("No reverted transaction found", dstPayload);
+                    }
+                }
             }
             if (actionType.action === "CreateIntent") {
                 if (transaction.dest_tx_hash) {
@@ -109,12 +127,26 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                     payload.intentTxHash = undefined
                 }
             }
-            // console.log(transaction.src_tx_hash,"payload.intentTxHash", payload.intentTxHash)
-            await updateTransactionInfo(id, payload.txnFee, actionType.action,
-                actionType.actionText || "", payload.intentTxHash ?? '', payload.slippage ?? '', payload.blockNumber);
+
+            // Only update DB when we have valid data (avoids JSON/undefined errors from bad payloads)
+            const feeValid = typeof payload.txnFee === 'string';
+            const blockNumberValid = typeof payload.blockNumber === 'number';
+            if (feeValid && blockNumberValid) {
+                await updateTransactionInfo(id, payload.txnFee, actionType.action,
+                    actionType.actionText || "", payload.intentTxHash ?? '', payload.slippage ?? '', payload.blockNumber);
+            } else {
+                if (id in retries) retries[id] = retries[id] + 1;
+                else retries[id] = 1;
+                console.log("Invalid data for id", id, "fee", payload.txnFee, "blockNumber", payload.blockNumber);
+            }
         } catch (error) {
             const errMessage = error instanceof Error ? error.message : String(error);
             console.log("Failed updating transaction info for id", id, errMessage);
+            if (id in retries) {
+                retries[id] = retries[id] + 1;
+            } else {
+                retries[id] = 1;
+            }
         }
     }
 }
