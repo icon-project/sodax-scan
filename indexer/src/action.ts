@@ -171,7 +171,6 @@ export const decodeCallData = (callData: string, srcChainId: string, _: string):
     }
 }
 
-// paul, what happens here
 export const parseSolanaTransaction = async (txnHash: string, connSn: string): Promise<string> => {
     const data = JSON.stringify({
         action: 'get_packet',

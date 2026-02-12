@@ -46,7 +46,6 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
         }
         const srcChainId = transaction.src_network as string;
         const dstChainId = transaction.dest_network as string;
-        let lastUpdateArgs: { id: number; fee: unknown; actionType: unknown; actionText: unknown; intentTxHash: unknown; slippage: unknown; blockNumber: unknown } | null = null;
         try {
             console.log("Processing txn", transaction.src_tx_hash);
             const txHash = transaction.src_tx_hash;
@@ -57,14 +56,11 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             }
             if (actionType.action === SendMessage) {
                 if (srcChainId === solana) {
-                    console.log("*** Parsing Solana transaction", transaction.src_tx_hash, transaction.sn);
                     try {
-                    const payload = await parseSolanaTransaction(transaction.src_tx_hash, transaction.sn)
+                        const payload = await parseSolanaTransaction(transaction.src_tx_hash, transaction.sn)
                         if (payload !== "0x") {
                             actionType = parsePayloadData(payload, srcChainId, dstChainId);
                         }
-                        console.log("***Parsed Solana transaction", payload);
-                        console.log("*** Action type", actionType);
                     } catch (error) {
                         console.log("Error parsing Solana transaction", error);
                     }
@@ -113,8 +109,6 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                 }
 
                 if (srcHasHashedPayload(srcChainId) && transaction.dest_tx_hash) {
-                    // todo: remove when verified that this is working
-                    console.log("Checking for reverted transaction", transaction.dest_tx_hash, transaction.sn, dstChainId);
                     const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn);
                     if (dstPayload.storedCallReverted) {
                         actionType.action = "Reverted";
@@ -137,55 +131,17 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             // Only update DB when we have valid data (avoids JSON/undefined errors from bad payloads)
             const feeValid = typeof payload.txnFee === 'string';
             const blockNumberValid = typeof payload.blockNumber === 'number';
-            const DEBUG_TX_HASH = '2SASERdAfFVYhqxZoFGSFozQif3Ar8MAThPcSAFr2FrLn1dnAMbPqZfpgaAxeCwKzehRv4uwxFxJSSp6XVKzXHnR';
-            const DEBUG_ID = 156988;
-            const isDebugTx = txHash === DEBUG_TX_HASH || id === DEBUG_ID;
             if (feeValid && blockNumberValid) {
-                lastUpdateArgs = {
-                    id,
-                    fee: payload.txnFee,
-                    actionType: actionType.action,
-                    actionText: actionType.actionText ?? '',
-                    intentTxHash: payload.intentTxHash ?? '',
-                    slippage: payload.slippage ?? '',
-                    blockNumber: payload.blockNumber,
-                };
-                if (isDebugTx) {
-                    const updateArgs = [
-                        ['id', id],
-                        ['fee', payload.txnFee],
-                        ['actionType', actionType.action],
-                        ['actionText', actionType.actionText ?? ''],
-                        ['intentTxHash', payload.intentTxHash ?? ''],
-                        ['slippage', payload.slippage ?? ''],
-                        ['blockNumber', payload.blockNumber],
-                    ] as const;
-                    console.log(
-                        '[DEBUG] updateTransactionInfo args id=' + id + ' txHash=' + txHash.slice(0, 12) + '... attempt=' + (retries[id] ?? 1) + ':',
-                        updateArgs.map(([name, v]) => `${name}=${typeof v === 'undefined' ? 'undefined' : JSON.stringify(v)}`).join(', ')
-                    );
-                }
                 await updateTransactionInfo(id, payload.txnFee, actionType.action,
                     actionType.actionText || "", payload.intentTxHash ?? '', payload.slippage ?? '', payload.blockNumber);
             } else {
                 if (id in retries) retries[id] = retries[id] + 1;
                 else retries[id] = 1;
-                if (isDebugTx) {
-                    console.log("[DEBUG] Skipped update (invalid data) id=" + id + " txHash=" + txHash.slice(0, 12) + "... feeValid=" + feeValid + " blockNumberValid=" + blockNumberValid + " fee=" + payload.txnFee + " blockNumber=" + payload.blockNumber);
-                } else {
-                    console.log("Invalid data for id", id, "fee", payload.txnFee, "blockNumber", payload.blockNumber);
-                }
+                console.log("Invalid data for id", id, "fee", payload.txnFee, "blockNumber", payload.blockNumber);
             }
         } catch (error) {
             const errMessage = error instanceof Error ? error.message : String(error);
-            const firstFailure = !(id in retries);
-            if (firstFailure) {
-                console.log("Failed updating transaction info for id", id, errMessage);
-                if (lastUpdateArgs && lastUpdateArgs.id === id) {
-                    console.log("  -> updateTransactionInfo args we tried to pass:", JSON.stringify(lastUpdateArgs, (_, v) => (v === undefined ? '<undefined>' : v)));
-                }
-            }
-            // Count failed attempts so we eventually skip this message (avoids endless retry on parse/DB errors)
+            console.log("Failed updating transaction info for id", id, errMessage);
             if (id in retries) {
                 retries[id] = retries[id] + 1;
             } else {
