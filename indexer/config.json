@@ -1584,6 +1584,10 @@
             "0x891c7ab9047eb087b5a988a2638e7056f67adc5c":{
                 "name": "USDT",
                 "decimals": 6
+            },
+            "8Bj8gSbga8My8qRkT1RrvgxFBExiGFgdRNHFaR9o2T3Q":{
+                 "name": "soda",
+                 "decimals": 9
             }
         }
     },
