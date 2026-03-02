@@ -20,6 +20,7 @@ export const lightlink = "27756"
 export const ethereum = "2"
 export const redbelly = "726564"
 export const kaia = "27489"
+export const bitcoin = "627463"
 
 export type AssetInfo = {
   name: string;
@@ -59,6 +60,7 @@ const chainNameToIdMap: Record<string, string> = {
   ethereum: ethereum,
   redbelly: redbelly,
   kaia: kaia,
+  bitcoin: bitcoin,
 };
 
 export const idToChainNameMap: Record<string, string> = Object.fromEntries(

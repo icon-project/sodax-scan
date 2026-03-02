@@ -180,6 +180,75 @@ export const parseSolanaTransaction = async (txnHash: string, connSn: string): P
     return "0x"
 }
 
+const BTC_TOKEN_ID = "0:0";
+
+export interface BitcoinDecodedPayload {
+    tokenId: string;
+    from: string;
+    to: string;
+    amount: bigint;
+    data: string;
+}
+
+export function decodeBitcoinPayload(payloadHex: string): BitcoinDecodedPayload | null {
+    try {
+        const normalized = payloadHex.replace(/^0x/, '');
+        const payloadBuffer = Buffer.from(normalized, 'hex');
+        const decoded = RLP.decode(payloadBuffer);
+
+        if (!Array.isArray(decoded) || decoded.length < 4) {
+            return null;
+        }
+
+        const toBuffer = (x: unknown): Buffer =>
+            Buffer.isBuffer(x) ? x : Buffer.from(x as Uint8Array);
+
+        const tokenBuf = toBuffer(decoded[0]);
+        const fromBuf = toBuffer(decoded[1]);
+        const toBuf = toBuffer(decoded[2]);
+        const amountBuf = toBuffer(decoded[3]);
+        const dataBuf = decoded.length > 4 ? toBuffer(decoded[4]) : Buffer.alloc(0);
+
+        const tokenId = tokenBuf.length > 0 ? tokenBuf.toString('utf8') : BTC_TOKEN_ID;
+        const from = fromBuf.length > 0 ? fromBuf.toString('utf8') || fromBuf.toString('hex') : '';
+        const to = toBuf.length > 0 ? toBuf.toString('utf8') || toBuf.toString('hex') : '';
+        const amountHex = amountBuf.length > 0 ? amountBuf.toString('hex') : '0';
+        const amount = BigInt('0x' + amountHex);
+        const data = dataBuf.length > 0 ? '0x' + dataBuf.toString('hex') : '0x';
+
+        return { tokenId, from, to, amount, data };
+    } catch {
+        return null;
+    }
+}
+
+export function mapBitcoinPayloadToActionType(
+    decoded: BitcoinDecodedPayload,
+    srcChainId: string,
+    _dstChainId: string
+): actionType {
+    const amountStr = decoded.amount.toString();
+    const tokenAddress = decoded.tokenId;
+    const result: actionType = {
+        action: Transfer,
+        amount: amountStr,
+        tokenAddress,
+    };
+    if (srcChainId in chains) {
+        const assetsInformation = chains[srcChainId].Assets;
+        if (tokenAddress in assetsInformation) {
+            const { name, decimals } = assetsInformation[tokenAddress];
+            result.denom = name;
+            result.actionText = `Transfer ${bigintDivisionToDecimalString(decoded.amount, decimals)} ${name}`;
+        } else {
+            result.actionText = `Transfer ${amountStr} ${tokenAddress}`;
+        }
+    } else {
+        result.actionText = `Transfer ${amountStr} ${tokenAddress}`;
+    }
+    return result;
+}
+
 export const parsePayloadData = (data: string, srcChainId: string, dstChainId: string): actionType => {
     const abi = ethers.AbiCoder.defaultAbiCoder();
     const payloadBuffer = Buffer.from(data.replace(/^0x/, ''), 'hex');

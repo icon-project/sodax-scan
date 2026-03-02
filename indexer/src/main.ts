@@ -1,10 +1,10 @@
 import axios from "axios";
 import { getHandler } from './handler'
-import { chains, solana, sonic } from "./configs";
-import { parsePayloadData, parseSolanaTransaction } from "./action";
+import { chains, solana, sonic, bitcoin } from "./configs";
+import { decodeBitcoinPayload, mapBitcoinPayloadToActionType, parsePayloadData, parseSolanaTransaction } from "./action";
 import { updateTransactionInfo } from "./db";
 import dotenv from 'dotenv';
-import { SendMessage, SodaxScannerResponse, Transfer } from "./types";
+import { actionType, SendMessage, SodaxScannerResponse, Transfer } from "./types";
 import { bigintDivisionToDecimalString, multiplyDecimalBy10Pow18, srcHasHashedPayload } from "./utils";
 import pool from './db/db';
 
@@ -50,16 +50,26 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             console.log("Processing txn", transaction.src_tx_hash);
             const txHash = transaction.src_tx_hash;
             const payload = await getHandler(srcChainId).fetchPayload(txHash, transaction.sn);
-            let actionType = parsePayloadData(payload.payload, srcChainId, dstChainId);
+            let actionType: actionType;
+            if (srcChainId === bitcoin) {
+                const decoded = decodeBitcoinPayload(payload.payload);
+                if (decoded) {
+                    actionType = mapBitcoinPayloadToActionType(decoded, srcChainId, dstChainId);
+                } else {
+                    actionType = { action: SendMessage };
+                }
+            } else {
+                actionType = parsePayloadData(payload.payload, srcChainId, dstChainId);
+            }
             if (actionType.intentTxHash) {
                 payload.intentTxHash = actionType.intentTxHash
             }
             if (actionType.action === SendMessage) {
                 if (srcChainId === solana) {
                     try {
-                        const payload = await parseSolanaTransaction(transaction.src_tx_hash, transaction.sn)
-                        if (payload !== "0x") {
-                            actionType = parsePayloadData(payload, srcChainId, dstChainId);
+                        const solanaPayload = await parseSolanaTransaction(transaction.src_tx_hash, transaction.sn)
+                        if (solanaPayload !== "0x") {
+                            actionType = parsePayloadData(solanaPayload, srcChainId, dstChainId);
                         }
                     } catch (error) {
                         console.log("Error parsing Solana transaction", error);
