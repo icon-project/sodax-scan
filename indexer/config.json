@@ -2172,7 +2172,7 @@
         }
     },
     "bitcoin": {
-        "AssetManager": "",
+        "AssetManager": "bc1p4z9555xw0266vhq2x5un4zdmm9dt9zyet32fs7wa7u5ckdxusd9qsw4xfx",
         "Assets": {
             "0:0": {
                 "name": "BTC",
@@ -2181,6 +2181,10 @@
             "897442:43": {
                 "name": "BUSD",
                 "decimals": 6
+            },
+            "0x0000000000000000000000000000000000000000": {
+                "name": "BTC",
+                "decimals": 8
             }
         }
     }
