@@ -222,6 +222,13 @@ export function decodeBitcoinPayload(payloadHex: string): BitcoinDecodedPayload 
     }
 }
 
+export function getBitcoinPayloadDenom(payloadHex: string, chainId: string): string {
+    const decoded = decodeBitcoinPayload(payloadHex);
+    if (!decoded || !(chainId in chains)) return "";
+    const assets = chains[chainId].Assets;
+    return assets[decoded.tokenId]?.name ?? "";
+}
+
 export function mapBitcoinPayloadToActionType(
     decoded: BitcoinDecodedPayload,
     srcChainId: string,
