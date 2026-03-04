@@ -182,12 +182,13 @@ export const parseSolanaTransaction = async (txnHash: string, connSn: string): P
     return "0x"
 }
 
-export const parseBitcoinTransaction = async (txnHash: string): Promise<string> => {
+export const parseBitcoinTransaction = async (txnHash: string, connSn: string): Promise<string> => {
     const data = JSON.stringify({
         "action": "get_packet",
         "params": {
             "chain_id": "627463",
             "tx_hash": txnHash,
+            "conn_sn": connSn
         }
     });
     const response = (await axios.post(process.env.RELAY_URL || "",

@@ -98,7 +98,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                         actionType.actionText = `CreateIntent ${actionType.actionText ?? ''} to Bitcoin`
                     }
                     try {
-                    const bitcoinPayload = await parseBitcoinTransaction(transaction.src_tx_hash)
+                    const bitcoinPayload = await parseBitcoinTransaction(transaction.src_tx_hash, transaction.sn)
                         console.log('Bitcoin payload', bitcoinPayload)
                         if (bitcoinPayload !== '0x') {
                             actionType = parsePayloadData(bitcoinPayload, srcChainId, dstChainId)
