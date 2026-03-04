@@ -76,6 +76,11 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                     console.log("Decoded bitcoin payload", decoded);
                     if (decoded) {
                         actionType = mapBitcoinPayloadToActionType(decoded, srcChainId, dstChainId);
+                        if (payload.intentTxHash && !payload.intentFilled && !payload.intentCancelled) {
+                            actionType.action = "CreateIntent";
+                            actionType.intentTxHash = payload.intentTxHash;
+                            actionType.actionText = `CreateIntent ${actionType.actionText ?? ""} to Bitcoin`;
+                        }
                     } else {
                         actionType = { action: SendMessage };
                     }
@@ -140,10 +145,9 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             if (actionType.action === "CreateIntent") {
                 if (transaction.dest_tx_hash) {
                     const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn);
-                    payload.intentTxHash = dstPayload.intentTxHash
-                } else {
-                    payload.intentTxHash = undefined
+                    payload.intentTxHash = dstPayload.intentTxHash;
                 }
+                // else: keep payload.intentTxHash (e.g. from Bitcoin path)
             }
 
             // Only update DB when we have valid data (avoids JSON/undefined errors from bad payloads)
