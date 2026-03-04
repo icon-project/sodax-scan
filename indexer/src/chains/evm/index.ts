@@ -138,6 +138,18 @@ export class EvmHandler implements ChainHandler {
           const decoded = decodedIntentFill[0]
           const srcChainId = String(decoded[8])
           const dstChainId = String(decoded[9])
+
+          // for debugging, print all shit if dest or src chain is bitcoin
+          if (srcChainId === bitcoin || dstChainId === bitcoin) {
+            console.log("srcChainId", srcChainId)
+            console.log("dstChainId", dstChainId)
+            console.log("decoded", decoded)
+            console.log("decodedIntentFill", decodedIntentFill)
+            console.log("input", input)
+            console.log("intentTuple", intentTuple)
+          }
+
+
           const assetsInformation = chains[srcChainId].Assets
           let inputToken = decoded[2].toLowerCase()
           let decimals = 18
