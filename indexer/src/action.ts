@@ -182,6 +182,24 @@ export const parseSolanaTransaction = async (txnHash: string, connSn: string): P
     return "0x"
 }
 
+export const parseBitcoinTransaction = async (txnHash: string): Promise<string> => {
+    const data = JSON.stringify({
+        "action": "get_packet",
+        "params": {
+            "chain_id": "627463",
+            "tx_hash": txnHash,
+        }
+    });
+    const response = (await axios.post(process.env.RELAY_URL || "",
+        data
+    )).data
+    const payloadData = JSON.parse(response.data.data) || {}
+    if ("payload" in payloadData) {
+        return payloadData.payload
+    }
+    return "0x"
+}
+
 const BTC_TOKEN_ID = "0:0";
 
 export interface BitcoinDecodedPayload {
