@@ -52,18 +52,10 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             const payload = await getHandler(srcChainId).fetchPayload(txHash, transaction.sn);
             console.log("FULL PAYLOAD", payload);
             let actionType: actionType;
-            if (dstChainId === bitcoin) {
-                console.log("Decoding bitcoin payload", payload.payload);
-                const decoded = decodeBitcoinPayload(payload.payload);
-                console.log("Decoded bitcoin payload", decoded);
-                if (decoded) {
-                    actionType = mapBitcoinPayloadToActionType(decoded, srcChainId, dstChainId);
-                } else {
-                    actionType = { action: SendMessage };
-                }
-            } else {
-                actionType = parsePayloadData(payload.payload, srcChainId, dstChainId);
-            }
+            actionType = parsePayloadData(payload.payload, srcChainId, dstChainId);
+            
+
+            console.log("ACTION TYPE", actionType);
             if (actionType.intentTxHash) {
                 payload.intentTxHash = actionType.intentTxHash
             }
@@ -78,7 +70,20 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                         console.log("Error parsing Solana transaction", error);
                     }
                 }
+                if (dstChainId === bitcoin) {
+                    console.log("Decoding bitcoin payload", payload.payload);
+                    const decoded = decodeBitcoinPayload(payload.payload);
+                    console.log("Decoded bitcoin payload", decoded);
+                    if (decoded) {
+                        actionType = mapBitcoinPayloadToActionType(decoded, srcChainId, dstChainId);
+                    } else {
+                        actionType = { action: SendMessage };
+                    }
+                }
             }
+
+
+
             if (payload.intentFilled) {
                 actionType.action = "IntentFilled";
                 actionType.actionText = payload.actionText;
