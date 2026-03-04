@@ -70,21 +70,21 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                         console.log("Error parsing Solana transaction", error);
                     }
                 }
-                if (dstChainId === bitcoin) {
-                    console.log("Decoding bitcoin payload", payload.payload);
-                    const decoded = decodeBitcoinPayload(payload.payload);
-                    console.log("Decoded bitcoin payload", decoded);
-                    if (decoded) {
-                        actionType = mapBitcoinPayloadToActionType(decoded, srcChainId, dstChainId);
-                        if (payload.intentTxHash && !payload.intentFilled && !payload.intentCancelled) {
-                            actionType.action = "CreateIntent";
-                            actionType.intentTxHash = payload.intentTxHash;
-                            actionType.actionText = `CreateIntent ${actionType.actionText ?? ""} to Bitcoin`;
-                        }
-                    } else {
-                        actionType = { action: SendMessage };
-                    }
-                }
+                // if (dstChainId === bitcoin) {
+                //     console.log("Decoding bitcoin payload", payload.payload);
+                //     const decoded = decodeBitcoinPayload(payload.payload);
+                //     console.log("Decoded bitcoin payload", decoded);
+                //     if (decoded) {
+                //         actionType = mapBitcoinPayloadToActionType(decoded, srcChainId, dstChainId);
+                //         if (payload.intentTxHash && !payload.intentFilled && !payload.intentCancelled) {
+                //             actionType.action = "CreateIntent";
+                //             actionType.intentTxHash = payload.intentTxHash;
+                //             actionType.actionText = `CreateIntent ${actionType.actionText ?? ""} to Bitcoin`;
+                //         }
+                //     } else {
+                //         actionType = { action: SendMessage };
+                //     }
+                // }
             }
 
 
