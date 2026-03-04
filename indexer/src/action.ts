@@ -210,7 +210,13 @@ export function decodeBitcoinPayload(payloadHex: string): BitcoinDecodedPayload 
         const dataBuf = decoded.length > 4 ? toBuffer(decoded[4]) : Buffer.alloc(0);
 
         const tokenId = tokenBuf.length > 0 ? tokenBuf.toString('utf8') : BTC_TOKEN_ID;
-        const from = fromBuf.length > 0 ? fromBuf.toString('utf8') || fromBuf.toString('hex') : '';
+        // from is 20 bytes when source is EVM (Ethereum address); decode as hex, else UTF-8
+        const from =
+            fromBuf.length === 20
+                ? '0x' + fromBuf.toString('hex')
+                : fromBuf.length > 0
+                    ? fromBuf.toString('utf8') || '0x' + fromBuf.toString('hex')
+                    : '';
         const to = toBuf.length > 0 ? toBuf.toString('utf8') || toBuf.toString('hex') : '';
         const amountHex = amountBuf.length > 0 ? amountBuf.toString('hex') : '0';
         const amount = BigInt('0x' + amountHex);
