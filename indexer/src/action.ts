@@ -263,6 +263,7 @@ export function mapBitcoinPayloadToActionType(
 }
 
 export const parsePayloadData = (data: string, srcChainId: string, dstChainId: string): actionType => {
+    console.log("PARSING PAYLOAD DATA", data, srcChainId, dstChainId);
     const abi = ethers.AbiCoder.defaultAbiCoder();
     const payloadBuffer = Buffer.from(data.replace(/^0x/, ''), 'hex');
     let tmpResult: actionType = {
