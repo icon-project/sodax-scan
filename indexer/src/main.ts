@@ -52,6 +52,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             const payload = await getHandler(srcChainId).fetchPayload(txHash, transaction.sn);
             let actionType: actionType;
             if (srcChainId === bitcoin) {
+                console.log("Decoding bitcoin payload", payload.payload);
                 const decoded = decodeBitcoinPayload(payload.payload);
                 if (decoded) {
                     actionType = mapBitcoinPayloadToActionType(decoded, srcChainId, dstChainId);
