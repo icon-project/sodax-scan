@@ -25,6 +25,8 @@ export const decodeCallData = (callData: string, srcChainId: string, _: string):
     const abi = ethers.AbiCoder.defaultAbiCoder();
     const selector = callData.slice(0, 10);
     const data = `0x${callData.slice(10)}`;
+    console.log("SELECTOR", selector);
+    console.log("DATA", data);
     switch (selector) {
         case SELECTORS.supply:
             {
