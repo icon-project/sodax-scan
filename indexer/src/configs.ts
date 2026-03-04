@@ -95,7 +95,7 @@ export const RPC_URLS: Record<string, string> = {
   [ethereum]: requireEnv("ETHEREUM_URL"),
   [redbelly]: requireEnv("REDBELLY_URL"),
   [kaia]: requireEnv("KAIA_URL"),
-  // [bitcoin]: requireEnv("BITCOIN_URL"),
+  [bitcoin]: requireEnv("BITCOIN_URL"),
 };
 
 type ChainsById = {

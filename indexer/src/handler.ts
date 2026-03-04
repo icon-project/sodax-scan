@@ -31,7 +31,7 @@ const handlers: Record<string, ChainHandler> = {
     [ethereum]: new EvmHandler({ rpcUrl: RPC_URLS[ethereum], denom: "ETH"}),
     [redbelly]: new EvmHandler({ rpcUrl: RPC_URLS[redbelly], denom: "RBNT"}),
     [kaia]: new EvmHandler({ rpcUrl: RPC_URLS[kaia], denom: "KAIA"}),
-    [bitcoin]: new BitcoinHandler({ relayUrl: process.env.RELAY_URL || "" }),
+    [bitcoin]: new BitcoinHandler({ rpcUrl: RPC_URLS[bitcoin] }),
 };
 
 export function getHandler(chain: string): ChainHandler {

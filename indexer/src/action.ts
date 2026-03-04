@@ -285,7 +285,7 @@ export function mapBitcoinPayloadToActionType(
 }
 
 export const parsePayloadData = (data: string, srcChainId: string, dstChainId: string): actionType => {
-    console.log("PARSING PAYLOAD DATA", data, srcChainId, dstChainId);
+    // console.log("PARSING PAYLOAD DATA", data, srcChainId, dstChainId);
     const abi = ethers.AbiCoder.defaultAbiCoder();
     const payloadBuffer = Buffer.from(data.replace(/^0x/, ''), 'hex');
     let tmpResult: actionType = {
@@ -294,17 +294,17 @@ export const parsePayloadData = (data: string, srcChainId: string, dstChainId: s
     try {
         const rlp = RLP.decode(payloadBuffer);
         if (Array.isArray(rlp) && rlp.length === 5) {
-            console.log("RLP", rlp);
+            // console.log("RLP", rlp);
             const tokenAddress = `0x${Buffer.from(rlp[0] as Uint8Array).toString('hex')}`.toLowerCase()
             const tokenAmount = rlp[3] && (rlp[3] as Uint8Array).length > 0
                 ? BigInt(`0x${Buffer.from(rlp[3] as Uint8Array).toString('hex')}`)
                 : 0n
             const callDataHex = `0x${Buffer.from(rlp[4] as Uint8Array).toString('hex')}`;
-            console.log("CALL DATA HEX", callDataHex);
+            // console.log("CALL DATA HEX", callDataHex);
             let denom = ""
 
             if (dstChainId in chains) {
-                console.log("DST CHAIN ID", dstChainId);
+                // console.log("DST CHAIN ID", dstChainId);
                 const assetsInformation = chains[dstChainId].Assets
                 if (tokenAddress in assetsInformation) {
                     denom = assetsInformation[tokenAddress].name
@@ -315,11 +315,11 @@ export const parsePayloadData = (data: string, srcChainId: string, dstChainId: s
                 }
             }
             if (callDataHex !== "0x") {
-                console.log("CALL DATA HEX", callDataHex);
+                // console.log("CALL DATA HEX", callDataHex);
                 const innerCalls = abi.decode(['(address,uint256,bytes)[]'], callDataHex);
                 for (const call of innerCalls[0]) {
                     const result = decodeCallData(call[2], srcChainId, dstChainId);
-                    console.log("RESULT", result);
+                    // console.log("RESULT", result);
                     if (!result.tokenAddress) {
                         result.tokenAddress = tokenAddress
                     }
@@ -332,23 +332,23 @@ export const parsePayloadData = (data: string, srcChainId: string, dstChainId: s
                     }
                     if (finalActionTypes.includes(result.action)) {
                         result.tokenAddress = decodeTokenAddress(result.tokenAddress, srcChainId, dstChainId)
-                        console.log("RESULT TOKEN ADDRESS", result.tokenAddress);
+                        // console.log("RESULT TOKEN ADDRESS", result.tokenAddress);
                         return result;
                     }
                 }
             } else {
                 tmpResult.tokenAddress = decodeTokenAddress(tokenAddress, srcChainId, dstChainId)
-                console.log("TMP RESULT TOKEN ADDRESS", tmpResult.tokenAddress);
+                // console.log("TMP RESULT TOKEN ADDRESS", tmpResult.tokenAddress);
                 tmpResult.denom = denom
             }
             if (!tmpResult.amount) {
                 tmpResult.amount = bigintDivisionToDecimalString(tokenAmount, 18)
                 tmpResult.tokenAddress = decodeTokenAddress(tokenAddress, srcChainId, dstChainId)
                 tmpResult.denom = denom
-                console.log("TMP RESULT DENOM", tmpResult.denom);
+                // console.log("TMP RESULT DENOM", tmpResult.denom);
             }
             if (tmpResult.tokenAddress && tmpResult.action === Transfer) {
-                console.log("TMP RESULT TOKEN ADDRESS", tmpResult.tokenAddress);
+                // console.log("TMP RESULT TOKEN ADDRESS", tmpResult.tokenAddress);
                 let chainId = srcChainId
                 if (chainId === sonic) {
                     chainId = dstChainId
@@ -359,14 +359,14 @@ export const parsePayloadData = (data: string, srcChainId: string, dstChainId: s
                     const decimals = srcAssetsInformation[tmpResult.tokenAddress].decimals
                     const inputAmount = tmpResult.amount || "0"
                     tmpResult.actionText = `Transfer ${processAmount(inputAmount, decimals)} ${denom}`
-                    console.log("TMP RESULT ACTION TEXT", tmpResult.actionText);
+                    // console.log("TMP RESULT ACTION TEXT", tmpResult.actionText);
                 } else {
                     tmpResult.actionText = `Transfer ${processAmount(tmpResult.amount, srcAssetsInformation[zeroAddress].decimals)} ${tmpResult.tokenAddress}`
-                    console.log("TMP RESULT ACTION TEXT", tmpResult.actionText);
+                    // console.log("TMP RESULT ACTION TEXT", tmpResult.actionText);
                 }
             }
 
-            console.log("TMP RESULT **** ", tmpResult);
+            // console.log("TMP RESULT **** ", tmpResult);
         }
     } catch (err) {
         const errMessage = err instanceof Error ? err.message : String(err);
@@ -417,7 +417,7 @@ export const parsePayloadData = (data: string, srcChainId: string, dstChainId: s
         }
     }
 
-    console.log("TMP RESULT ****///// ", tmpResult);
+    // console.log("TMP RESULT ****///// ", tmpResult);
     return tmpResult;
 };
 
