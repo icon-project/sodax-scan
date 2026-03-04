@@ -280,6 +280,7 @@ export const parsePayloadData = (data: string, srcChainId: string, dstChainId: s
                 ? BigInt(`0x${Buffer.from(rlp[3] as Uint8Array).toString('hex')}`)
                 : 0n
             const callDataHex = `0x${Buffer.from(rlp[4] as Uint8Array).toString('hex')}`;
+            console.log("CALL DATA HEX", callDataHex);
             let denom = ""
 
             if (dstChainId in chains) {
