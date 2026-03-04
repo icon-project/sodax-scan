@@ -193,6 +193,7 @@ export const parseBitcoinTransaction = async (txnHash: string): Promise<string> 
     const response = (await axios.post(process.env.RELAY_URL || "",
         data
     )).data
+    console.log('Bitcoin response 000000', response)
     const payloadData = JSON.parse(response.data.data) || {}
     if ("payload" in payloadData) {
         return payloadData.payload
