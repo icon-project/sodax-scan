@@ -238,7 +238,10 @@ export class EvmHandler implements ChainHandler {
                   }
                   const inputAmount = bigintDivisionToDecimalString(result[4], decimals)
                   const outputAmount = bigintDivisionToDecimalString(BigInt(intentFilledValue), outputDecimals)
-                  const slippageScaled = this.slippagePercent(intentMinOutput, BigInt(intentFilledValue))
+                  let slippageScaled = ""
+                  if (intentMinOutput > 0n) {
+                    slippageScaled = this.slippagePercent(intentMinOutput, BigInt(intentFilledValue))
+                  }
                   return {
                     txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
                     payload: "0x",
@@ -256,8 +259,7 @@ export class EvmHandler implements ChainHandler {
               }
             }
 
-          } catch { }
-
+          } catch (err) { console.log("decode intent fill error", err) }
           return {
             txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
             payload: "0x",

@@ -2189,6 +2189,18 @@
             "0x3839373434323a3433":{
                 "name": "BUSD",
                 "decimals": 6
+            },
+            "897442:43":{
+                "name": "BUSD",
+                "decimals": 6
+            },
+            "0:0":{
+                "name": "BTC",
+                "decimals": 8
+            },
+            "0xeb0393893b5bf98a50073d6740738b08e575058b":{
+                "name": "BTC",
+                "decimals": 8
             }
         }
     }

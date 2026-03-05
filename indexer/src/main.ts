@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { getHandler } from './handler'
-import { chains, solana, sonic, bitcoin } from './configs'
-import { decodeBitcoinPayload, mapBitcoinPayloadToActionType, parseBitcoinTransaction, parsePayloadData, parseSolanaTransaction } from './action'
+import { chains, solana, sonic } from './configs'
+import { parsePayloadData, parseSolanaTransaction } from './action'
 import { updateTransactionInfo } from './db'
 import dotenv from 'dotenv'
 import { actionType, SendMessage, SodaxScannerResponse, Transfer } from './types'
@@ -50,11 +50,10 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             console.log('Processing txn', transaction.src_tx_hash)
             const txHash = transaction.src_tx_hash
             const payload = await getHandler(srcChainId).fetchPayload(txHash, transaction.sn)
-            console.log('FULL PAYLOAD', payload)
+
             let actionType: actionType
             actionType = parsePayloadData(payload.payload, srcChainId, dstChainId)
 
-            // console.log('ACTION TYPE', actionType)
             if (actionType.intentTxHash) {
                 payload.intentTxHash = actionType.intentTxHash
             }
@@ -69,48 +68,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                         console.log('Error parsing Solana transaction', error)
                     }
                 }
-                // if (dstChainId === bitcoin) {
-                //     console.log("Decoding bitcoin payload", payload.payload);
-                //     const decoded = decodeBitcoinPayload(payload.payload);
-                //     console.log("Decoded bitcoin payload", decoded);
-                //     if (decoded) {
-                //         actionType = mapBitcoinPayloadToActionType(decoded, srcChainId, dstChainId);
-                //         if (payload.intentTxHash && !payload.intentFilled && !payload.intentCancelled) {
-                //             actionType.action = "CreateIntent";
-                //             actionType.intentTxHash = payload.intentTxHash;
-                //             actionType.actionText = `CreateIntent ${actionType.actionText ?? ""} to Bitcoin`;
-                //         }
-                //     } else {
-                //         actionType = { action: SendMessage };
-                //     }
-                // }
             }
-
-            // do this because the ones we test are already in the db and not as sendmsg
-            if (dstChainId === bitcoin) {
-                console.log('Decoding bitcoin payload', payload.payload)
-                const decoded = decodeBitcoinPayload(payload.payload)
-                if (decoded) {
-                    actionType = mapBitcoinPayloadToActionType(decoded, srcChainId, dstChainId)
-                    if (payload.intentTxHash && !payload.intentFilled && !payload.intentCancelled) {
-                        actionType.action = 'CreateIntent'
-                        actionType.intentTxHash = payload.intentTxHash
-                        actionType.actionText = `CreateIntent ${actionType.actionText ?? ''} to Bitcoin`
-                    }
-                    try {
-                    const bitcoinPayload = await parseBitcoinTransaction(transaction.src_tx_hash, transaction.sn)
-                        console.log('Bitcoin payload', bitcoinPayload)
-                        if (bitcoinPayload !== '0x') {
-                            actionType = parsePayloadData(bitcoinPayload, srcChainId, dstChainId)
-                        }
-                    } catch (error) {
-                        console.log('Error parsing Bitcoin transaction')
-                    }
-                } else {
-                    actionType = { action: SendMessage }
-                }
-            }
-
             if (payload.intentFilled) {
                 actionType.action = 'IntentFilled'
                 actionType.actionText = payload.actionText
@@ -148,23 +106,23 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                     }
                 }
             }
-            console.log(`Action: ${actionType.action} \nAction Details: ${actionType.actionText} \nTransaction Fee: ${payload.txnFee}\n\n`)
+            
             if (actionType.action === 'SendMsg') {
                 if (id in retries) {
                     retries[id] = retries[id] + 1
                 } else {
                     retries[id] = 1
                 }
+            }
 
-                if (srcHasHashedPayload(srcChainId) && transaction.dest_tx_hash) {
-                    const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn)
-                    if (dstPayload.storedCallReverted) {
-                        actionType.action = 'Reverted'
-                        actionType.actionText = 'StoredCallReverted'
-                        console.log('Reverted transaction found', dstPayload)
-                    } else {
-                        console.log('No reverted transaction found', dstPayload)
-                    }
+            if (srcHasHashedPayload(srcChainId) && transaction.dest_tx_hash) {
+                const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn)
+                if (dstPayload.storedCallReverted) {
+                    actionType.action = 'Reverted'
+                    actionType.actionText = 'StoredCallReverted'
+                    console.log('Reverted transaction found', dstPayload)
+                } else {
+                    console.log('No reverted transaction found', dstPayload)
                 }
             }
             if (actionType.action === 'CreateIntent') {
@@ -174,8 +132,8 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                 }
                 // else: keep payload.intentTxHash (e.g. from Bitcoin path)
             }
+            console.log(`Action: ${actionType.action} \nAction Details: ${actionType.actionText} \nTransaction Fee: ${payload.txnFee}\n\n`)
 
-            // Only update DB when we have valid data (avoids JSON/undefined errors from bad payloads)
             const feeValid = typeof payload.txnFee === 'string'
             const blockNumberValid = typeof payload.blockNumber === 'number'
             if (feeValid && blockNumberValid) {
@@ -206,7 +164,6 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
 }
 
 const main = async () => {
-    console.log('RELAY URL', process.env.RELAY_URL)
     const args = process.argv.slice(2)
     if (args.length === 0) {
         processSodaxStream()
