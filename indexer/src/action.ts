@@ -249,7 +249,6 @@ export const parsePayloadData = (data: string, srcChainId: string, dstChainId: s
                     tmpResult.actionText = `Transfer ${processAmount(tmpResult.amount, srcAssetsInformation[zeroAddress].decimals)} ${tmpResult.tokenAddress}`
                 }
             }
-
         }
     } catch (err) {
         const errMessage = err instanceof Error ? err.message : String(err);

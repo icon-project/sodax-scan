@@ -52,6 +52,7 @@ function renderDestHashLink(item, meta) {
 function renderHashLink(scanUrl, network, hash, isFull = false) {
     if (!hash) return <div>-</div>
 
+    const isOdHash = typeof hash === 'string' && hash.toLowerCase().startsWith('od')
     let networkImg
     let linkClass = isFull ? 'hover:underline inline-block' : 'hover:underline inline-block text-ellipsis overflow-hidden w-64'
     let link = <div>-</div>
@@ -63,7 +64,7 @@ function renderHashLink(scanUrl, network, hash, isFull = false) {
         href = scanUrl.replace('{txHash}', hash)
     }
     networkImg = <Image alt={network} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
-    link = !isFull ? (
+    link = !isFull || isOdHash ? (
         <div className={linkClass}>{hash}</div>
     ) : (
         <div className="flex">
