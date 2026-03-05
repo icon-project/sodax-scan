@@ -50,7 +50,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             console.log('Processing txn', transaction.src_tx_hash)
             const txHash = transaction.src_tx_hash
             const payload = await getHandler(srcChainId).fetchPayload(txHash, transaction.sn)
-            // console.log('FULL PAYLOAD', payload)
+            console.log('FULL PAYLOAD', payload)
             let actionType: actionType
             actionType = parsePayloadData(payload.payload, srcChainId, dstChainId)
 
@@ -86,10 +86,10 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                 // }
             }
 
+            // do this because the ones we test are already in the db and not as sendmsg
             if (dstChainId === bitcoin) {
-                // console.log('Decoding bitcoin payload', payload.payload)
+                console.log('Decoding bitcoin payload', payload.payload)
                 const decoded = decodeBitcoinPayload(payload.payload)
-                // console.log('Decoded bitcoin payload', decoded)
                 if (decoded) {
                     actionType = mapBitcoinPayloadToActionType(decoded, srcChainId, dstChainId)
                     if (payload.intentTxHash && !payload.intentFilled && !payload.intentCancelled) {
@@ -97,15 +97,15 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                         actionType.intentTxHash = payload.intentTxHash
                         actionType.actionText = `CreateIntent ${actionType.actionText ?? ''} to Bitcoin`
                     }
-                    // try {
-                    // const bitcoinPayload = await parseBitcoinTransaction(transaction.src_tx_hash, transaction.sn)
-                    //     console.log('Bitcoin payload', bitcoinPayload)
-                    //     if (bitcoinPayload !== '0x') {
-                    //         actionType = parsePayloadData(bitcoinPayload, srcChainId, dstChainId)
-                    //     }
-                    // } catch (error) {
-                    //     console.log('Error parsing Bitcoin transaction', error)
-                    // }
+                    try {
+                    const bitcoinPayload = await parseBitcoinTransaction(transaction.src_tx_hash, transaction.sn)
+                        console.log('Bitcoin payload', bitcoinPayload)
+                        if (bitcoinPayload !== '0x') {
+                            actionType = parsePayloadData(bitcoinPayload, srcChainId, dstChainId)
+                        }
+                    } catch (error) {
+                        console.log('Error parsing Bitcoin transaction')
+                    }
                 } else {
                     actionType = { action: SendMessage }
                 }

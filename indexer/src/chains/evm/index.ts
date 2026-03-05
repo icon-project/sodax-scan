@@ -2,11 +2,10 @@ import axios from "axios";
 import { ChainHandler } from "../../types/ChainHandler";
 import { ethers } from 'ethers';
 import { TxPayload } from "../../types";
-import { chains, idToChainNameMap, sonic, bitcoin } from "../../configs";
+import { chains, idToChainNameMap, sonic } from "../../configs";
 import { bigintDivisionToDecimalString } from "../../utils";
 import RLP from "rlp";
 import { getHandler } from "../../handler";
-import { getBitcoinPayloadDenom } from "../../action";
 
 const calculateTopicHash = (signature: string) => ethers.keccak256(ethers.toUtf8Bytes(signature));
 
@@ -68,7 +67,7 @@ export class EvmHandler implements ChainHandler {
         const abi = ethers.AbiCoder.defaultAbiCoder();
         const intentTuple = "(bytes32,bool,uint256,uint256,bool)";
         const decoded = abi.decode([intentTuple], log.data);
-        intentFilledAction = `IntentFilled (${decoded[0][0]})`
+        intentFilledAction = `IntentFilled ${decoded[0]}`
         intentFilledValue = decoded[0][3]
         intentHash = decoded[0][0]
       }
@@ -136,20 +135,8 @@ export class EvmHandler implements ChainHandler {
         try {
           const decodedIntentFill = abi.decode(intentFillTuple, input);
           const decoded = decodedIntentFill[0]
-          const srcChainId = String(decoded[8])
-          const dstChainId = String(decoded[9])
-
-          // for debugging, print all shit if dest or src chain is bitcoin
-          if (srcChainId === bitcoin || dstChainId === bitcoin) {
-            console.log("srcChainId", srcChainId)
-            console.log("dstChainId", dstChainId)
-            console.log("decoded", decoded)
-            console.log("decodedIntentFill", decodedIntentFill)
-            console.log("input", input)
-            console.log("intentTuple", intentTuple)
-          }
-
-
+          const srcChainId = decoded[8]
+          const dstChainId = decoded[9]
           const assetsInformation = chains[srcChainId].Assets
           let inputToken = decoded[2].toLowerCase()
           let decimals = 18
@@ -172,9 +159,6 @@ export class EvmHandler implements ChainHandler {
             inputAmount = bigintDivisionToDecimalString(decoded[4], decimals)
             outputAmount = bigintDivisionToDecimalString(decoded[5], outputDecimals)
           }
-          const minOutput = decodedIntentFill[3]
-          const actualOutput = decodedIntentFill[2]
-          const slippageScaled = intentFilled && minOutput > 0n ? this.slippagePercent(minOutput, actualOutput) : undefined
           return {
             txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
             payload: "0x",
@@ -183,7 +167,6 @@ export class EvmHandler implements ChainHandler {
             swapInputToken: decoded[2],
             swapOutputToken: decoded[3],
             ...(intentCancelled ? { intentTxHash: intentHash } : {}),
-            ...(slippageScaled != null ? { slippage: slippageScaled } : {}),
             actionText: intentFilled ? `IntentFilled ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})` : `IntentCancelled ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})`,
             blockNumber: Number.parseInt(tx.result.blockNumber, 16),
             storedCallReverted,
@@ -200,8 +183,8 @@ export class EvmHandler implements ChainHandler {
                   const intentTuple = "(uint256,address,address,address,uint256,uint256,uint256,bool,uint256,uint256,bytes,bytes,address,bytes)";
                   const intentDecoded = abi.decode([intentTuple], intentInput);
                   const result = intentDecoded[0]
-                  const srcChainId = String(result[8])
-                  const dstChainId = String(result[9])
+                  const srcChainId = result[8]
+                  const dstChainId = result[9]
                   intentMinOutput = result[5]
                   const dstToken = result[3]
                   for (const log of tx.result.logs ?? []) {
@@ -210,15 +193,12 @@ export class EvmHandler implements ChainHandler {
                       const abi = ethers.AbiCoder.defaultAbiCoder();
                       const decoded = abi.decode(['uint256', 'bytes', 'uint256', 'uint256', 'bytes', 'bytes'], log.data);
                       const payload = decoded[5];
-                      const payloadHex = typeof payload === 'string' ? payload : '0x' + Buffer.from(payload).toString('hex');
                       const connSn = decoded[2]
                       const msgDstChainId = decoded[3]
-                      const intentDenom = getTokenDenom(dstToken.toLowerCase(), dstChainId, srcChainId)
-                      const payloadDenom = srcChainId === bitcoin
-                        ? getBitcoinPayloadDenom(payloadHex, srcChainId)
-                        : this.parsePayloadData(payload, dstChainId, srcChainId)
+                      const intentDenom = getTokenDenom(dstToken.toLowerCase(), BigInt(dstChainId).toString(), BigInt(srcChainId).toString())
+                      const payloadDenom = this.parsePayloadData(payload, BigInt(dstChainId).toString(), BigInt(srcChainId).toString())
                       if (BigInt(connSn).toString() === BigInt(txConnSn).toString()) {
-                        if (intentDenom !== payloadDenom || String(msgDstChainId) !== dstChainId) {
+                        if (intentDenom !== payloadDenom || msgDstChainId !== dstChainId) {
                           if (intentDenom.includes("USDC") && payloadDenom.includes("USDC")) {
                             continue
                           }
