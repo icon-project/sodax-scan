@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { getHandler } from './handler'
-import { chains, solana, sonic } from './configs'
-import { parsePayloadData, parseSolanaTransaction } from './action'
+import { bitcoin, chains, solana, sonic } from './configs'
+import { parseBitcoinTransaction, parsePayloadData, parseSolanaTransaction } from './action'
 import { updateTransactionInfo } from './db'
 import dotenv from 'dotenv'
 import { actionType, SendMessage, SodaxScannerResponse, Transfer } from './types'
@@ -50,10 +50,10 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             console.log('Processing txn', transaction.src_tx_hash)
             const txHash = transaction.src_tx_hash
             const payload = await getHandler(srcChainId).fetchPayload(txHash, transaction.sn)
-
             let actionType: actionType
             actionType = parsePayloadData(payload.payload, srcChainId, dstChainId)
 
+            console.log('ACTION TYPE #1', actionType)
             if (actionType.intentTxHash) {
                 payload.intentTxHash = actionType.intentTxHash
             }
@@ -106,7 +106,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                     }
                 }
             }
-            
+
             if (actionType.action === 'SendMsg') {
                 if (id in retries) {
                     retries[id] = retries[id] + 1
@@ -116,24 +116,45 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             }
 
             if (srcHasHashedPayload(srcChainId) && transaction.dest_tx_hash) {
+                console.log('HERE 1')
                 const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn)
                 if (dstPayload.storedCallReverted) {
                     actionType.action = 'Reverted'
                     actionType.actionText = 'StoredCallReverted'
-                    console.log('Reverted transaction found', dstPayload)
-                } else {
-                    console.log('No reverted transaction found', dstPayload)
+                }
+                if (dstPayload.intentTxHash) {
+                    actionType.action = 'CreateIntent'
+                    actionType.intentTxHash = dstPayload.intentTxHash
                 }
             }
             if (actionType.action === 'CreateIntent') {
                 if (transaction.dest_tx_hash) {
                     const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn)
+                    console.log('HERE 3', dstPayload)
                     payload.intentTxHash = dstPayload.intentTxHash
                 }
                 // else: keep payload.intentTxHash (e.g. from Bitcoin path)
             }
-            console.log(`Action: ${actionType.action} \nAction Details: ${actionType.actionText} \nTransaction Fee: ${payload.txnFee}\n\n`)
 
+            if (srcChainId === bitcoin) {
+                const bitcoinPayload = await parseBitcoinTransaction(transaction.src_tx_hash)
+                if (bitcoinPayload !== '0x') {
+                    actionType = parsePayloadData(bitcoinPayload, srcChainId, dstChainId)
+                    console.log('ACTION TYPE #2', actionType)
+                }
+                if (actionType.action === 'CreateIntent') {
+                    if (transaction.dest_tx_hash) {
+                        const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn)
+                        if (dstPayload.intentTxHash) {
+                            actionType.action = 'CreateIntent'
+                            actionType.intentTxHash = dstPayload.intentTxHash
+                        }
+                    }
+                }
+            }
+
+            console.log(`Action: ${actionType.action} \nAction Details: ${actionType.actionText} \nTransaction Fee: ${payload.txnFee}\n\n`)
+            return
             const feeValid = typeof payload.txnFee === 'string'
             const blockNumberValid = typeof payload.blockNumber === 'number'
             if (feeValid && blockNumberValid) {

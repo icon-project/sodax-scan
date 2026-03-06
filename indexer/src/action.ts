@@ -2,7 +2,7 @@ import { ethers } from "ethers";
 import { actionType, SendMessage, Transfer } from "./types";
 import { getHandler } from "./handler";
 import { RLP } from '@ethereumjs/rlp';
-import { chains, idToChainNameMap, sonic } from "./configs";
+import { bitcoin, chains, idToChainNameMap, sonic } from "./configs";
 import { bigintDivisionToDecimalString } from "./utils";
 import axios from "axios";
 
@@ -180,6 +180,15 @@ export const parseSolanaTransaction = async (txnHash: string, connSn: string): P
     return "0x"
 }
 
+export const parseBitcoinTransaction = async (txnHash: string): Promise<string> => {
+    const response = await axios.post(process.env.RELAY_URL ?? "", {
+        action: "get_transaction_packets",
+        params: { chain_id: bitcoin, tx_hash: txnHash },
+    })
+    console.log('RESPONSE', response.data)
+    return extractPayloadFromRelayResponse(response.data?.data)
+}
+
 export const parsePayloadData = (data: string, srcChainId: string, dstChainId: string): actionType => {
     const abi = ethers.AbiCoder.defaultAbiCoder();
     const payloadBuffer = Buffer.from(data.replace(/^0x/, ''), 'hex');
@@ -331,4 +340,12 @@ function decodeTokenAddress(
 ): string {
     const chainId = srcChainId === sonic ? dstChainId : srcChainId;
     return getHandler(chainId).decodeAddress(tokenAddress);
+}
+
+function extractPayloadFromRelayResponse(raw: unknown): string {
+    const data = raw == null ? null : typeof raw === "string" ? JSON.parse(raw) : raw
+    const item = Array.isArray(data) && data.length > 0 ? data[0] : data
+    const hex = item && typeof item === "object" && "payload" in item && typeof item.payload === "string" ? item.payload : null
+    if (!hex) return "0x"
+    return hex.startsWith("0x") ? hex : `0x${hex}`
 }
