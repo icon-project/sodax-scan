@@ -1,11 +1,11 @@
 import axios from "axios";
 import { getHandler } from './handler'
-import { chains, solana, sonic } from "./configs";
-import { parsePayloadData, parseSolanaTransaction } from "./action";
+import { bitcoin, chains, solana, sonic } from "./configs";
+import { getTransactionPackets, getPayloadFromRelayPacket, parsePayloadData } from "./action";
 import { updateTransactionInfo } from "./db";
 import dotenv from 'dotenv';
 import { SendMessage, SodaxScannerResponse, Transfer } from "./types";
-import { bigintDivisionToDecimalString, multiplyDecimalBy10Pow18, srcHasHashedPayload } from "./utils";
+import { bigintDivisionToDecimalString, multiplyDecimalBy10Pow18, srcHasHashedPayload, extractConnSn } from "./utils";
 import pool from './db/db';
 
 dotenv.config();
@@ -51,18 +51,19 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             const txHash = transaction.src_tx_hash;
             const payload = await getHandler(srcChainId).fetchPayload(txHash, transaction.sn);
             let actionType = parsePayloadData(payload.payload, srcChainId, dstChainId);
+
             if (actionType.intentTxHash) {
                 payload.intentTxHash = actionType.intentTxHash
             }
             if (actionType.action === SendMessage) {
                 if (srcChainId === solana) {
                     try {
-                        const payload = await parseSolanaTransaction(transaction.src_tx_hash, transaction.sn)
-                        if (payload !== "0x") {
-                            actionType = parsePayloadData(payload, srcChainId, dstChainId);
+                        const payload = await getPayloadFromRelayPacket(transaction.src_tx_hash, String(transaction.sn), srcChainId)
+                        if (payload !== '0x') {
+                            actionType = parsePayloadData(payload, srcChainId, dstChainId)
                         }
                     } catch (error) {
-                        console.log("Error parsing Solana transaction", error);
+                        console.log('Error parsing Solana transaction', error)
                     }
                 }
             }
@@ -75,7 +76,6 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             if (payload.intentCancelled) {
                 actionType.action = "CancelIntent";
                 actionType.actionText = payload.actionText;
-                console.log(payload)
             }
             if (payload.reverseSwap) {
                 actionType.action = "Migration";
@@ -100,40 +100,66 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                     }
                 }
             }
-            console.log(`Action: ${actionType.action} \nAction Details: ${actionType.actionText} \nTransaction Fee: ${payload.txnFee}\n\n`);
+
             if (actionType.action === "SendMsg") {
                 if (id in retries) {
                     retries[id] = retries[id] + 1
                 } else {
                     retries[id] = 1
                 }
-
-                if (srcHasHashedPayload(srcChainId) && transaction.dest_tx_hash) {
-                    const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn);
-                    if (dstPayload.storedCallReverted) {
-                        actionType.action = "Reverted";
-                        actionType.actionText = "StoredCallReverted";
-                        console.log("Reverted transaction found", dstPayload);
-                    } else {
-                        console.log("No reverted transaction found", dstPayload);
-                    }
-                }
             }
+
+
+            if (srcChainId === bitcoin) {
+                // note: Im not sure if we handle txs with mulitple packets/messages correctly here.
+                const relayResponse = await getTransactionPackets(transaction.src_tx_hash, srcChainId)
+                const connSn = extractConnSn(relayResponse)
+                if (!connSn) {
+                    console.log('No connSn found')
+                    continue
+                }
+
+                let payload = '0x' as any
+                try {
+                    payload = await getPayloadFromRelayPacket(transaction.src_tx_hash, connSn, srcChainId)
+                } catch (error) {
+                    console.log('Error getting relay packet', error)
+                }
+                actionType = parsePayloadData(payload, srcChainId, dstChainId)
+            }
+
             if (actionType.action === "CreateIntent") {
                 if (transaction.dest_tx_hash) {
                     const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn);
                     payload.intentTxHash = dstPayload.intentTxHash
-                } else {
-                    payload.intentTxHash = undefined
+                }
+
+                // else: keep payload.intentTxHash (e.g. from Bitcoin path)
+            }
+
+            // Check for stored call reverted or intent tx hash in the destination transaction
+            if (srcHasHashedPayload(srcChainId) && transaction.dest_tx_hash) {
+                const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn)
+                if (dstPayload.storedCallReverted) {
+                    actionType.action = 'Reverted'
+                    actionType.actionText = 'StoredCallReverted'
                 }
             }
 
-            // Only update DB when we have valid data (avoids JSON/undefined errors from bad payloads)
-            const feeValid = typeof payload.txnFee === 'string';
-            const blockNumberValid = typeof payload.blockNumber === 'number';
+            console.log(`Action: ${actionType.action} \nAction Details: ${actionType.actionText} \nTransaction Fee: ${payload.txnFee}\n\n`)
+
+            const feeValid = typeof payload.txnFee === 'string'
+            const blockNumberValid = typeof payload.blockNumber === 'number'
             if (feeValid && blockNumberValid) {
-                await updateTransactionInfo(id, payload.txnFee, actionType.action,
-                    actionType.actionText || "", payload.intentTxHash ?? '', payload.slippage ?? '', payload.blockNumber);
+                await updateTransactionInfo(
+                    id,
+                    payload.txnFee,
+                    actionType.action,
+                    actionType.actionText || '',
+                    payload.intentTxHash ?? '',
+                    payload.slippage ?? '',
+                    payload.blockNumber
+                )
             } else {
                 if (id in retries) retries[id] = retries[id] + 1;
                 else retries[id] = 1;
@@ -150,6 +176,8 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
         }
     }
 }
+
+
 
 const main = async () => {
     const args = process.argv.slice(2);

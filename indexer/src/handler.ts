@@ -1,5 +1,6 @@
-import { arbitrum, avax, base, botanix, bsc, ethereum, hyperliquid, icon, injective, lightlink, near, nibiru, optimism, polygon, redbelly, RPC_URLS, solana, sonic, stellar, sui, kaia } from './configs.ts';
+import { arbitrum, avax, base, bitcoin, botanix, bsc, ethereum, hyperliquid, icon, injective, lightlink, near, nibiru, optimism, polygon, redbelly, RPC_URLS, solana, sonic, stellar, sui, kaia } from './configs.ts';
 import { EvmHandler } from './chains/evm/index.ts';
+import { BitcoinHandler } from './chains/bitcoin/index.ts';
 import { ChainHandler } from './types/ChainHandler';
 import { StellarHandler } from './chains/stellar/index.ts';
 import { IconHandler } from './chains/icon/index.ts';
@@ -30,6 +31,7 @@ const handlers: Record<string, ChainHandler> = {
     [ethereum]: new EvmHandler({ rpcUrl: RPC_URLS[ethereum], denom: "ETH"}),
     [redbelly]: new EvmHandler({ rpcUrl: RPC_URLS[redbelly], denom: "RBNT"}),
     [kaia]: new EvmHandler({ rpcUrl: RPC_URLS[kaia], denom: "KAIA"}),
+    [bitcoin]: new BitcoinHandler({ rpcUrl: RPC_URLS[bitcoin] }),
 };
 
 export function getHandler(chain: string): ChainHandler {

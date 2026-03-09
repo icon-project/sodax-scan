@@ -2170,5 +2170,38 @@
                 "decimals": 6
             }
         }
+    },
+    "bitcoin": {
+        "AssetManager": "bc1p4z9555xw0266vhq2x5un4zdmm9dt9zyet32fs7wa7u5ckdxusd9qsw4xfx",
+        "Assets": {
+            "0xdb41c7d09406026d4582bc2fc6d6319c323fe1bb": {
+                "name": "BUSD",
+                "decimals": 6
+            },
+            "0x0000000000000000000000000000000000000000": {
+                "name": "BTC",
+                "decimals": 8
+            },
+            "0x303a30":{
+                "name": "BTC",
+                "decimals": 8
+            },
+            "0x3839373434323a3433":{
+                "name": "BUSD",
+                "decimals": 6
+            },
+            "897442:43":{
+                "name": "BUSD",
+                "decimals": 6
+            },
+            "0:0":{
+                "name": "BTC",
+                "decimals": 8
+            },
+            "0xeb0393893b5bf98a50073d6740738b08e575058b":{
+                "name": "BTC",
+                "decimals": 8
+            }
+        }
     }
 }
