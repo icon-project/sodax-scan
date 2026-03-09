@@ -207,10 +207,21 @@ export const getPayloadFromRelayPacket = async (txnHash: string, connSn: string,
             transformResponse: [(data: string) => data]
         }
     )
-    const parsed = parseKeepConnSn(response.data)
-    const parsedJson = JSON.parse(parsed.data.data)
-    const payload = parsedJson.payload
-    return payload
+    try {
+        const parsed = parseKeepConnSn(response.data)
+        const dataStr = parsed?.data?.data
+        if (dataStr == null || typeof dataStr !== 'string') {
+            return '0x'
+        }
+        const parsedJson = JSON.parse(dataStr)
+        const payload = parsedJson?.payload
+        if (payload == null) {
+            return '0x'
+        }
+        return payload
+    } catch {
+        return '0x'
+    }
 }
 
 export const parsePayloadData = (data: string, srcChainId: string, dstChainId: string): actionType => {
