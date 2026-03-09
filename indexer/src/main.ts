@@ -123,7 +123,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                 try {
                     payload = await getPayloadFromRelayPacket(transaction.src_tx_hash, connSn, srcChainId)
                 } catch (error) {
-                    console.log('Error getting relay packet', (error as any).response.data)
+                    console.log('Error getting relay packet', error)
                 }
                 actionType = parsePayloadData(payload, srcChainId, dstChainId)
             }
