@@ -109,13 +109,6 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                 }
             }
 
-            if (actionType.action === "CreateIntent") {
-                if (transaction.dest_tx_hash) {
-                    const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn);
-                    payload.intentTxHash = dstPayload.intentTxHash
-                }
-                // else: keep payload.intentTxHash (e.g. from Bitcoin path)
-            }
 
             if (srcChainId === bitcoin) {
                 // note: Im not sure if we handle txs with mulitple packets/messages correctly here.
@@ -132,8 +125,16 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                 } catch (error) {
                     console.log('Error getting relay packet', (error as any).response.data)
                 }
-
                 actionType = parsePayloadData(payload, srcChainId, dstChainId)
+            }
+
+            if (actionType.action === "CreateIntent") {
+                if (transaction.dest_tx_hash) {
+                    const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn);
+                    payload.intentTxHash = dstPayload.intentTxHash
+                }
+
+                // else: keep payload.intentTxHash (e.g. from Bitcoin path)
             }
 
             // Check for stored call reverted or intent tx hash in the destination transaction
