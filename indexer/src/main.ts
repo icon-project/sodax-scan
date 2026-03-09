@@ -1,12 +1,12 @@
-import axios from 'axios'
-import { getHandler } from './handler'
-import { bitcoin, chains, solana, sonic } from './configs'
-import { getTransactionPackets, getPayloadFromRelayPacket, parsePayloadData } from './action'
-import { updateTransactionInfo } from './db'
-import dotenv from 'dotenv'
-import { actionType, SendMessage, SodaxScannerResponse, Transfer } from './types'
-import { bigintDivisionToDecimalString, multiplyDecimalBy10Pow18, srcHasHashedPayload } from './utils'
-import pool from './db/db'
+import axios from "axios";
+import { getHandler } from "./handler";
+import { bitcoin, chains, solana, sonic } from "./configs";
+import { getTransactionPackets, getPayloadFromRelayPacket, parsePayloadData } from "./action";
+import { updateTransactionInfo } from "./db";
+import dotenv from "dotenv";
+import { SendMessage, SodaxScannerResponse, Transfer } from "./types";
+import { bigintDivisionToDecimalString, multiplyDecimalBy10Pow18, srcHasHashedPayload, extractConnSn } from "./utils";
+import pool from "./db/db";
 
 dotenv.config()
 const SODAXSCAN_CONFIG = {
@@ -16,27 +16,27 @@ const SODAXSCAN_CONFIG = {
         'User-Agent': 'Mozilla/5.0',
         Accept: '*/*',
         'Accept-Encoding': 'gzip, deflate, br, zstd'
-    }
-}
+    },
+};
 
 let lastScannedId = 0
-let isRunning = true
+let isRunning = true;
 let retries: Record<string, number> = {}
 const processSodaxStream = async () => {
-    const response: SodaxScannerResponse = (await axios.request(SODAXSCAN_CONFIG)).data satisfies SodaxScannerResponse
-    await parseTransactionEvent(response)
+    const response: SodaxScannerResponse = (await axios.request(SODAXSCAN_CONFIG)).data satisfies SodaxScannerResponse;
+    await parseTransactionEvent(response);
     lastScannedId = response.data[0].id
 }
 
 async function parseTransactionEvent(response: SodaxScannerResponse) {
     for (const transaction of response.data) {
-        const id = transaction.id
+        const id = transaction.id;
 
         // Skip only if we've already seen this message and have nothing left to do for it.
-        const alreadySeen = lastScannedId !== 0 && id <= lastScannedId
-        const hasIntentTxHash = transaction.intent_tx_hash != null && transaction.intent_tx_hash !== ''
-        const createIntentDone = transaction.action_type !== 'CreateIntent' || hasIntentTxHash
-        const needsNoMoreWork = transaction.action_type !== 'SendMsg' && createIntentDone
+        const alreadySeen = lastScannedId !== 0 && id <= lastScannedId;
+        const hasIntentTxHash = transaction.intent_tx_hash != null && transaction.intent_tx_hash !== '';
+        const createIntentDone = transaction.action_type !== 'CreateIntent' || hasIntentTxHash;
+        const needsNoMoreWork = transaction.action_type !== 'SendMsg' && createIntentDone;
         if (alreadySeen && needsNoMoreWork) {
             continue
         }
@@ -44,14 +44,13 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
         if (id in retries && retries[id] > 4) {
             continue
         }
-        const srcChainId = transaction.src_network as string
-        const dstChainId = transaction.dest_network as string
+        const srcChainId = transaction.src_network as string;
+        const dstChainId = transaction.dest_network as string;
         try {
             console.log('Processing txn', transaction.src_tx_hash)
-            const txHash = transaction.src_tx_hash
-            const payload = await getHandler(srcChainId).fetchPayload(txHash, transaction.sn)
-            let actionType: actionType
-            actionType = parsePayloadData(payload.payload, srcChainId, dstChainId)
+            const txHash = transaction.src_tx_hash;
+            const payload = await getHandler(srcChainId).fetchPayload(txHash, transaction.sn);
+            let actionType = parsePayloadData(payload.payload, srcChainId, dstChainId);
 
             if (actionType.intentTxHash) {
                 payload.intentTxHash = actionType.intentTxHash
@@ -69,43 +68,43 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                 }
             }
             if (payload.intentFilled) {
-                actionType.action = 'IntentFilled'
-                actionType.actionText = payload.actionText
-                actionType.swapInputToken = payload.swapInputToken
-                actionType.swapOutputToken = payload.swapOutputToken
+                actionType.action = "IntentFilled";
+                actionType.actionText = payload.actionText;
+                actionType.swapInputToken = payload.swapInputToken;
+                actionType.swapOutputToken = payload.swapOutputToken;
             }
             if (payload.intentCancelled) {
-                actionType.action = 'CancelIntent'
-                actionType.actionText = payload.actionText
+                actionType.action = "CancelIntent";
+                actionType.actionText = payload.actionText;
             }
             if (payload.reverseSwap) {
-                actionType.action = 'Migration'
-                actionType.actionText = payload.actionText
+                actionType.action = "Migration";
+                actionType.actionText = payload.actionText;
             }
-            const assetManager = chains[srcChainId].AssetManager
-            let assetsInformation = chains[srcChainId].Assets
+            const assetManager = chains[srcChainId].AssetManager;
+            let assetsInformation = chains[srcChainId].Assets;
             if (srcChainId === sonic) {
-                assetsInformation = chains[dstChainId].Assets
+                assetsInformation = chains[dstChainId].Assets;
             }
             if (actionType.action === Transfer || actionType.action === SendMessage) {
-                const dstAddress: string = payload.dstAddress || ''
+                const dstAddress: string = payload.dstAddress || "";
                 if (dstAddress.toLowerCase() === assetManager.toLowerCase()) {
-                    actionType.action = 'Deposit'
-                    const token = actionType.tokenAddress || ''
+                    actionType.action = 'Deposit';
+                    const token = actionType.tokenAddress || "";
                     if (token in assetsInformation) {
                         const adjustedAmount = bigintDivisionToDecimalString(
                             BigInt(multiplyDecimalBy10Pow18(actionType.amount || '0')),
                             assetsInformation[token].decimals
                         )
-                        actionType.denom = assetsInformation[token].name
-                        actionType.actionText = `Deposit ${adjustedAmount} ${actionType.denom}`
+                        actionType.denom = assetsInformation[token].name;
+                        actionType.actionText = `Deposit ${adjustedAmount} ${actionType.denom}`;
                     } else {
-                        actionType.actionText = `Deposit ${actionType.amount} ${actionType.tokenAddress}`
+                        actionType.actionText = `Deposit ${actionType.amount} ${actionType.tokenAddress}`;
                     }
                 }
             }
 
-            if (actionType.action === 'SendMsg') {
+            if (actionType.action === "SendMsg") {
                 if (id in retries) {
                     retries[id] = retries[id] + 1
                 } else {
@@ -164,31 +163,23 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                     payload.blockNumber
                 )
             } else {
-                if (id in retries) retries[id] = retries[id] + 1
-                else retries[id] = 1
-                console.log('Invalid data for id', id, 'fee', payload.txnFee, 'blockNumber', payload.blockNumber)
+                if (id in retries) retries[id] = retries[id] + 1;
+                else retries[id] = 1;
+                console.log("Invalid data for id", id, "fee", payload.txnFee, "blockNumber", payload.blockNumber);
             }
         } catch (error) {
-            const errMessage = error instanceof Error ? error.message : String(error)
-            console.log('Failed updating transaction info for id', id, errMessage)
+            const errMessage = error instanceof Error ? error.message : String(error);
+            console.log("Failed updating transaction info for id", id, errMessage);
             if (id in retries) {
-                retries[id] = retries[id] + 1
+                retries[id] = retries[id] + 1;
             } else {
-                retries[id] = 1
+                retries[id] = 1;
             }
         }
     }
 }
 
-/**
- * Extracts the connection sn from the relay response, keeping it as a string
- * @param input - The relay response
- * @returns The connection sn
- */
-function extractConnSn(input: string): string | null {
-    const m = input.match(/"conn_sn"\s*:\s*(\d+)/)
-    return m ? m[1] : null
-}
+
 
 const main = async () => {
     const args = process.argv.slice(2)

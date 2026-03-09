@@ -2,7 +2,7 @@ import { ethers } from "ethers";
 import { actionType, SendMessage, Transfer } from "./types";
 import { getHandler } from "./handler";
 import { RLP } from '@ethereumjs/rlp';
-import { bitcoin, chains, idToChainNameMap, sonic } from "./configs";
+import { chains, idToChainNameMap, sonic } from "./configs";
 import { bigintDivisionToDecimalString } from "./utils";
 import axios from "axios";
 
