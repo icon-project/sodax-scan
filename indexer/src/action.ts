@@ -161,32 +161,56 @@ export const decodeCallData = (callData: string, srcChainId: string, _: string):
     };
 };
 
-export const parseSolanaTransaction = async (txnHash: string, connSn: string): Promise<string> => {
-    const data = JSON.stringify({
-        "action": "get_packet",
-        "params": {
-            "chain_id": "1",
-            "tx_hash": txnHash,
-            "conn_sn": connSn
+/**
+ * Gets all packets (aka relay-messages) of tx - note: 1 tx can have multiple packets.
+ */
+export const getTransactionPackets = async (txnHash: string, chainId: string): Promise<string> => {
+    const response = await axios.post(
+        process.env.RELAY_URL ?? '',
+        {
+            action: 'get_transaction_packets',
+            params: { chain_id: chainId, tx_hash: txnHash }
+        },
+        {
+            responseType: 'text',
+            transformResponse: [(data) => data] // prevent axios parsing with JSON.parse (loosing precision on bigints)
         }
-    });
-    const response = (await axios.post(process.env.RELAY_URL || "",
-        data
-    )).data
-    const payloadData = JSON.parse(response.data.data) || {}
-    if ("payload" in payloadData) {
-        return payloadData.payload
-    }
-    return "0x"
+    )
+
+    return response.data
 }
 
-export const parseBitcoinTransaction = async (txnHash: string): Promise<string> => {
-    const response = await axios.post(process.env.RELAY_URL ?? "", {
-        action: "get_transaction_packets",
-        params: { chain_id: bitcoin, tx_hash: txnHash },
-    })
-    console.log('RESPONSE', response.data)
-    return extractPayloadFromRelayResponse(response.data?.data)
+/**
+ * grabs the conn_sn from the response and keeps it as a string in the payload
+*/
+function parseKeepConnSn(input: string): any {
+  const fixed = input.replace(/"conn_sn"\s*:\s*(\d+)/g, '"conn_sn":"$1"');
+  return JSON.parse(fixed); 
+}
+
+/**
+ * Get the payload from a specific relay packet/msg
+ */
+export const getPayloadFromRelayPacket = async (txnHash: string, connSn: string, chainId: string): Promise<string> => {
+    const response = await axios.post(
+        process.env.RELAY_URL ?? '',
+        {
+            action: 'get_packet',
+            params: {
+                chain_id: chainId,
+                tx_hash: txnHash,
+                conn_sn: connSn
+            }
+        },
+        {
+            responseType: 'text',
+            transformResponse: [(data: string) => data]
+        }
+    )
+    const parsed = parseKeepConnSn(response.data)
+    const parsedJson = JSON.parse(parsed.data.data)
+    const payload = parsedJson.payload
+    return payload
 }
 
 export const parsePayloadData = (data: string, srcChainId: string, dstChainId: string): actionType => {
@@ -260,8 +284,6 @@ export const parsePayloadData = (data: string, srcChainId: string, dstChainId: s
             }
         }
     } catch (err) {
-        const errMessage = err instanceof Error ? err.message : String(err);
-        console.log("error with fallback ABI decode", errMessage)
         try {
             const innerCalls = abi.decode(['(address,uint256,bytes)[]'], payloadBuffer);
             for (const call of innerCalls[0]) {
@@ -340,12 +362,4 @@ function decodeTokenAddress(
 ): string {
     const chainId = srcChainId === sonic ? dstChainId : srcChainId;
     return getHandler(chainId).decodeAddress(tokenAddress);
-}
-
-function extractPayloadFromRelayResponse(raw: unknown): string {
-    const data = raw == null ? null : typeof raw === "string" ? JSON.parse(raw) : raw
-    const item = Array.isArray(data) && data.length > 0 ? data[0] : data
-    const hex = item && typeof item === "object" && "payload" in item && typeof item.payload === "string" ? item.payload : null
-    if (!hex) return "0x"
-    return hex.startsWith("0x") ? hex : `0x${hex}`
 }
