@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { getHandler } from './handler'
 import { bitcoin, chains, solana, sonic } from './configs'
-import { parseBitcoinTransaction, parsePayloadData, parseSolanaTransaction } from './action'
+import { getTransactionPackets, getPayloadFromRelayPacket, parsePayloadData } from './action'
 import { updateTransactionInfo } from './db'
 import dotenv from 'dotenv'
 import { actionType, SendMessage, SodaxScannerResponse, Transfer } from './types'
@@ -53,16 +53,15 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             let actionType: actionType
             actionType = parsePayloadData(payload.payload, srcChainId, dstChainId)
 
-            console.log('ACTION TYPE #1', actionType)
             if (actionType.intentTxHash) {
                 payload.intentTxHash = actionType.intentTxHash
             }
             if (actionType.action === SendMessage) {
                 if (srcChainId === solana) {
                     try {
-                        const solanaPayload = await parseSolanaTransaction(transaction.src_tx_hash, transaction.sn)
-                        if (solanaPayload !== '0x') {
-                            actionType = parsePayloadData(solanaPayload, srcChainId, dstChainId)
+                        const payload = await getPayloadFromRelayPacket(transaction.src_tx_hash, String(transaction.sn), srcChainId)
+                        if (payload !== '0x') {
+                            actionType = parsePayloadData(payload, srcChainId, dstChainId)
                         }
                     } catch (error) {
                         console.log('Error parsing Solana transaction', error)
@@ -78,7 +77,6 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             if (payload.intentCancelled) {
                 actionType.action = 'CancelIntent'
                 actionType.actionText = payload.actionText
-                console.log(payload)
             }
             if (payload.reverseSwap) {
                 actionType.action = 'Migration'
@@ -115,46 +113,44 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                 }
             }
 
-            if (srcHasHashedPayload(srcChainId) && transaction.dest_tx_hash) {
-                console.log('HERE 1')
-                const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn)
-                if (dstPayload.storedCallReverted) {
-                    actionType.action = 'Reverted'
-                    actionType.actionText = 'StoredCallReverted'
-                }
-                if (dstPayload.intentTxHash) {
-                    actionType.action = 'CreateIntent'
-                    actionType.intentTxHash = dstPayload.intentTxHash
-                }
-            }
             if (actionType.action === 'CreateIntent') {
                 if (transaction.dest_tx_hash) {
                     const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn)
-                    console.log('HERE 3', dstPayload)
                     payload.intentTxHash = dstPayload.intentTxHash
                 }
                 // else: keep payload.intentTxHash (e.g. from Bitcoin path)
             }
 
             if (srcChainId === bitcoin) {
-                const bitcoinPayload = await parseBitcoinTransaction(transaction.src_tx_hash)
-                if (bitcoinPayload !== '0x') {
-                    actionType = parsePayloadData(bitcoinPayload, srcChainId, dstChainId)
-                    console.log('ACTION TYPE #2', actionType)
+                // note: Im not sure if we handle txs with mulitple packets/messages correctly here.
+                const relayResponse = await getTransactionPackets(transaction.src_tx_hash, srcChainId)
+                const connSn = extractConnSn(relayResponse)
+                if (!connSn) {
+                    console.log('No connSn found')
+                    continue
                 }
-                if (actionType.action === 'CreateIntent') {
-                    if (transaction.dest_tx_hash) {
-                        const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn)
-                        if (dstPayload.intentTxHash) {
-                            actionType.action = 'CreateIntent'
-                            actionType.intentTxHash = dstPayload.intentTxHash
-                        }
-                    }
+
+                let payload = '0x' as any
+                try {
+                    payload = await getPayloadFromRelayPacket(transaction.src_tx_hash, connSn, srcChainId)
+                } catch (error) {
+                    console.log('Error getting relay packet', (error as any).response.data)
+                }
+
+                actionType = parsePayloadData(payload, srcChainId, dstChainId)
+            }
+
+            // Check for stored call reverted or intent tx hash in the destination transaction
+            if (srcHasHashedPayload(srcChainId) && transaction.dest_tx_hash) {
+                const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn)
+                if (dstPayload.storedCallReverted) {
+                    actionType.action = 'Reverted'
+                    actionType.actionText = 'StoredCallReverted'
                 }
             }
 
             console.log(`Action: ${actionType.action} \nAction Details: ${actionType.actionText} \nTransaction Fee: ${payload.txnFee}\n\n`)
-            return
+
             const feeValid = typeof payload.txnFee === 'string'
             const blockNumberValid = typeof payload.blockNumber === 'number'
             if (feeValid && blockNumberValid) {
@@ -182,6 +178,16 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             }
         }
     }
+}
+
+/**
+ * Extracts the connection sn from the relay response, keeping it as a string
+ * @param input - The relay response
+ * @returns The connection sn
+ */
+function extractConnSn(input: string): string | null {
+    const m = input.match(/"conn_sn"\s*:\s*(\d+)/)
+    return m ? m[1] : null
 }
 
 const main = async () => {
