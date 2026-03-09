@@ -8,7 +8,7 @@ import { SendMessage, SodaxScannerResponse, Transfer } from "./types";
 import { bigintDivisionToDecimalString, multiplyDecimalBy10Pow18, srcHasHashedPayload, extractConnSn } from "./utils";
 import pool from './db/db';
 
-dotenv.config()
+dotenv.config();
 const SODAXSCAN_CONFIG = {
     method: 'get',
     url: `${process.env.SCANNER_URL}/api/messages?skip=0&limit=${Number.parseInt(process.env.LIMIT || '10')}`,
@@ -38,11 +38,11 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
         const createIntentDone = transaction.action_type !== 'CreateIntent' || hasIntentTxHash;
         const needsNoMoreWork = transaction.action_type !== 'SendMsg' && createIntentDone;
         if (alreadySeen && needsNoMoreWork) {
-            continue
+            continue;
         }
 
         if (id in retries && retries[id] > 4) {
-            continue;
+            continue
         }
         const srcChainId = transaction.src_network as string;
         const dstChainId = transaction.dest_network as string;
@@ -195,8 +195,8 @@ const main = async () => {
             return () => {
                 console.log(`Received ${signal}. Cleaning up...`);
                 clearInterval(intervalId);
-                process.exit(0) // Exit cleanly
-            }
+                process.exit(0); // Exit cleanly
+            };
         }
         process.on('SIGINT', shutdownHandler('SIGINT'));
         process.on('SIGTERM', shutdownHandler('SIGTERM'));
@@ -208,7 +208,7 @@ const main = async () => {
             headers: {
                 'User-Agent': 'Mozilla/5.0',
                 Accept: '*/*',
-                'Accept-Encoding': 'gzip, deflate, br, zstd'
+                'Accept-Encoding': 'gzip, deflate, br, zstd',
             },
         };
         const response: SodaxScannerResponse = (await axios.request(SINGLE_EVENT_SODAXSCAN_CONFIG)).data satisfies SodaxScannerResponse;
