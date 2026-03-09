@@ -1,12 +1,12 @@
 import axios from "axios";
-import { getHandler } from "./handler";
+import { getHandler } from './handler'
 import { bitcoin, chains, solana, sonic } from "./configs";
 import { getTransactionPackets, getPayloadFromRelayPacket, parsePayloadData } from "./action";
 import { updateTransactionInfo } from "./db";
-import dotenv from "dotenv";
+import dotenv from 'dotenv';
 import { SendMessage, SodaxScannerResponse, Transfer } from "./types";
 import { bigintDivisionToDecimalString, multiplyDecimalBy10Pow18, srcHasHashedPayload, extractConnSn } from "./utils";
-import pool from "./db/db";
+import pool from './db/db';
 
 dotenv.config()
 const SODAXSCAN_CONFIG = {
@@ -15,7 +15,7 @@ const SODAXSCAN_CONFIG = {
     headers: {
         'User-Agent': 'Mozilla/5.0',
         Accept: '*/*',
-        'Accept-Encoding': 'gzip, deflate, br, zstd'
+        'Accept-Encoding': 'gzip, deflate, br, zstd',
     },
 };
 
@@ -42,12 +42,12 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
         }
 
         if (id in retries && retries[id] > 4) {
-            continue
+            continue;
         }
         const srcChainId = transaction.src_network as string;
         const dstChainId = transaction.dest_network as string;
         try {
-            console.log('Processing txn', transaction.src_tx_hash)
+            console.log("Processing txn", transaction.src_tx_hash);
             const txHash = transaction.src_tx_hash;
             const payload = await getHandler(srcChainId).fetchPayload(txHash, transaction.sn);
             let actionType = parsePayloadData(payload.payload, srcChainId, dstChainId);
@@ -92,10 +92,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                     actionType.action = 'Deposit';
                     const token = actionType.tokenAddress || "";
                     if (token in assetsInformation) {
-                        const adjustedAmount = bigintDivisionToDecimalString(
-                            BigInt(multiplyDecimalBy10Pow18(actionType.amount || '0')),
-                            assetsInformation[token].decimals
-                        )
+                        const adjustedAmount = bigintDivisionToDecimalString(BigInt(multiplyDecimalBy10Pow18(actionType.amount || "0")), assetsInformation[token].decimals);
                         actionType.denom = assetsInformation[token].name;
                         actionType.actionText = `Deposit ${adjustedAmount} ${actionType.denom}`;
                     } else {
@@ -112,9 +109,9 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                 }
             }
 
-            if (actionType.action === 'CreateIntent') {
+            if (actionType.action === "CreateIntent") {
                 if (transaction.dest_tx_hash) {
-                    const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn)
+                    const dstPayload = await getHandler(dstChainId).fetchPayload(transaction.dest_tx_hash, transaction.sn);
                     payload.intentTxHash = dstPayload.intentTxHash
                 }
                 // else: keep payload.intentTxHash (e.g. from Bitcoin path)
@@ -182,34 +179,27 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
 
 
 const main = async () => {
-    const args = process.argv.slice(2)
+    const args = process.argv.slice(2);
     if (args.length === 0) {
-        processSodaxStream()
-            .catch(console.error)
-            .finally(() => {
-                isRunning = false
-            })
-        const intervalId = setInterval(
-            () => {
-                if (isRunning) return
-                isRunning = true
-                processSodaxStream()
-                    .catch(console.error)
-                    .finally(() => {
-                        isRunning = false
-                    })
-            },
-            Number.parseInt(process.env.REQUEST_DELAY || '5000')
-        )
+        processSodaxStream().catch(console.error).finally(() => {
+            isRunning = false;
+        });
+        const intervalId = setInterval(() => {
+            if (isRunning) return;
+            isRunning = true;
+            processSodaxStream().catch(console.error).finally(() => {
+                isRunning = false;
+            });
+        }, Number.parseInt(process.env.REQUEST_DELAY || "5000"));
         function shutdownHandler(signal: string) {
             return () => {
-                console.log(`Received ${signal}. Cleaning up...`)
-                clearInterval(intervalId)
+                console.log(`Received ${signal}. Cleaning up...`);
+                clearInterval(intervalId);
                 process.exit(0) // Exit cleanly
             }
         }
-        process.on('SIGINT', shutdownHandler('SIGINT'))
-        process.on('SIGTERM', shutdownHandler('SIGTERM'))
+        process.on('SIGINT', shutdownHandler('SIGINT'));
+        process.on('SIGTERM', shutdownHandler('SIGTERM'));
     } else {
         const eventId = args[0]
         const SINGLE_EVENT_SODAXSCAN_CONFIG = {
@@ -219,18 +209,18 @@ const main = async () => {
                 'User-Agent': 'Mozilla/5.0',
                 Accept: '*/*',
                 'Accept-Encoding': 'gzip, deflate, br, zstd'
-            }
-        }
-        const response: SodaxScannerResponse = (await axios.request(SINGLE_EVENT_SODAXSCAN_CONFIG)).data satisfies SodaxScannerResponse
-        await parseTransactionEvent(response)
-        await pool.end()
-        process.exit(0)
+            },
+        };
+        const response: SodaxScannerResponse = (await axios.request(SINGLE_EVENT_SODAXSCAN_CONFIG)).data satisfies SodaxScannerResponse;
+        await parseTransactionEvent(response);
+        await pool.end();
+        process.exit(0);
     }
 }
 
 function cleanupRecords() {
-    retries = {}
+    retries = {};
 }
 
 main().catch(console.error)
-setInterval(() => cleanupRecords(), 1800 * 1000)
+setInterval(() => cleanupRecords(), 1800 * 1000);
