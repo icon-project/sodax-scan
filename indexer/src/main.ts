@@ -149,7 +149,7 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
             console.log(`Action: ${actionType.action} \nAction Details: ${actionType.actionText} \nTransaction Fee: ${payload.txnFee}\n\n`)
 
             const feeValid = typeof payload.txnFee === 'string'
-            const blockNumberValid = typeof payload.blockNumber === 'number'
+            const blockNumberValid = payload.blockNumber === null || typeof payload.blockNumber === 'number'
             if (feeValid && blockNumberValid) {
                 await updateTransactionInfo(
                     id,

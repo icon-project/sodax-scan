@@ -2179,6 +2179,51 @@
             }
         }
     },
+    "stacks": {
+        "AssetManager": "SP3031RGK734636C8KGW2Y76TEQBTVX59Q472EQH0.asset-manager-impl",
+        "Assets": {
+            "0x30b3b1a3e4F1235472772e60a8cd9C0165db641e": {
+                "name": "STX",
+                "decimals": 6
+            },
+            "0x78093c056fb37ffc1a9ae96daa0a7dd9d372b64d": {
+                "name": "bnUSD",
+                "decimals": 6
+            },
+            "0xebd34ddf9f47f9bcdf706e87206d40a579c34822": {
+                "name": "SODA",
+                "decimals": 6
+            },
+            "0x6f6c039b07e25bb86d8223643a84122404963d9b": {
+                "name": "sBTC",
+                "decimals": 8
+            },
+            "0x2336917df30f3417986a29ec384274a83adbef16": {
+                "name": "USDC",
+                "decimals": 6
+            },
+            "SP3031RGK734636C8KGW2Y76TEQBTVX59Q472EQH0.bnusd": {
+                "name": "bnUSD",
+                "decimals": 6
+            },
+            "SP3031RGK734636C8KGW2Y76TEQBTVX59Q472EQH0.soda": {
+                "name": "SODA",
+                "decimals": 6
+            },
+            "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token": {
+                "name": "sBTC",
+                "decimals": 8
+            },
+            "SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx": {
+                "name": "USDC",
+                "decimals": 6
+            },
+            "0x0000000000000000000000000000000000000000": {
+                "name": "STX",
+                "decimals": 6
+            }
+        }
+    },
     "bitcoin": {
         "AssetManager": "bc1p4z9555xw0266vhq2x5un4zdmm9dt9zyet32fs7wa7u5ckdxusd9qsw4xfx",
         "Assets": {

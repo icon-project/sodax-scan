@@ -27,7 +27,7 @@ export interface TxPayload {
   actionText?: string
   slippage?: string
   intentTxHash?: string
-  blockNumber: number
+  blockNumber: number | null
   /** True if the tx logs contain StoredCallReverted(bytes32) */
   storedCallReverted?: boolean
 }
