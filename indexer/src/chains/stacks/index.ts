@@ -18,6 +18,10 @@ interface StacksTxResult {
     block_height?: number;
     fee_rate?: string;
     tx_status?: string;
+    tx_type?: string;
+    events?: unknown[];
+    contract_call?: unknown;
+    [key: string]: unknown;
 }
 
 async function fetchTransaction(
