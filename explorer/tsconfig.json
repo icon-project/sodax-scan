@@ -19,6 +19,7 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "target": "es2017",
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
