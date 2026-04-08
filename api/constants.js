@@ -99,7 +99,7 @@ const META_URLS = {
         [NETWORK.ETHEREUM]: USE_MAINNET ? 'https://etherscan.io/tx/' : 'https://etherscan.io/tx/',
         [NETWORK.REDBELLY]: USE_MAINNET ? 'https://redbelly.routescan.io/tx/' : 'https://redbelly.routescan.io/tx/',
         [NETWORK.KAIA]: USE_MAINNET ? 'https://kaiascan.io/tx/' : 'https://kaiascan.io/tx/',
-        [NETWORK.BITCOIN]: USE_MAINNET ? 'https://uniscan.cc/tx/' : 'https://uniscan.cc/tx/',
+        [NETWORK.BITCOIN]: USE_MAINNET ? 'https://ordiscan.com/tx/' : 'https://uniscan.cc/signet/tx/',
     }
 }
 
