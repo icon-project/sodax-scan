@@ -1,6 +1,6 @@
 import pool from './db';
 
-export async function updateTransactionInfo(id: number, fee: string, actionType: string, actionText: string, intentTxHash: string, slippage = '', blockNumber: number): Promise<void> {
+export async function updateTransactionInfo(id: number, fee: string, actionType: string, actionText: string, intentTxHash: string, slippage = '', blockNumber: number | null): Promise<void> {
   // console.log([fee, actionType, actionText, intentTxHash, slippage, id])
   const client = await pool.connect();
 

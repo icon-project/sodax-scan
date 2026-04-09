@@ -63,6 +63,10 @@ function renderHashLink(scanUrl, network, hash, isFull = false) {
     if (network == '1' || network == '10002') {
         href = scanUrl.replace('{txHash}', hash)
     }
+    if (network == '60') {
+        const txHash = hash.startsWith('0x') ? hash : `0x${hash}`
+        href = `https://explorer.hiro.so/txid/${txHash}?chain=mainnet`
+    }
     networkImg = <Image alt={network} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
     link = !isFull || isOdHash ? (
         <div className={linkClass}>{hash}</div>
