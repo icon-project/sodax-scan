@@ -1071,7 +1071,7 @@
             },
             "0x55d398326f99059ff775485246999027b3197955":{
                 "name": "USDT",
-                "decimals": 18
+                "decimals": 6
             },
             "0x2170ed0880ac9a755fd29b2688956bd959f933f8": {
                 "name": "ETHB",
@@ -1091,7 +1091,7 @@
             },
             "0x6047828dc181963ba44974801ff68e538da5eaf9":{
                 "name": "USDT",
-                "decimals": 18
+                "decimals": 6
             },
             "0x50c42deacd8fc9773493ed674b675be577f2634b":{
                 "name": "wETH",
