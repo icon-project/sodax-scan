@@ -28,6 +28,7 @@ const NETWORK = {
     REDBELLY: 'redbelly',
     KAIA: 'kaia',
     BITCOIN: 'bitcoin',
+    ALEO: 'aleo',
 }
 
 const NETWORK_MAPPINGS = {
@@ -54,6 +55,7 @@ const NETWORK_MAPPINGS = {
     [NETWORK.REDBELLY]: CONFIG_NETWORKS.redbelly.nid,
     [NETWORK.KAIA]: CONFIG_NETWORKS.kaia.nid,
     [NETWORK.BITCOIN]: CONFIG_NETWORKS.bitcoin.nid,
+    [NETWORK.ALEO]: CONFIG_NETWORKS.aleo.nid,
 }
 
 const REV_NETWORK_MAPPINGS = {
@@ -80,6 +82,7 @@ const REV_NETWORK_MAPPINGS = {
     [CONFIG_NETWORKS.redbelly.nid]: [NETWORK.REDBELLY],
     [CONFIG_NETWORKS.kaia.nid]: [NETWORK.KAIA],
     [CONFIG_NETWORKS.bitcoin.nid]: [NETWORK.BITCOIN],
+    [CONFIG_NETWORKS.aleo.nid]: [NETWORK.ALEO],
 }
 
 const NETWORK_DETAILS = {
@@ -220,6 +223,12 @@ const NETWORK_DETAILS = {
         name: 'bitcoin',
         logo: `/images/network-bitcoin.png`,
         nativeAsset: 'BTC',
+    },
+    [NETWORK.ALEO]: {
+        id: NETWORK.ALEO,
+        name: 'aleo',
+        logo: `/images/network-aleo.png`,
+        nativeAsset: 'ALEO',
     },
 }
 

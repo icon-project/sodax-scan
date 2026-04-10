@@ -1,14 +1,15 @@
-import { arbitrum, avax, base, bitcoin, botanix, bsc, ethereum, hyperliquid, icon, injective, lightlink, near, nibiru, optimism, polygon, redbelly, RPC_URLS, solana, sonic, stacks, stellar, sui, kaia } from './configs.ts';
-import { EvmHandler } from './chains/evm/index.ts';
+import { AleoHandler } from './chains/aleo/index.ts';
 import { BitcoinHandler } from './chains/bitcoin/index.ts';
-import { ChainHandler } from './types/ChainHandler';
-import { StellarHandler } from './chains/stellar/index.ts';
+import { EvmHandler } from './chains/evm/index.ts';
 import { IconHandler } from './chains/icon/index.ts';
-import { SuiHandler } from './chains/sui/index.ts';
-import { SolanaHandler } from './chains/solana/index.ts';
 import { InjectiveHandler } from './chains/injective/index.ts';
 import { NearHandler } from './chains/near/index.ts';
+import { SolanaHandler } from './chains/solana/index.ts';
 import { StacksHandler } from './chains/stacks/index.ts';
+import { StellarHandler } from './chains/stellar/index.ts';
+import { SuiHandler } from './chains/sui/index.ts';
+import { aleo, arbitrum, avax, base, bitcoin, botanix, bsc, ethereum, hyperliquid, icon, injective, kaia, lightlink, near, nibiru, optimism, polygon, redbelly, RPC_URLS, solana, sonic, stacks, stellar, sui } from './configs.ts';
+import { ChainHandler } from './types/ChainHandler';
 
 
 const handlers: Record<string, ChainHandler> = {
@@ -34,6 +35,7 @@ const handlers: Record<string, ChainHandler> = {
     [kaia]: new EvmHandler({ rpcUrl: RPC_URLS[kaia], denom: "KAIA"}),
     [bitcoin]: new BitcoinHandler({ rpcUrl: RPC_URLS[bitcoin] }),
     [stacks]: new StacksHandler({ rpcUrl: RPC_URLS[stacks] }),
+    [aleo]: new AleoHandler({ rpcUrl: RPC_URLS[aleo] }),
 };
 
 export function getHandler(chain: string): ChainHandler {
@@ -41,4 +43,3 @@ export function getHandler(chain: string): ChainHandler {
     if (!handler) throw new Error(`No handler registered for chain: ${chain}`);
     return handler;
 }
-
