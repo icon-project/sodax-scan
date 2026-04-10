@@ -725,7 +725,7 @@
             "0x50c42deacd8fc9773493ed674b675be577f2634b":{
                 "name": "wETH",
                 "decimals": 18
-            }        
+            }
         }
     },
     "polygon": {
@@ -939,7 +939,7 @@
             "0xe0064414c2c1a636a9424c7a17d86fbf7fd3f190": {
                 "name": "NIBI",
                 "decimals": 18
-            },            
+            },
             "0x0829f361a05d993d5ceb035ca6df3446b060970b": {
                 "name": "USDC",
                 "decimals": 6
@@ -1096,7 +1096,7 @@
             "0x50c42deacd8fc9773493ed674b675be577f2634b":{
                 "name": "wETH",
                 "decimals": 18
-            }    
+            }
         }
     },
     "hyperliquid": {
@@ -1876,7 +1876,7 @@
     },
     "near": {
         "AssetManager": "asset-manager.sodax.near",
-        "Assets": {    
+        "Assets": {
             "0xda7a39b44d5aa0b99bd3c16110f79fa43d3bf4a4":{
                 "name": "NEAR",
                 "decimals": 24
@@ -1909,11 +1909,11 @@
     },
     "ethereum": {
         "AssetManager": "0x39e77f86c1b1f3fbab362a82b49d2e86c09659b4",
-        "Assets": {   
+        "Assets": {
             "0x0000000000000000000000000000000000000000": {
                 "name": "ETH",
                 "decimals": 18
-            },  
+            },
             "0xaeafa26e43f46cd83efe89b1e57c858eb5685a24":{
                 "name": "ETH",
                 "decimals": 18
@@ -1925,7 +1925,7 @@
             "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": {
                 "name": "USDC",
                 "decimals": 6
-            },   
+            },
             "0x4a1c82744cddee675a255fb289cb0917a482e7c7": {
                 "name": "Soda",
                 "decimals": 18
@@ -1966,7 +1966,7 @@
     },
     "redbelly": {
         "AssetManager": "0x39e77f86c1b1f3fbab362a82b49d2e86c09659b4",
-        "Assets": {    
+        "Assets": {
             "0x0000000000000000000000000000000000000000": {
                 "name": "RBNT",
                 "decimals": 18
@@ -2022,12 +2022,12 @@
             "0x390ceed555905ec225da330a188ea04e85570f00": {
                 "name": "rPOL",
                 "decimals": 18
-            }        
+            }
         }
     },
     "lightlink": {
         "AssetManager": "0x4a1c82744cddee675a255fb289cb0917a482e7c7",
-        "Assets": {     
+        "Assets": {
             "0x19920ef8fe1a9d51fdb0914abbb2f970c74dca68":{
                 "name": "ETH",
                 "decimals": 18
@@ -2256,5 +2256,9 @@
                 "decimals": 8
             }
         }
+    },
+    "aleo": {
+        "AssetManager": "",
+        "Assets": {}
     }
 }

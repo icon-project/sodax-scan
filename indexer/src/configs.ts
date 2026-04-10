@@ -22,6 +22,7 @@ export const redbelly = "726564"
 export const kaia = "27489"
 export const bitcoin = "627463"
 export const stacks = "60"
+export const aleo = "6694886634401"
 
 export type AssetInfo = {
   name: string;
@@ -63,6 +64,7 @@ const chainNameToIdMap: Record<string, string> = {
   kaia: kaia,
   bitcoin: bitcoin,
   stacks: stacks,
+  aleo: aleo,
 };
 
 export const idToChainNameMap: Record<string, string> = Object.fromEntries(
@@ -99,6 +101,7 @@ export const RPC_URLS: Record<string, string> = {
   [kaia]: requireEnv("KAIA_URL"),
   [bitcoin]: requireEnv("BITCOIN_URL"),
   [stacks]: requireEnv("STACKS_URL"),
+  [aleo]: requireEnv("ALEO_URL"),
 };
 
 type ChainsById = {
