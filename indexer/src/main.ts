@@ -136,6 +136,9 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
 
                 // else: keep payload.intentTxHash (e.g. from Bitcoin path)
             }
+            if (!payload.intentTxHash?.startsWith("0x")) {
+                payload.intentTxHash = ""
+            }
 
             // Check for stored call reverted or intent tx hash in the destination transaction
             if (srcHasHashedPayload(srcChainId) && transaction.dest_tx_hash) {
