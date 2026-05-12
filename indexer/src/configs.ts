@@ -26,6 +26,13 @@ export const stacks = "60"
 export type AssetInfo = {
   name: string;
   decimals: number;
+  /**
+   * True for hub-side liquid wraps (sodaBNB, sodaNEAR, …) — ERC-20 contracts
+   * are always 18 decimals, but the API reports the underlying asset's native
+   * decimals (e.g. 24 for sodaNEAR). Money-market / ERC-20 contexts should
+   * force 18; intent contexts should use `decimals` as-is.
+   */
+  isSodaWrap?: boolean;
 };
 
 type ChainAssets = {
@@ -122,3 +129,59 @@ function loadChains(filePath: string): Chains {
   return chainsById;
 }
 export const chains: Chains = loadChains("./config.json")
+
+const HUB_ASSETS_URL = "https://api.sodax.com/v1/be/config/hub/assets";
+const RELAY_MAP_URL = "https://api.sodax.com/v1/be/config/relay/chain-id-map";
+
+type HubAsset = {
+  asset: string;
+  decimal: number;
+  symbol: string;
+  name: string;
+  vault: string;
+};
+
+export async function enrichChainsFromApi(): Promise<void> {
+  let hubAssets: Record<string, Record<string, HubAsset>>;
+  let relayMap: Record<string, string>;
+  try {
+    const [assetsRes, relayRes] = await Promise.all([
+      fetch(HUB_ASSETS_URL),
+      fetch(RELAY_MAP_URL),
+    ]);
+    if (!assetsRes.ok || !relayRes.ok) {
+      throw new Error(`hub=${assetsRes.status} relay=${relayRes.status}`);
+    }
+    hubAssets = (await assetsRes.json()) as Record<string, Record<string, HubAsset>>;
+    relayMap = (await relayRes.json()) as Record<string, string>;
+  } catch (err) {
+    console.warn(
+      "enrichChainsFromApi: failed to fetch SODAX config — falling back to config.json only.",
+      err instanceof Error ? err.message : err,
+    );
+    return;
+  }
+
+  let added = 0;
+  for (const [apiChainKey, assets] of Object.entries(hubAssets)) {
+    const chainId = relayMap[apiChainKey];
+    if (!chainId) {
+      console.warn(`enrichChainsFromApi: no internal id for API chain "${apiChainKey}", skipping.`);
+      continue;
+    }
+    const chainEntry = chains[chainId];
+    if (!chainEntry) continue; // chain not configured locally — skip
+    for (const [addr, info] of Object.entries(assets)) {
+      const key = addr.toLowerCase();
+      if (key in chainEntry.Assets) continue; // local config wins
+      chainEntry.Assets[key] = {
+        name: info.symbol || info.name,
+        decimals: info.decimal,
+        // "Soda <Asset>" name pattern identifies hub liquid wraps (Soda BNB, SODA NEAR, Soda WEETH, …)
+        isSodaWrap: info.name?.toLowerCase().startsWith("soda ") ?? false,
+      };
+      added++;
+    }
+  }
+  console.log(`enrichChainsFromApi: added ${added} asset entries from hub/assets API.`);
+}

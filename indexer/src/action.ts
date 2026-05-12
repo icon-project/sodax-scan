@@ -3,7 +3,7 @@ import { actionType, SendMessage, Transfer } from "./types";
 import { getHandler } from "./handler";
 import { RLP } from '@ethereumjs/rlp';
 import { chains, idToChainNameMap, sonic } from "./configs";
-import { bigintDivisionToDecimalString } from "./utils";
+import { bigintDivisionToDecimalString, resolveMoneyMarketActionText } from "./utils";
 import axios from "axios";
 
 const calculateSelector = (signature: string) => ethers.keccak256(ethers.toUtf8Bytes(signature)).slice(0, 10);
@@ -29,14 +29,13 @@ export const decodeCallData = (callData: string, srcChainId: string, _: string):
         case SELECTORS.supply:
             {
                 const supply = abi.decode(['address', 'uint256', 'address', 'uint16'], data);
-                const assetsInformation = chains[srcChainId].Assets
                 const tokenAddress = supply[0].toLowerCase()
                 const tokenAmount = supply[1]
                 return {
                     action: 'Supply',
                     tokenAddress: tokenAddress,
                     amount: tokenAmount,
-                    actionText: tokenAddress in assetsInformation ? `Supply ${bigintDivisionToDecimalString(supply[1], assetsInformation[tokenAddress].decimals)} ${assetsInformation[tokenAddress].name}` : `Supply ${bigintDivisionToDecimalString(tokenAmount, 18)} ${tokenAddress}`
+                    actionText: resolveMoneyMarketActionText('Supply', tokenAmount, tokenAddress, srcChainId),
                 };
             }
         case SELECTORS.withdraw:
@@ -44,36 +43,33 @@ export const decodeCallData = (callData: string, srcChainId: string, _: string):
                 const withdraw = abi.decode(['address', 'uint256', 'address'], data);
                 const amount = withdraw[1]
                 const tokenAddress = withdraw[0].toLowerCase()
-                const assetsInformation = chains[srcChainId].Assets
                 return {
                     action: 'Withdraw',
                     amount: amount,
                     tokenAddress: tokenAddress,
-                    actionText: tokenAddress in assetsInformation ? `Withdraw ${bigintDivisionToDecimalString(withdraw[1], assetsInformation[tokenAddress].decimals)} ${assetsInformation[tokenAddress].name}` : `Withdraw ${bigintDivisionToDecimalString(withdraw[1], 18)} ${tokenAddress}`
+                    actionText: resolveMoneyMarketActionText('Withdraw', amount, tokenAddress, srcChainId),
                 };
             }
         case SELECTORS.borrow:
             {
                 const borrow = abi.decode(['address', 'uint256', 'uint256', 'uint16', 'address'], data);
-                const assetsInformation = chains[srcChainId].Assets
                 const tokenAddress = borrow[0].toLowerCase()
                 return {
                     action: 'Borrow',
                     amount: borrow[1],
                     tokenAddress: tokenAddress,
-                    actionText: tokenAddress in assetsInformation ? `Borrow ${bigintDivisionToDecimalString(borrow[1], assetsInformation[tokenAddress].decimals)} ${assetsInformation[tokenAddress].name}` : `Borrow ${bigintDivisionToDecimalString(borrow[1], 18)} ${tokenAddress}`
+                    actionText: resolveMoneyMarketActionText('Borrow', borrow[1], tokenAddress, srcChainId),
                 };
             }
         case SELECTORS.repay:
             {
                 const repay = abi.decode(['address', 'uint256', 'uint256', 'address'], data);
-                const assetsInformation = chains[srcChainId].Assets
                 const tokenAddress = repay[0].toLowerCase()
                 return {
                     action: 'Repay',
                     amount: repay[1],
                     tokenAddress: tokenAddress,
-                    actionText: tokenAddress in assetsInformation ? `Repay ${bigintDivisionToDecimalString(repay[1], assetsInformation[tokenAddress].decimals)} ${assetsInformation[tokenAddress].name}` : `Repay ${bigintDivisionToDecimalString(repay[1], 18)} ${tokenAddress}`
+                    actionText: resolveMoneyMarketActionText('Repay', repay[1], tokenAddress, srcChainId),
                 };
             }
         case SELECTORS.createIntent:
@@ -374,3 +370,4 @@ function decodeTokenAddress(
     const chainId = srcChainId === sonic ? dstChainId : srcChainId;
     return getHandler(chainId).decodeAddress(tokenAddress);
 }
+
