@@ -90,12 +90,6 @@ export default async function MessageDetail({ msgData, meta }) {
                 </div>
             </div>
 
-            <div className="py-4 flex flex-row-reverse">
-                <Link className="hover:underline underline-offset-2 text-sm pr-2" href={`/`}>
-                    Back to Messages
-                </Link>
-            </div>
-
             <Script>{`
             for(var i=0;i<document.getElementsByClassName("copy-hash").length;i++){
                 document.getElementsByClassName("copy-hash")[i].onclick = function(){ navigator.clipboard.writeText(this.previousSibling.innerText); }
