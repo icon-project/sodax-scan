@@ -1,6 +1,6 @@
 import axios from "axios";
 import { getHandler } from './handler'
-import { bitcoin, chains, solana, sonic } from "./configs";
+import { bitcoin, chains, enrichChainsFromApi, solana, sonic } from "./configs";
 import { getTransactionPackets, getPayloadFromRelayPacket, parsePayloadData } from "./action";
 import { updateTransactionInfo } from "./db";
 import dotenv from 'dotenv';
@@ -183,6 +183,8 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
 
 
 const main = async () => {
+    await enrichChainsFromApi();
+
     const args = process.argv.slice(2);
     if (args.length === 0) {
         processSodaxStream().catch(console.error).finally(() => {
