@@ -1,4 +1,5 @@
-import { solana, bitcoin } from "./configs";
+import { chains, idToChainNameMap, solana, sonic, bitcoin } from "./configs";
+import type { AssetInfo } from "./configs";
 
 export function bigintDivisionToDecimalString(num: bigint, decimals: number) {
     const denom = BigInt(10 ** decimals)
@@ -43,4 +44,26 @@ export function srcHasHashedPayload(srcChainId: string): boolean {
 export function extractConnSn(input: string): string | null {
   const m = input.match(/"conn_sn"\s*:\s*(\d+)/)
   return m ? m[1] : null
+}
+
+export function getErc20Decimals(asset: AssetInfo): number {
+  return asset.isSodaWrap ? 18 : asset.decimals;
+}
+
+export function resolveMoneyMarketActionText(
+  action: string,
+  amount: bigint,
+  tokenAddress: string,
+  srcChainId: string,
+): string {
+  const srcHit = chains[srcChainId]?.Assets?.[tokenAddress];
+  if (srcHit) {
+    return `${action} ${bigintDivisionToDecimalString(amount, getErc20Decimals(srcHit))} ${srcHit.name}`;
+  }
+  const hubHit = chains[sonic]?.Assets?.[tokenAddress];
+  if (hubHit) {
+    const srcName = idToChainNameMap[srcChainId] ?? srcChainId;
+    return `${action} ${bigintDivisionToDecimalString(amount, getErc20Decimals(hubHit))} ${hubHit.name} (Sonic) ← initiated from ${srcName}`;
+  }
+  return `${action} ${bigintDivisionToDecimalString(amount, 18)} ${tokenAddress}`;
 }
