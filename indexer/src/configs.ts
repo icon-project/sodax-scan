@@ -175,15 +175,23 @@ export async function enrichChainsFromApi(): Promise<void> {
     const chainEntry = chains[chainId];
     if (!chainEntry) continue; // chain not configured locally — skip
     for (const [addr, info] of Object.entries(assets)) {
-      const key = addr.toLowerCase();
-      if (key in chainEntry.Assets) continue; // local config wins
-      chainEntry.Assets[key] = {
+      const entry: AssetInfo = {
         name: info.symbol || info.name,
         decimals: info.decimal,
         // "Soda <Asset>" name pattern identifies hub liquid wraps (Soda BNB, SODA NEAR, Soda WEETH, …)
         isSodaWrap: info.name?.toLowerCase().startsWith("soda ") ?? false,
       };
-      added++;
+      // API exposes two addresses per token: the dict key (canonical "spoke
+      // key") and `info.asset` (often the wrapped contract address). The
+      // indexer's action_detail rows may reference either, so register both
+      // under the same AssetInfo. Local config.json entries still win.
+      for (const candidate of [addr, info.asset]) {
+        if (!candidate) continue;
+        const key = candidate.toLowerCase();
+        if (key in chainEntry.Assets) continue;
+        chainEntry.Assets[key] = entry;
+        added++;
+      }
     }
   }
   console.log(`enrichChainsFromApi: added ${added} asset entries from hub/assets API.`);
