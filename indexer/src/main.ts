@@ -7,6 +7,8 @@ import dotenv from 'dotenv';
 import { SendMessage, SodaxScannerResponse, Transfer } from "./types";
 import { bigintDivisionToDecimalString, multiplyDecimalBy10Pow18, srcHasHashedPayload, extractConnSn } from "./utils";
 import pool from './db/db';
+import { ensureHubIntentsSchema } from './hub-intents/schema';
+import { startHubIntentsPoller } from './hub-intents/poller';
 
 dotenv.config();
 const SODAXSCAN_CONFIG = {
@@ -187,6 +189,12 @@ const main = async () => {
 
     const args = process.argv.slice(2);
     if (args.length === 0) {
+        try {
+            await ensureHubIntentsSchema();
+        } catch (err) {
+            console.error('hub-intents: schema bootstrap failed:', err);
+        }
+        const hubIntentsTimer = startHubIntentsPoller();
         processSodaxStream().catch(console.error).finally(() => {
             isRunning = false;
         });
@@ -201,6 +209,7 @@ const main = async () => {
             return () => {
                 console.log(`Received ${signal}. Cleaning up...`);
                 clearInterval(intervalId);
+                clearInterval(hubIntentsTimer);
                 process.exit(0); // Exit cleanly
             };
         }

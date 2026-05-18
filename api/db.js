@@ -226,10 +226,86 @@ const getTotalMessages = async (status, src_networks, dest_networks, src_address
     }
 }
 
+const HUB_INTENT_FIELDS = ` id, intent_hash, creator, solver, input_token, output_token,
+    input_amount, min_output_amount, filled_output_amount, src_chain_id, dst_chain_id,
+    status, created_block_number, created_block_timestamp, created_tx_hash,
+    filled_block_number, filled_block_timestamp, filled_tx_hash,
+    cancelled_block_number, cancelled_block_timestamp, cancelled_tx_hash,
+    slippage, action_detail, created_at, updated_at `
+
+const buildHubIntentsWhereSql = (status, creator, from_timestamp, to_timestamp) => {
+    let values = []
+    let conditions = []
+    if (status) {
+        conditions.push(`status = any(string_to_array($${conditions.length + 1},','))`)
+        values.push(status)
+    }
+    if (creator) {
+        conditions.push(`LOWER(creator) = LOWER($${conditions.length + 1})`)
+        values.push(creator)
+    }
+    if (from_timestamp) {
+        conditions.push(`created_block_timestamp >= $${conditions.length + 1}`)
+        values.push(from_timestamp)
+    }
+    if (to_timestamp) {
+        conditions.push(`created_block_timestamp <= $${conditions.length + 1}`)
+        values.push(to_timestamp)
+    }
+    return { conditions, values }
+}
+
+const getHubIntents = async (skip, limit, status, creator, from_timestamp, to_timestamp) => {
+    const { conditions, values } = buildHubIntentsWhereSql(status, creator, from_timestamp, to_timestamp)
+
+    let sqlTotal = `SELECT count(*) FROM hub_intents`
+    let sqlRows = `SELECT ${HUB_INTENT_FIELDS}
+                    FROM hub_intents
+                    ORDER BY created_block_timestamp DESC NULLS LAST, id DESC
+                    OFFSET $1 LIMIT $2`
+    if (conditions.length > 0) {
+        sqlTotal = `SELECT count(*) FROM hub_intents WHERE ${conditions.join(' AND ')}`
+        sqlRows = `SELECT ${HUB_INTENT_FIELDS}
+                    FROM hub_intents
+                    WHERE ${conditions.join(' AND ')}
+                    ORDER BY created_block_timestamp DESC NULLS LAST, id DESC
+                    OFFSET $${conditions.length + 1} LIMIT $${conditions.length + 2}`
+    }
+
+    const totalRs = await pool.query(sqlTotal, values)
+    const rowsRs = await pool.query(sqlRows, values.concat([skip, limit]))
+
+    return {
+        data: rowsRs.rows,
+        meta: {
+            urls: META_URLS,
+            pagination: {
+                total: Math.ceil(Number(totalRs.rows[0].count) / Number(limit)),
+                size: Number(limit),
+                number: Math.floor(Number(skip) / Number(limit)) + 1
+            },
+            time: Math.floor(Date.now() / 1000)
+        }
+    }
+}
+
+const getHubIntentByHash = async (hash) => {
+    const rs = await pool.query(
+        `SELECT ${HUB_INTENT_FIELDS} FROM hub_intents WHERE intent_hash = $1`,
+        [hash]
+    )
+    return {
+        data: rs.rows,
+        meta: { urls: META_URLS }
+    }
+}
+
 module.exports = {
     getMessages,
     getMessageById,
     searchMessages,
     getStatistic,
-    getTotalMessages
+    getTotalMessages,
+    getHubIntents,
+    getHubIntentByHash
 }
