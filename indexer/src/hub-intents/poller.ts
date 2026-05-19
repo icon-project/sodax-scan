@@ -263,8 +263,7 @@ export function startHubIntentsPoller(): NodeJS.Timeout {
     try {
       await runOnce();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error('hub-intents: poll error:', msg);
+      console.error('hub-intents: poll error:', err);
     } finally {
       running = false;
     }

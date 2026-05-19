@@ -47,6 +47,16 @@ const CREATE_INDEXER_CURSORS = `
   );
 `;
 
+// Indexer in prod connects as a DML-only role (e.g. v3_relayer). When the
+// schema is bootstrapped by an admin role once, these GRANTs make the tables
+// usable from that DML role. Override target via env if your role differs.
+const GRANT_TARGET_ROLE = process.env.HUB_INTENTS_DB_ROLE || 'v3_relayer';
+const GRANTS = [
+  `GRANT SELECT, INSERT, UPDATE ON hub_intents     TO ${GRANT_TARGET_ROLE};`,
+  `GRANT SELECT, INSERT, UPDATE ON indexer_cursors TO ${GRANT_TARGET_ROLE};`,
+  `GRANT USAGE, SELECT ON SEQUENCE hub_intents_id_seq TO ${GRANT_TARGET_ROLE};`,
+];
+
 export async function ensureHubIntentsSchema(): Promise<void> {
   const client = await pool.connect();
   try {
@@ -62,5 +72,17 @@ export async function ensureHubIntentsSchema(): Promise<void> {
     throw err;
   } finally {
     client.release();
+  }
+
+  // GRANTs run in their own connection, each isolated. When the indexer runs
+  // as the DML role itself, these all fail with "must be owner" — that's
+  // fine, we log once and move on without rolling back the schema above.
+  for (const sql of GRANTS) {
+    try {
+      await pool.query(sql);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`hub-intents: skipped grant (${msg}): ${sql.trim()}`);
+    }
   }
 }
