@@ -6,7 +6,6 @@ const db = require('./db')
 const logger = require('./logger')
 const rpc = require('./rpc')
 const { NETWORK } = require('./constants')
-const rateLimiter = require('./middlewares/rate-limiter')
 const cors = require('cors')
 
 app.use(bodyParser.json())
@@ -68,8 +67,6 @@ const corsOptions = {
     }
 }
 app.use(cors(corsOptions))
-
-app.use(rateLimiter)
 
 app.get('/api', (req, res) => {
     res.status(200).json({ status: 'running' })
