@@ -37,16 +37,12 @@ const UNIFIED_SUBQUERY = `(
     SELECT
         -e.id AS id,
         NULL::bigint AS sn,
+        -- Hub events are single-tx on-chain actions that confirm immediately —
+        -- there's no relay-leg waiting step. So each row's status reflects
+        -- only its own event: created/filled = executed, cancelled = rollbacked.
         (CASE
-            WHEN e.event_type = 'filled'    THEN 'executed'
             WHEN e.event_type = 'cancelled' THEN 'rollbacked'
-            WHEN EXISTS (SELECT 1 FROM hub_intent_events x
-                         WHERE x.intent_hash = e.intent_hash AND x.event_type = 'cancelled')
-                THEN 'rollbacked'
-            WHEN EXISTS (SELECT 1 FROM hub_intent_events x
-                         WHERE x.intent_hash = e.intent_hash AND x.event_type = 'filled')
-                THEN 'executed'
-            ELSE 'pending'
+            ELSE 'executed'
         END)::varchar AS status,
         e.src_chain_id::varchar           AS src_network,
         e.block_number                    AS src_block_number,
