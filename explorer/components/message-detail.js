@@ -39,7 +39,12 @@ export default async function MessageDetail({ msgData, meta }) {
                         <div className="table-row bg-white border-b">
                             <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Destination transaction hash:</div>
                             <div className="table-cell px-3 py-2 xl:px-6 xl:py-4">
-                                {Render.renderHashLink(meta.urls.tx[msgData.dest_network], msgData.dest_network, msgData.dest_tx_hash, true)}
+                                {/* Hub-only events (sn == null) have no dest leg — mirror the
+                                    source tx + chain so this row reads symmetrically rather than
+                                    rendering "-". Intent's true dst chain still shows in Action. */}
+                                {msgData.sn == null
+                                    ? Render.renderHashLink(meta.urls.tx[msgData.src_network], msgData.src_network, msgData.src_tx_hash, true)
+                                    : Render.renderHashLink(meta.urls.tx[msgData.dest_network], msgData.dest_network, msgData.dest_tx_hash, true)}
                             </div>
                         </div>
                         <div className="table-row bg-white border-b">

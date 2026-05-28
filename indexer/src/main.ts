@@ -9,6 +9,7 @@ import { bigintDivisionToDecimalString, multiplyDecimalBy10Pow18, srcHasHashedPa
 import pool from './db/db';
 import { ensureHubIntentsSchema } from './hub-intents/schema';
 import { startHubIntentsPoller } from './hub-intents/poller';
+import { isRawTupleActionText, recoverIntentFilledFormat } from './intent-fill-format';
 
 dotenv.config();
 const SODAXSCAN_CONFIG = {
@@ -74,6 +75,33 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                 actionType.actionText = payload.actionText;
                 actionType.swapInputToken = payload.swapInputToken;
                 actionType.swapOutputToken = payload.swapOutputToken;
+
+                // If the handler emitted the raw event-tuple fallback
+                // ("IntentFilled 0xHASH,bool,…,FILLED,…"), recover a proper
+                // human-readable format using the intent hash + raw filled
+                // amount the handler provided. Sources: hub_intent_events.filled
+                // first, then the sibling CreateIntent message. If neither
+                // resolves yet (e.g. sibling hasn't been ingested), keep the
+                // existing text — the periodic backfill script catches it.
+                if (
+                    isRawTupleActionText(actionType.actionText) &&
+                    payload.intentTxHash &&
+                    payload.filledOutputAmount
+                ) {
+                    try {
+                        const fmt = await recoverIntentFilledFormat(
+                            payload.intentTxHash,
+                            BigInt(payload.filledOutputAmount),
+                        );
+                        if (fmt) {
+                            actionType.actionText = fmt.actionDetail;
+                            if (fmt.slippage) payload.slippage = fmt.slippage;
+                        }
+                    } catch (err) {
+                        const msg = err instanceof Error ? err.message : String(err);
+                        console.log('IntentFilled format recovery failed:', msg);
+                    }
+                }
             }
             if (payload.intentCancelled) {
                 actionType.action = "CancelIntent";

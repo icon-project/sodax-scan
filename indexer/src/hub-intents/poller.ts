@@ -2,12 +2,14 @@ import { ethers } from 'ethers';
 import { RPC_URLS, sonic, chains, idToChainNameMap } from '../configs';
 import { bigintDivisionToDecimalString } from '../utils';
 import {
-  CreatedRow,
+  CreatedEventRow,
+  FilledEventRow,
+  CancelledEventRow,
+  getCreatedContext,
   getCursor,
-  getMinOutputAmount,
-  insertCreatedIntent,
-  markIntentCancelled,
-  markIntentFilled,
+  insertCancelledEvent,
+  insertCreatedEvent,
+  insertFilledEvent,
   setCursor,
 } from './repo';
 
@@ -128,8 +130,11 @@ async function handleCreated(
   const dstChainId = (tuple[9] as bigint).toString();
   const solver = (tuple[12] as string).toLowerCase();
 
-  // Hub-only filter: both legs on Sonic.
-  if (srcChainId !== sonic || dstChainId !== sonic) return;
+  // Hub-origin filter: source leg on Sonic means the intent was created
+  // hub-native (did not arrive via the relayer, so the relayer path won't
+  // have it). Destination may be any chain — cross-network intents still
+  // originate here and must be indexed.
+  if (srcChainId !== sonic) return;
 
   const inInfo = tokenInfo(srcChainId, inputToken);
   const outInfo = tokenInfo(dstChainId, outputToken);
@@ -140,7 +145,7 @@ async function handleCreated(
   const actionDetail = `IntentSwap ${inAmt} ${inInfo.name}(${srcName}) -> ${outAmt} ${outInfo.name}(${dstName})`;
 
   const ts = await blockTs.get(log.blockNumber);
-  const row: CreatedRow = {
+  const row: CreatedEventRow = {
     intentHash,
     creator,
     solver,
@@ -153,9 +158,10 @@ async function handleCreated(
     blockNumber: log.blockNumber,
     blockTimestamp: ts,
     txHash: log.transactionHash,
+    logIndex: log.index ?? 0,
     actionDetail,
   };
-  await insertCreatedIntent(row);
+  await insertCreatedEvent(row);
 }
 
 async function handleFilled(
@@ -169,24 +175,39 @@ async function handleFilled(
   const intentHash = t[0] as string;
   const filledOutputRaw = t[3] as bigint;
   const filledOutputAmount = filledOutputRaw.toString();
-  const ts = await blockTs.get(log.blockNumber);
+
+  // Only record fills for intents we created (hub-origin). A null context means
+  // the IntentFilled belongs to an intent the created-filter skipped or one
+  // created before our START_BLOCK — recording it would orphan the event.
+  const ctx = await getCreatedContext(intentHash);
+  if (ctx === null) return;
 
   // Slippage = (filled - minOutput) / minOutput, signed. Negative = worse than min,
   // which should be impossible per contract invariants but we report it honestly.
   let slippage: string | undefined;
-  const minOutput = await getMinOutputAmount(intentHash);
-  if (minOutput !== null && minOutput > 0n) {
-    slippage = slippagePercent(minOutput, filledOutputRaw);
+  if (ctx.minOutputAmount !== null && ctx.minOutputAmount > 0n) {
+    slippage = slippagePercent(ctx.minOutputAmount, filledOutputRaw);
   }
 
-  await markIntentFilled({
+  const outInfo = tokenInfo(ctx.dstChainId, ctx.outputToken);
+  const outAmt = bigintDivisionToDecimalString(filledOutputRaw, outInfo.decimals);
+  const dstName = idToChainNameMap[ctx.dstChainId] || ctx.dstChainId;
+  const actionDetail = `IntentFilled ${outAmt} ${outInfo.name}(${dstName})`;
+
+  const ts = await blockTs.get(log.blockNumber);
+  const row: FilledEventRow = {
     intentHash,
     filledOutputAmount,
+    srcChainId: ctx.srcChainId,
+    dstChainId: ctx.dstChainId,
     slippage,
     blockNumber: log.blockNumber,
     blockTimestamp: ts,
     txHash: log.transactionHash,
-  });
+    logIndex: log.index ?? 0,
+    actionDetail,
+  };
+  await insertFilledEvent(row);
 }
 
 async function handleCancelled(
@@ -196,13 +217,23 @@ async function handleCancelled(
   const abi = ethers.AbiCoder.defaultAbiCoder();
   const decoded = abi.decode(['bytes32'], log.data);
   const intentHash = decoded[0] as string;
+
+  // Same orphan guard as fills: only record cancels for intents we created.
+  const ctx = await getCreatedContext(intentHash);
+  if (ctx === null) return;
+
   const ts = await blockTs.get(log.blockNumber);
-  await markIntentCancelled({
+  const row: CancelledEventRow = {
     intentHash,
+    srcChainId: ctx.srcChainId,
+    dstChainId: ctx.dstChainId,
     blockNumber: log.blockNumber,
     blockTimestamp: ts,
     txHash: log.transactionHash,
-  });
+    logIndex: log.index ?? 0,
+    actionDetail: 'IntentCancelled',
+  };
+  await insertCancelledEvent(row);
 }
 
 async function processBatch(fromBlock: number, toBlock: number): Promise<void> {

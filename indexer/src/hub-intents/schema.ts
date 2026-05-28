@@ -1,42 +1,39 @@
 import pool from '../db/db';
 
-const CREATE_HUB_INTENTS = `
-  CREATE TABLE IF NOT EXISTS hub_intents (
-    id                          BIGSERIAL PRIMARY KEY,
-    intent_hash                 VARCHAR(100) NOT NULL UNIQUE,
-    creator                     VARCHAR(100),
-    solver                      VARCHAR(100),
-    input_token                 VARCHAR(100),
-    output_token                VARCHAR(100),
-    input_amount                VARCHAR(100),
-    min_output_amount           VARCHAR(100),
-    filled_output_amount        VARCHAR(100),
-    src_chain_id                VARCHAR(20),
-    dst_chain_id                VARCHAR(20),
-    status                      VARCHAR(20) NOT NULL,
-    created_block_number        BIGINT,
-    created_block_timestamp     BIGINT,
-    created_tx_hash             VARCHAR(100),
-    filled_block_number         BIGINT,
-    filled_block_timestamp      BIGINT,
-    filled_tx_hash              VARCHAR(100),
-    cancelled_block_number      BIGINT,
-    cancelled_block_timestamp   BIGINT,
-    cancelled_tx_hash           VARCHAR(100),
-    slippage                    VARCHAR(50),
-    action_detail               TEXT,
-    created_at                  BIGINT,
-    updated_at                  BIGINT
+const CREATE_HUB_INTENT_EVENTS = `
+  CREATE TABLE IF NOT EXISTS hub_intent_events (
+    id                    BIGSERIAL PRIMARY KEY,
+    intent_hash           VARCHAR(100) NOT NULL,
+    event_type            VARCHAR(20)  NOT NULL,   -- created | filled | cancelled
+    action_type           VARCHAR(30)  NOT NULL,   -- CreateIntent | IntentFilled | CancelIntent
+    creator               VARCHAR(100),
+    solver                VARCHAR(100),
+    input_token           VARCHAR(100),
+    output_token          VARCHAR(100),
+    input_amount          VARCHAR(100),
+    min_output_amount     VARCHAR(100),
+    filled_output_amount  VARCHAR(100),
+    src_chain_id          VARCHAR(20),
+    dst_chain_id          VARCHAR(20),
+    block_number          BIGINT,
+    block_timestamp       BIGINT,
+    tx_hash               VARCHAR(100),
+    log_index             INTEGER,
+    action_detail         TEXT,
+    slippage              VARCHAR(50),
+    created_at            BIGINT,
+    updated_at            BIGINT,
+    UNIQUE (tx_hash, log_index)
   );
 `;
 
-const HUB_INTENTS_INDEXES = [
-  `CREATE INDEX IF NOT EXISTS idx_hub_intents_status        ON hub_intents(status);`,
-  `CREATE INDEX IF NOT EXISTS idx_hub_intents_creator       ON hub_intents(LOWER(creator));`,
-  `CREATE INDEX IF NOT EXISTS idx_hub_intents_created_tx    ON hub_intents(created_tx_hash);`,
-  `CREATE INDEX IF NOT EXISTS idx_hub_intents_filled_tx     ON hub_intents(filled_tx_hash);`,
-  `CREATE INDEX IF NOT EXISTS idx_hub_intents_cancelled_tx  ON hub_intents(cancelled_tx_hash);`,
-  `CREATE INDEX IF NOT EXISTS idx_hub_intents_created_at    ON hub_intents(created_at DESC);`,
+const HUB_INTENT_EVENTS_INDEXES = [
+  `CREATE INDEX IF NOT EXISTS idx_hie_intent_hash  ON hub_intent_events(intent_hash);`,
+  `CREATE INDEX IF NOT EXISTS idx_hie_event_type   ON hub_intent_events(event_type);`,
+  `CREATE INDEX IF NOT EXISTS idx_hie_creator      ON hub_intent_events(LOWER(creator));`,
+  `CREATE INDEX IF NOT EXISTS idx_hie_tx_hash      ON hub_intent_events(tx_hash);`,
+  `CREATE INDEX IF NOT EXISTS idx_hie_block_ts     ON hub_intent_events(block_timestamp DESC);`,
+  `CREATE INDEX IF NOT EXISTS idx_hie_created_at   ON hub_intent_events(created_at DESC);`,
 ];
 
 const CREATE_INDEXER_CURSORS = `
@@ -47,22 +44,19 @@ const CREATE_INDEXER_CURSORS = `
   );
 `;
 
-// Indexer in prod connects as a DML-only role (e.g. v3_relayer). When the
-// schema is bootstrapped by an admin role once, these GRANTs make the tables
-// usable from that DML role. Override target via env if your role differs.
 const GRANT_TARGET_ROLE = process.env.HUB_INTENTS_DB_ROLE || 'v3_relayer';
 const GRANTS = [
-  `GRANT SELECT, INSERT, UPDATE ON hub_intents     TO ${GRANT_TARGET_ROLE};`,
-  `GRANT SELECT, INSERT, UPDATE ON indexer_cursors TO ${GRANT_TARGET_ROLE};`,
-  `GRANT USAGE, SELECT ON SEQUENCE hub_intents_id_seq TO ${GRANT_TARGET_ROLE};`,
+  `GRANT SELECT, INSERT ON hub_intent_events        TO ${GRANT_TARGET_ROLE};`,
+  `GRANT SELECT, INSERT, UPDATE ON indexer_cursors  TO ${GRANT_TARGET_ROLE};`,
+  `GRANT USAGE, SELECT ON SEQUENCE hub_intent_events_id_seq TO ${GRANT_TARGET_ROLE};`,
 ];
 
 export async function ensureHubIntentsSchema(): Promise<void> {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query(CREATE_HUB_INTENTS);
-    for (const sql of HUB_INTENTS_INDEXES) {
+    await client.query(CREATE_HUB_INTENT_EVENTS);
+    for (const sql of HUB_INTENT_EVENTS_INDEXES) {
       await client.query(sql);
     }
     await client.query(CREATE_INDEXER_CURSORS);
@@ -72,6 +66,15 @@ export async function ensureHubIntentsSchema(): Promise<void> {
     throw err;
   } finally {
     client.release();
+  }
+
+  // Best-effort cleanup of the superseded per-intent table. Runs isolated so a
+  // missing-privilege error under a DML role doesn't undo the schema above.
+  try {
+    await pool.query('DROP TABLE IF EXISTS hub_intents;');
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(`hub-intents: skipped drop of legacy hub_intents (${msg})`);
   }
 
   // GRANTs run in their own connection, each isolated. When the indexer runs

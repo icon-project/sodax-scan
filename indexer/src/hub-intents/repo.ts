@@ -1,6 +1,6 @@
 import pool from '../db/db';
 
-export interface CreatedRow {
+export interface CreatedEventRow {
   intentHash: string;
   creator: string;
   solver: string;
@@ -13,36 +13,55 @@ export interface CreatedRow {
   blockNumber: number;
   blockTimestamp: number;
   txHash: string;
+  logIndex: number;
   actionDetail: string;
 }
 
-export interface FilledRow {
+export interface FilledEventRow {
   intentHash: string;
   filledOutputAmount: string;
+  srcChainId: string;
+  dstChainId: string;
   slippage?: string;
   blockNumber: number;
   blockTimestamp: number;
   txHash: string;
+  logIndex: number;
+  actionDetail: string;
 }
 
-export interface CancelledRow {
+export interface CancelledEventRow {
   intentHash: string;
+  srcChainId: string;
+  dstChainId: string;
   blockNumber: number;
   blockTimestamp: number;
   txHash: string;
+  logIndex: number;
+  actionDetail: string;
+}
+
+// Subset of a created event needed to enrich later fill/cancel events
+// (slippage baseline + token/chain context for action_detail formatting).
+export interface CreatedContext {
+  minOutputAmount: bigint | null;
+  outputToken: string;
+  inputToken: string;
+  srcChainId: string;
+  dstChainId: string;
 }
 
 const nowSec = () => Math.floor(Date.now() / 1000);
 
-export async function insertCreatedIntent(row: CreatedRow): Promise<void> {
+export async function insertCreatedEvent(row: CreatedEventRow): Promise<void> {
   const sql = `
-    INSERT INTO hub_intents (
-      intent_hash, creator, solver, input_token, output_token,
-      input_amount, min_output_amount, src_chain_id, dst_chain_id,
-      status, created_block_number, created_block_timestamp, created_tx_hash,
-      action_detail, created_at, updated_at
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'created',$10,$11,$12,$13,$14,$14)
-    ON CONFLICT (intent_hash) DO NOTHING
+    INSERT INTO hub_intent_events (
+      intent_hash, event_type, action_type, creator, solver,
+      input_token, output_token, input_amount, min_output_amount,
+      src_chain_id, dst_chain_id, block_number, block_timestamp,
+      tx_hash, log_index, action_detail, created_at, updated_at
+    ) VALUES ($1,'created','CreateIntent',$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$15)
+    ON CONFLICT (tx_hash, log_index) DO NOTHING
   `;
   await pool.query(sql, [
     row.intentHash,
@@ -57,66 +76,86 @@ export async function insertCreatedIntent(row: CreatedRow): Promise<void> {
     row.blockNumber,
     row.blockTimestamp,
     row.txHash,
+    row.logIndex,
     row.actionDetail,
     nowSec(),
   ]);
 }
 
-export async function markIntentFilled(row: FilledRow): Promise<void> {
+export async function insertFilledEvent(row: FilledEventRow): Promise<void> {
   const sql = `
-    UPDATE hub_intents
-       SET status                 = 'filled',
-           filled_output_amount   = $2,
-           slippage               = COALESCE($3, slippage),
-           filled_block_number    = $4,
-           filled_block_timestamp = $5,
-           filled_tx_hash         = $6,
-           updated_at             = $7
-     WHERE intent_hash = $1
+    INSERT INTO hub_intent_events (
+      intent_hash, event_type, action_type, filled_output_amount,
+      src_chain_id, dst_chain_id, block_number, block_timestamp,
+      tx_hash, log_index, action_detail, slippage, created_at, updated_at
+    ) VALUES ($1,'filled','IntentFilled',$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$11)
+    ON CONFLICT (tx_hash, log_index) DO NOTHING
   `;
   await pool.query(sql, [
     row.intentHash,
     row.filledOutputAmount,
-    row.slippage ?? null,
+    row.srcChainId,
+    row.dstChainId,
     row.blockNumber,
     row.blockTimestamp,
     row.txHash,
+    row.logIndex,
+    row.actionDetail,
+    row.slippage ?? null,
     nowSec(),
   ]);
 }
 
-export async function markIntentCancelled(row: CancelledRow): Promise<void> {
+export async function insertCancelledEvent(row: CancelledEventRow): Promise<void> {
   const sql = `
-    UPDATE hub_intents
-       SET status                    = 'cancelled',
-           cancelled_block_number    = $2,
-           cancelled_block_timestamp = $3,
-           cancelled_tx_hash         = $4,
-           updated_at                = $5
-     WHERE intent_hash = $1
+    INSERT INTO hub_intent_events (
+      intent_hash, event_type, action_type,
+      src_chain_id, dst_chain_id, block_number, block_timestamp,
+      tx_hash, log_index, action_detail, created_at, updated_at
+    ) VALUES ($1,'cancelled','CancelIntent',$2,$3,$4,$5,$6,$7,$8,$9,$9)
+    ON CONFLICT (tx_hash, log_index) DO NOTHING
   `;
   await pool.query(sql, [
     row.intentHash,
+    row.srcChainId,
+    row.dstChainId,
     row.blockNumber,
     row.blockTimestamp,
     row.txHash,
+    row.logIndex,
+    row.actionDetail,
     nowSec(),
   ]);
 }
 
-export async function getMinOutputAmount(intentHash: string): Promise<bigint | null> {
+// Returns the created-event context for an intent, or null when we never
+// indexed its creation (e.g. non-hub-origin intent, or created before
+// START_BLOCK). Callers use null to skip orphan fill/cancel events.
+export async function getCreatedContext(intentHash: string): Promise<CreatedContext | null> {
   const r = await pool.query(
-    `SELECT min_output_amount FROM hub_intents WHERE intent_hash = $1`,
+    `SELECT min_output_amount, output_token, input_token, src_chain_id, dst_chain_id
+       FROM hub_intent_events
+      WHERE intent_hash = $1 AND event_type = 'created'
+      LIMIT 1`,
     [intentHash],
   );
   if (r.rows.length === 0) return null;
-  const v = r.rows[0].min_output_amount;
-  if (v === null || v === undefined) return null;
-  try {
-    return BigInt(v);
-  } catch {
-    return null;
+  const row = r.rows[0];
+  let minOutputAmount: bigint | null = null;
+  if (row.min_output_amount !== null && row.min_output_amount !== undefined) {
+    try {
+      minOutputAmount = BigInt(row.min_output_amount);
+    } catch {
+      minOutputAmount = null;
+    }
   }
+  return {
+    minOutputAmount,
+    outputToken: row.output_token,
+    inputToken: row.input_token,
+    srcChainId: row.src_chain_id,
+    dstChainId: row.dst_chain_id,
+  };
 }
 
 export async function getCursor(name: string): Promise<number | null> {

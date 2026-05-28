@@ -16,10 +16,14 @@ pool.on('error', function (error, client) {
     logger.error(error)
 })
 
-// Unified messages view: messages table + hub_intents shaped to the same columns.
-// hub_intents rows get negative ids so they never collide with messages.id (BIGSERIAL, always positive).
-// Status mapping: created→pending, filled→executed, cancelled→rollbacked.
-// Action type mapping: created→CreateIntent, filled→IntentFilled, cancelled→CancelIntent.
+// Unified messages view: messages table + hub_intent_events shaped to the same columns.
+// hub_intent_events rows get negative ids so they never collide with messages.id
+// (BIGSERIAL, always positive); each event row already has a distinct id, so the
+// negation keeps them distinct too. One row per on-chain event (created/filled/
+// cancelled), all sharing intent_tx_hash — mirrors the relayer one-row-per-message
+// model. The event tx is the source tx; these are single-tx hub events (no dest leg).
+// Status: filled→executed, cancelled→rollbacked; a created row is pending until a
+// fill or cancel for the same intent exists, then it reflects that outcome.
 const UNIFIED_SUBQUERY = `(
     SELECT
         id, sn, status, src_network, src_block_number, src_block_timestamp, src_tx_hash, src_app, src_error,
@@ -31,48 +35,49 @@ const UNIFIED_SUBQUERY = `(
     FROM messages
     UNION ALL
     SELECT
-        -id AS id,
+        -e.id AS id,
         NULL::bigint AS sn,
-        (CASE status
-            WHEN 'created'   THEN 'pending'
-            WHEN 'filled'    THEN 'executed'
-            WHEN 'cancelled' THEN 'rollbacked'
-            ELSE status
+        (CASE
+            WHEN e.event_type = 'filled'    THEN 'executed'
+            WHEN e.event_type = 'cancelled' THEN 'rollbacked'
+            WHEN EXISTS (SELECT 1 FROM hub_intent_events x
+                         WHERE x.intent_hash = e.intent_hash AND x.event_type = 'cancelled')
+                THEN 'rollbacked'
+            WHEN EXISTS (SELECT 1 FROM hub_intent_events x
+                         WHERE x.intent_hash = e.intent_hash AND x.event_type = 'filled')
+                THEN 'executed'
+            ELSE 'pending'
         END)::varchar AS status,
-        src_chain_id::varchar             AS src_network,
-        created_block_number              AS src_block_number,
-        created_block_timestamp           AS src_block_timestamp,
-        created_tx_hash::varchar          AS src_tx_hash,
-        creator::varchar                  AS src_app,
+        e.src_chain_id::varchar           AS src_network,
+        e.block_number                    AS src_block_number,
+        e.block_timestamp                 AS src_block_timestamp,
+        e.tx_hash::varchar                AS src_tx_hash,
+        e.creator::varchar                AS src_app,
         NULL::varchar                     AS src_error,
-        dst_chain_id::varchar             AS dest_network,
-        filled_block_number               AS dest_block_number,
-        filled_block_timestamp            AS dest_block_timestamp,
-        filled_tx_hash::varchar           AS dest_tx_hash,
-        solver::varchar                   AS dest_app,
+        e.dst_chain_id::varchar           AS dest_network,
+        NULL::bigint                      AS dest_block_number,
+        NULL::bigint                      AS dest_block_timestamp,
+        NULL::varchar                     AS dest_tx_hash,
+        e.solver::varchar                 AS dest_app,
         NULL::varchar                     AS dest_error,
         NULL::bigint                      AS response_block_number,
         NULL::bigint                      AS response_block_timestamp,
         NULL::varchar                     AS response_tx_hash,
         NULL::varchar                     AS response_error,
-        cancelled_block_number            AS rollback_block_number,
-        cancelled_block_timestamp         AS rollback_block_timestamp,
-        cancelled_tx_hash::varchar        AS rollback_tx_hash,
+        NULL::bigint                      AS rollback_block_number,
+        NULL::bigint                      AS rollback_block_timestamp,
+        NULL::varchar                     AS rollback_tx_hash,
         NULL::varchar                     AS rollback_error,
         NULL::varchar AS value,
         NULL::varchar AS fee,
-        (CASE status
-            WHEN 'filled'    THEN 'IntentFilled'
-            WHEN 'cancelled' THEN 'CancelIntent'
-            ELSE 'CreateIntent'
-        END)::varchar AS action_type,
-        action_detail::varchar AS action_detail,
+        e.action_type::varchar AS action_type,
+        e.action_detail::varchar AS action_detail,
         NULL::varchar AS action_amount_usd,
-        created_at,
-        updated_at,
-        intent_hash::varchar AS intent_tx_hash,
-        slippage::varchar    AS slippage
-    FROM hub_intents
+        e.created_at,
+        e.updated_at,
+        e.intent_hash::varchar AS intent_tx_hash,
+        e.slippage::varchar    AS slippage
+    FROM hub_intent_events e
 ) u`
 
 const buildWhereSql = (status, src_network, dest_network, src_address, dest_address, from_timestamp, to_timestamp, action_type, intent_tx_hash) => {
@@ -285,20 +290,20 @@ const getTotalMessages = async (status, src_networks, dest_networks, src_address
     }
 }
 
-// Direct hub_intents access — kept for utility / admin. /api/messages already
-// surfaces hub_intents via the unified subquery above.
-const HUB_INTENT_FIELDS = ` id, intent_hash, creator, solver, input_token, output_token,
-    input_amount, min_output_amount, filled_output_amount, src_chain_id, dst_chain_id,
-    status, created_block_number, created_block_timestamp, created_tx_hash,
-    filled_block_number, filled_block_timestamp, filled_tx_hash,
-    cancelled_block_number, cancelled_block_timestamp, cancelled_tx_hash,
+// Direct hub_intent_events access — kept for utility / admin. /api/messages already
+// surfaces these via the unified subquery above. One row per on-chain event.
+const HUB_INTENT_FIELDS = ` id, intent_hash, event_type, action_type, creator, solver,
+    input_token, output_token, input_amount, min_output_amount, filled_output_amount,
+    src_chain_id, dst_chain_id, block_number, block_timestamp, tx_hash, log_index,
     slippage, action_detail, created_at, updated_at `
 
+// `status` here filters on event_type (created|filled|cancelled) for backward compat
+// with the previous per-intent status vocabulary, which used the same words.
 const buildHubIntentsWhereSql = (status, creator, from_timestamp, to_timestamp) => {
     let values = []
     let conditions = []
     if (status) {
-        conditions.push(`status = any(string_to_array($${conditions.length + 1},','))`)
+        conditions.push(`event_type = any(string_to_array($${conditions.length + 1},','))`)
         values.push(status)
     }
     if (creator) {
@@ -306,11 +311,11 @@ const buildHubIntentsWhereSql = (status, creator, from_timestamp, to_timestamp) 
         values.push(creator)
     }
     if (from_timestamp) {
-        conditions.push(`created_block_timestamp >= $${conditions.length + 1}`)
+        conditions.push(`block_timestamp >= $${conditions.length + 1}`)
         values.push(from_timestamp)
     }
     if (to_timestamp) {
-        conditions.push(`created_block_timestamp <= $${conditions.length + 1}`)
+        conditions.push(`block_timestamp <= $${conditions.length + 1}`)
         values.push(to_timestamp)
     }
     return { conditions, values }
@@ -319,17 +324,17 @@ const buildHubIntentsWhereSql = (status, creator, from_timestamp, to_timestamp) 
 const getHubIntents = async (skip, limit, status, creator, from_timestamp, to_timestamp) => {
     const { conditions, values } = buildHubIntentsWhereSql(status, creator, from_timestamp, to_timestamp)
 
-    let sqlTotal = `SELECT count(*) FROM hub_intents`
+    let sqlTotal = `SELECT count(*) FROM hub_intent_events`
     let sqlRows = `SELECT ${HUB_INTENT_FIELDS}
-                    FROM hub_intents
-                    ORDER BY created_block_timestamp DESC NULLS LAST, id DESC
+                    FROM hub_intent_events
+                    ORDER BY block_timestamp DESC NULLS LAST, id DESC
                     OFFSET $1 LIMIT $2`
     if (conditions.length > 0) {
-        sqlTotal = `SELECT count(*) FROM hub_intents WHERE ${conditions.join(' AND ')}`
+        sqlTotal = `SELECT count(*) FROM hub_intent_events WHERE ${conditions.join(' AND ')}`
         sqlRows = `SELECT ${HUB_INTENT_FIELDS}
-                    FROM hub_intents
+                    FROM hub_intent_events
                     WHERE ${conditions.join(' AND ')}
-                    ORDER BY created_block_timestamp DESC NULLS LAST, id DESC
+                    ORDER BY block_timestamp DESC NULLS LAST, id DESC
                     OFFSET $${conditions.length + 1} LIMIT $${conditions.length + 2}`
     }
 
@@ -350,9 +355,13 @@ const getHubIntents = async (skip, limit, status, creator, from_timestamp, to_ti
     }
 }
 
+// Returns the full event timeline for an intent (created → filled/cancelled),
+// oldest first.
 const getHubIntentByHash = async (hash) => {
     const rs = await pool.query(
-        `SELECT ${HUB_INTENT_FIELDS} FROM hub_intents WHERE intent_hash = $1`,
+        `SELECT ${HUB_INTENT_FIELDS} FROM hub_intent_events
+         WHERE intent_hash = $1
+         ORDER BY block_timestamp ASC NULLS LAST, id ASC`,
         [hash]
     )
     return {

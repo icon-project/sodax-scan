@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import MessageList from './message-list'
 
 const POLL_INTERVAL_MS = 30_000
@@ -30,6 +30,59 @@ export default function IntentSiblings({
     const [now, setNow] = useState(() => Date.now())
     const [lastCheckedAt, setLastCheckedAt] = useState(null)
     const [nextCheckAt, setNextCheckAt] = useState(null)
+    const containerRef = useRef(null)
+
+    // Hover-to-highlight: when the cursor sits on any tx hash, find all other
+    // instances of that exact hash and highlight them together. Scope is the
+    // page wrapper that contains both the parent MessageDetail and this
+    // siblings panel, so a hash hovered in the detail header twins with matches
+    // in the siblings list (and vice versa). Intents commonly share txs across
+    // legs (a fill tx appears as both the hub IntentFilled event's src and the
+    // relay leg's src), so this makes the "same on-chain action" visually
+    // obvious. Inline styles avoid any Tailwind-purge pitfalls.
+    useEffect(() => {
+        const self = containerRef.current
+        if (!self) return
+        const el = self.parentElement || self
+        let active = []
+        const clearActive = () => {
+            for (const e of active) {
+                e.style.backgroundColor = ''
+                e.style.color = ''
+                e.style.borderRadius = ''
+                e.style.padding = ''
+            }
+            active = []
+        }
+        const onOver = (ev) => {
+            const target = ev.target?.closest?.('[data-hash]')
+            if (!target || !el.contains(target)) return
+            const hash = target.getAttribute('data-hash')
+            if (!hash) return
+            const matches = el.querySelectorAll(`[data-hash="${CSS.escape(hash)}"]`)
+            if (matches.length < 2) return // single occurrence — nothing to twin
+            clearActive()
+            for (const m of matches) {
+                m.style.backgroundColor = 'rgb(254, 240, 138)' // tailwind yellow-200
+                m.style.color = 'rgb(17, 24, 39)'              // tailwind gray-900
+                m.style.borderRadius = '2px'
+                m.style.padding = '0 2px'
+                active.push(m)
+            }
+        }
+        const onOut = (ev) => {
+            const target = ev.target?.closest?.('[data-hash]')
+            if (!target) return
+            clearActive()
+        }
+        el.addEventListener('mouseover', onOver)
+        el.addEventListener('mouseout', onOut)
+        return () => {
+            el.removeEventListener('mouseover', onOver)
+            el.removeEventListener('mouseout', onOut)
+            clearActive()
+        }
+    }, [siblings])
 
     const createdAtMs = (parentCreatedAtSec ?? 0) * 1000
     const isYoung = createdAtMs > 0 && now - createdAtMs < YOUNG_WINDOW_MS
@@ -93,7 +146,7 @@ export default function IntentSiblings({
     const nextCheckInSec = nextCheckAt ? Math.max(0, Math.ceil((nextCheckAt - now) / 1000)) : null
 
     return (
-        <div className="mt-8">
+        <div className="mt-8" ref={containerRef}>
             <h2 className="px-2 xl:px-6 py-3 text-xl font-medium uppercase bg-gray-50">
                 Related intent messages{siblings.length > 0 ? ` (${siblings.length})` : ''}
             </h2>
