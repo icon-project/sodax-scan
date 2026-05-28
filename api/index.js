@@ -151,34 +151,6 @@ app.get('/api/statistics/total_messages', async (req, res) => {
     }
 })
 
-app.get('/api/hub-intents', async (req, res) => {
-    const skip = req.query.skip ? parseInt(req.query.skip) : 0
-    const limit = req.query.limit ? parseInt(req.query.limit) : 10
-    const status = req.query.status
-    const creator = req.query.creator
-    const from_timestamp = req.query.from_timestamp
-    const to_timestamp = req.query.to_timestamp
-
-    try {
-        const rs = await db.getHubIntents(skip, limit, status, creator, from_timestamp, to_timestamp)
-        res.status(200).json(rs)
-    } catch (error) {
-        logger.error(error)
-        res.status(400).json({ error: error.message })
-    }
-})
-
-app.get('/api/hub-intents/:hash', async (req, res) => {
-    const hash = req.params.hash || ''
-    try {
-        const rs = await db.getHubIntentByHash(hash)
-        res.status(200).json(rs)
-    } catch (error) {
-        logger.error(error)
-        res.status(400).json({ error: error.message })
-    }
-})
-
 app.get('/api/rpc/block_height', async (req, res) => {
     const networks = req.query.networks ? req.query.networks.split(',') : Object.values(NETWORK)
     try {

@@ -286,92 +286,10 @@ const getTotalMessages = async (status, src_networks, dest_networks, src_address
     }
 }
 
-// Direct hub_intent_events access — kept for utility / admin. /api/messages already
-// surfaces these via the unified subquery above. One row per on-chain event.
-const HUB_INTENT_FIELDS = ` id, intent_hash, event_type, action_type, creator, solver,
-    input_token, output_token, input_amount, min_output_amount, filled_output_amount,
-    src_chain_id, dst_chain_id, block_number, block_timestamp, tx_hash, log_index,
-    slippage, action_detail, created_at, updated_at `
-
-// `status` here filters on event_type (created|filled|cancelled) for backward compat
-// with the previous per-intent status vocabulary, which used the same words.
-const buildHubIntentsWhereSql = (status, creator, from_timestamp, to_timestamp) => {
-    let values = []
-    let conditions = []
-    if (status) {
-        conditions.push(`event_type = any(string_to_array($${conditions.length + 1},','))`)
-        values.push(status)
-    }
-    if (creator) {
-        conditions.push(`LOWER(creator) = LOWER($${conditions.length + 1})`)
-        values.push(creator)
-    }
-    if (from_timestamp) {
-        conditions.push(`block_timestamp >= $${conditions.length + 1}`)
-        values.push(from_timestamp)
-    }
-    if (to_timestamp) {
-        conditions.push(`block_timestamp <= $${conditions.length + 1}`)
-        values.push(to_timestamp)
-    }
-    return { conditions, values }
-}
-
-const getHubIntents = async (skip, limit, status, creator, from_timestamp, to_timestamp) => {
-    const { conditions, values } = buildHubIntentsWhereSql(status, creator, from_timestamp, to_timestamp)
-
-    let sqlTotal = `SELECT count(*) FROM hub_intent_events`
-    let sqlRows = `SELECT ${HUB_INTENT_FIELDS}
-                    FROM hub_intent_events
-                    ORDER BY block_timestamp DESC NULLS LAST, id DESC
-                    OFFSET $1 LIMIT $2`
-    if (conditions.length > 0) {
-        sqlTotal = `SELECT count(*) FROM hub_intent_events WHERE ${conditions.join(' AND ')}`
-        sqlRows = `SELECT ${HUB_INTENT_FIELDS}
-                    FROM hub_intent_events
-                    WHERE ${conditions.join(' AND ')}
-                    ORDER BY block_timestamp DESC NULLS LAST, id DESC
-                    OFFSET $${conditions.length + 1} LIMIT $${conditions.length + 2}`
-    }
-
-    const totalRs = await pool.query(sqlTotal, values)
-    const rowsRs = await pool.query(sqlRows, values.concat([skip, limit]))
-
-    return {
-        data: rowsRs.rows,
-        meta: {
-            urls: META_URLS,
-            pagination: {
-                total: Math.ceil(Number(totalRs.rows[0].count) / Number(limit)),
-                size: Number(limit),
-                number: Math.floor(Number(skip) / Number(limit)) + 1
-            },
-            time: Math.floor(Date.now() / 1000)
-        }
-    }
-}
-
-// Returns the full event timeline for an intent (created → filled/cancelled),
-// oldest first.
-const getHubIntentByHash = async (hash) => {
-    const rs = await pool.query(
-        `SELECT ${HUB_INTENT_FIELDS} FROM hub_intent_events
-         WHERE intent_hash = $1
-         ORDER BY block_timestamp ASC NULLS LAST, id ASC`,
-        [hash]
-    )
-    return {
-        data: rs.rows,
-        meta: { urls: META_URLS }
-    }
-}
-
 module.exports = {
     getMessages,
     getMessageById,
     searchMessages,
     getStatistic,
     getTotalMessages,
-    getHubIntents,
-    getHubIntentByHash
 }
