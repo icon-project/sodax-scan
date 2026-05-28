@@ -259,7 +259,30 @@ export class EvmHandler implements ChainHandler {
               }
             }
 
-          } catch (err) { console.log("decode intent fill error", err) }
+          } catch (err) {
+            // FALLBACK: scan raw input for the fillIntent selector to handle
+            // compressed/router calldata that neither direct decode nor
+            // decodeExecuteCalldata can parse.
+            if (intentFilled) {
+              const parsed = this.parseFilledIntentFromInput(
+                inputData,
+                tx.result.logs ?? [],
+                txConnSn,
+                tx.result.to,
+                intentFilledValue,
+                intentHash,
+                intentCancelled,
+                txFee,
+                Number.parseInt(tx.result.blockNumber, 16),
+                storedCallReverted,
+              );
+              if (parsed) {
+                return parsed;
+              }
+            }
+            console.log("decode intent fill error", err)
+          }
+
           return {
             txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
             payload: "0x",
@@ -298,6 +321,105 @@ export class EvmHandler implements ChainHandler {
     const intPart = s.slice(0, s.length - decimals);
     const decPart = s.slice(s.length - decimals);
     return `${isNegative ? "-" : ""}${intPart}.${decPart}%`;
+  }
+
+  private parseFilledIntentFromInput(
+    inputData: string,
+    logs: Array<{ topics: string[]; data: string }>,
+    txConnSn: string,
+    dstAddress: string,
+    intentFilledValue: number,
+    intentHash: string,
+    intentCancelled: boolean,
+    txFee: bigint,
+    blockNumber: number,
+    storedCallReverted: boolean,
+  ): TxPayload | null {
+    const marker = fillIntentSelector.slice(2).toLowerCase();
+    const input = (inputData ?? "0x").toLowerCase();
+    const abi = ethers.AbiCoder.defaultAbiCoder();
+    const intentTuple =
+      "(uint256,address,address,address,uint256,uint256,uint256,bool,uint256,uint256,bytes,bytes,address,bytes)";
+    for (let at = input.indexOf(marker); at !== -1; at = input.indexOf(marker, at + 1)) {
+      try {
+        const decoded = abi.decode(
+          [intentTuple, "uint256", "uint256", "uint256"],
+          `0x${input.slice(at + marker.length)}`,
+        );
+        const intent = decoded[0];
+        const srcChainId = intent[8];
+        const dstChainId = intent[9];
+        const srcChain = chains[srcChainId];
+        const dstChain = chains[dstChainId];
+        if (!srcChain || !dstChain) {
+          continue;
+        }
+        // Cross-check the Message log: if the intent's dst token denom or
+        // dstChainId doesn't match the message payload for this connSn, this
+        // tx is actually a regular message (multi-intent fill case), not an
+        // intent fill for the current message.
+        const dstToken = intent[3];
+        for (const log of logs) {
+          if (!log.topics?.includes(MESSAGE_EVENT_TOPIC)) continue;
+          const msgDecoded = abi.decode(['uint256', 'bytes', 'uint256', 'uint256', 'bytes', 'bytes'], log.data);
+          const payload = msgDecoded[5];
+          const connSn = msgDecoded[2];
+          const msgDstChainId = msgDecoded[3];
+          if (BigInt(connSn).toString() !== BigInt(txConnSn).toString()) continue;
+          const intentDenom = getTokenDenom(dstToken.toLowerCase(), BigInt(dstChainId).toString(), BigInt(srcChainId).toString());
+          const payloadDenom = this.parsePayloadData(payload, BigInt(dstChainId).toString(), BigInt(srcChainId).toString());
+          if (intentDenom !== payloadDenom || msgDstChainId !== dstChainId) {
+            if (intentDenom.includes("USDC") && payloadDenom.includes("USDC")) continue;
+            if (intentDenom.includes("BTCB") && payloadDenom.includes("BTCB")) continue;
+            return {
+              txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
+              payload,
+              intentFilled: false,
+              intentCancelled,
+              dstAddress,
+              intentTxHash: intentHash,
+              blockNumber,
+              storedCallReverted,
+            };
+          }
+        }
+        let inputToken = intent[2].toLowerCase();
+        let decimals = 18;
+        if (inputToken in srcChain.Assets) {
+          const inputTokenInfo = srcChain.Assets[inputToken];
+          inputToken = inputTokenInfo.name;
+          decimals = inputTokenInfo.decimals;
+        }
+        let outputToken = intent[3].toLowerCase();
+        let outputDecimals = 18;
+        if (outputToken in dstChain.Assets) {
+          const outputTokenInfo = dstChain.Assets[outputToken];
+          outputToken = outputTokenInfo.name;
+          outputDecimals = outputTokenInfo.decimals;
+        }
+        const filledOutput = BigInt(intentFilledValue);
+        const inputAmount = bigintDivisionToDecimalString(decoded[1], decimals);
+        const outputAmount = bigintDivisionToDecimalString(filledOutput, outputDecimals);
+        const minOutput: bigint = intent[5];
+        const slippage = minOutput > 0n ? this.slippagePercent(minOutput, filledOutput) : "";
+        return {
+          txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
+          payload: "0x",
+          intentFilled: true,
+          intentCancelled: false,
+          swapInputToken: intent[2],
+          swapOutputToken: intent[3],
+          actionText: `IntentFilled ${inputAmount} ${inputToken}(${idToChainNameMap[srcChainId]}) -> ${outputAmount} ${outputToken}(${idToChainNameMap[dstChainId]})`,
+          ...(slippage ? { slippage } : {}),
+          intentTxHash: intentHash,
+          blockNumber,
+          storedCallReverted,
+        };
+      } catch {
+        // Try next selector match.
+      }
+    }
+    return null;
   }
 
   decodeExecuteCalldata(calldata: string) {
