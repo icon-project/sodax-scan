@@ -81,6 +81,21 @@ const UNIFIED_SUBQUERY = `(
         e.intent_hash::varchar AS intent_tx_hash,
         e.slippage::varchar    AS slippage
     FROM hub_intent_events e
+    -- Skip hub rows already covered by a relayer-indexed message on the same
+    -- Sonic tx for the same action. Hub-native intents whose fill leg delivers
+    -- cross-chain end up indexed twice (relayer scanner picks up the Sonic
+    -- fill tx as IntentFilled, hub poller indexes the same on-chain event).
+    -- The relayer row is the richer one — sn, value, fees, dest leg — so it
+    -- wins; we keep hub rows only when the relayer didn't already capture the
+    -- same (tx_hash, action_type) pair. Hub created rows are never dropped
+    -- (hub-native creates have no matching relayer message); Transfer logs on
+    -- a Sonic fill tx coexist with the hub IntentFilled because they have a
+    -- different action_type. See scripts/check-hub-relayer-overlap.ts.
+    WHERE NOT EXISTS (
+        SELECT 1 FROM messages m
+        WHERE m.src_tx_hash = e.tx_hash
+          AND m.action_type = e.action_type::varchar
+    )
 ) u`
 
 const buildWhereSql = (status, src_network, dest_network, src_address, dest_address, from_timestamp, to_timestamp, action_type, intent_tx_hash) => {
