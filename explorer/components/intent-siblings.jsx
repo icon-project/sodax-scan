@@ -73,6 +73,14 @@ export default function IntentSiblings({
         const onOut = (ev) => {
             const target = ev.target?.closest?.('[data-hash]')
             if (!target) return
+            // Moving directly from one [data-hash] to another (or to a child
+            // inside the same one) fires `mouseout` on the first before
+            // `mouseover` fires on the next. Clearing here causes a one-frame
+            // unhighlight between siblings — skip the clear when the cursor
+            // is heading into another in-scope [data-hash]; the upcoming
+            // `mouseover` will refresh the set itself.
+            const related = ev.relatedTarget?.closest?.('[data-hash]')
+            if (related && el.contains(related)) return
             clearActive()
         }
         el.addEventListener('mouseover', onOver)

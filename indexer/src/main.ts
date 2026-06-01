@@ -217,12 +217,21 @@ const main = async () => {
 
     const args = process.argv.slice(2);
     if (args.length === 0) {
+        // Gate the hub poller behind a successful schema bootstrap. Starting
+        // it after a failed CREATE would just spam "relation does not exist"
+        // errors every poll interval until manual intervention — better to
+        // log loud and leave the relayer-side indexer running on its own.
+        let hubSchemaReady = false;
         try {
             await ensureHubIntentsSchema();
+            hubSchemaReady = true;
         } catch (err) {
-            console.error('hub-intents: schema bootstrap failed:', err);
+            console.error(
+                'hub-intents: schema bootstrap failed — poller will NOT start. Fix DB privileges / connectivity and restart.',
+                err,
+            );
         }
-        const hubIntentsTimer = startHubIntentsPoller();
+        const hubIntentsTimer = hubSchemaReady ? startHubIntentsPoller() : null;
         processSodaxStream().catch(console.error).finally(() => {
             isRunning = false;
         });
@@ -237,7 +246,7 @@ const main = async () => {
             return () => {
                 console.log(`Received ${signal}. Cleaning up...`);
                 clearInterval(intervalId);
-                clearInterval(hubIntentsTimer);
+                if (hubIntentsTimer) clearInterval(hubIntentsTimer);
                 process.exit(0); // Exit cleanly
             };
         }

@@ -2,16 +2,25 @@ import { ethers } from 'ethers';
 import { RPC_URLS, sonic, chains, idToChainNameMap } from '../configs';
 import { bigintDivisionToDecimalString } from '../utils';
 import {
+  CreatedContext,
   CreatedEventRow,
   FilledEventRow,
   CancelledEventRow,
   getCreatedContext,
+  getCreatedContextsByIntentHashes,
   getCursor,
   insertCancelledEvent,
   insertCreatedEvent,
   insertFilledEvent,
   setCursor,
 } from './repo';
+
+// Resolves the created-event context for an intent. Backed by a per-batch
+// preload (one SELECT for all known intent_hashes in the batch) with a
+// single-row fallback for cases the preload couldn't cover — namely intents
+// whose CreateIntent log is in the same batch (the preload runs before
+// handleCreated inserts those rows, so they wouldn't appear in the map).
+type ContextLookup = (intentHash: string) => Promise<CreatedContext | null>;
 
 const CURSOR_NAME = 'sonic_hub_intents';
 
@@ -85,13 +94,36 @@ function slippagePercent(expected: bigint, actual: bigint): string {
   return `${isNegative ? '-' : ''}${intPart}.${decPart}%`;
 }
 
+// EVM/ICON hex addresses (0x…, cx…) are case-insensitive — normalise them so
+// checksum vs all-lowercase variants both match registry keys. Base58/bech32
+// addresses (Solana, Stellar, Sui, Bitcoin, …) ARE case-sensitive: lowercasing
+// destroys them and would miss the registry entry that configs.ts deliberately
+// stores in its canonical mixed case. Keep this rule mirrored with configs.ts.
+function normalizeAddr(addr: string): string {
+  return /^(0x|cx)[0-9a-fA-F]+$/.test(addr) ? addr.toLowerCase() : addr;
+}
+
 function tokenInfo(chainId: string, addr: string): { name: string; decimals: number } {
-  const lc = addr.toLowerCase();
+  const key = normalizeAddr(addr);
   const assets = chains[chainId]?.Assets;
-  if (assets && lc in assets) {
-    return { name: assets[lc].name, decimals: assets[lc].decimals };
+  if (assets && key in assets) {
+    return { name: assets[key].name, decimals: assets[key].decimals };
   }
+  // Unknown token: action_detail will use the raw address as the symbol and
+  // fall back to 18 decimals, which is wrong for USDC (6), WBTC (8), etc.
+  // Warn once per (chain, addr) so missing config entries surface in logs.
+  warnMissingToken(chainId, addr);
   return { name: addr, decimals: 18 };
+}
+
+const missingTokenSeen = new Set<string>();
+function warnMissingToken(chainId: string, addr: string): void {
+  const key = `${chainId}:${addr}`;
+  if (missingTokenSeen.has(key)) return;
+  missingTokenSeen.add(key);
+  console.warn(
+    `hub-intents: tokenInfo miss on chain ${chainId} for ${addr} — defaulting to 18 decimals.`,
+  );
 }
 
 interface BlockTimestampCache {
@@ -121,9 +153,13 @@ async function handleCreated(
   const intentHash = decoded[0] as string;
   const tuple = decoded[1] as ethers.Result;
 
+  // creator/solver come off the Sonic contract as EVM-style addresses, so
+  // lowercasing them is safe and matches downstream filter comparisons.
+  // Token addresses, however, may reference non-EVM tokens on cross-chain
+  // intents (e.g. Solana mint, Stellar issuer) — normalize only when hex.
   const creator = (tuple[1] as string).toLowerCase();
-  const inputToken = (tuple[2] as string).toLowerCase();
-  const outputToken = (tuple[3] as string).toLowerCase();
+  const inputToken = normalizeAddr(tuple[2] as string);
+  const outputToken = normalizeAddr(tuple[3] as string);
   const inputAmountRaw = tuple[4] as bigint;
   const minOutputAmountRaw = tuple[5] as bigint;
   const srcChainId = (tuple[8] as bigint).toString();
@@ -167,6 +203,7 @@ async function handleCreated(
 async function handleFilled(
   log: ethers.Log,
   blockTs: BlockTimestampCache,
+  lookupContext: ContextLookup,
 ): Promise<void> {
   const abi = ethers.AbiCoder.defaultAbiCoder();
   // Match existing flattened-tuple decode pattern.
@@ -179,7 +216,7 @@ async function handleFilled(
   // Only record fills for intents we created (hub-origin). A null context means
   // the IntentFilled belongs to an intent the created-filter skipped or one
   // created before our START_BLOCK — recording it would orphan the event.
-  const ctx = await getCreatedContext(intentHash);
+  const ctx = await lookupContext(intentHash);
   if (ctx === null) return;
 
   // Slippage = (filled - minOutput) / minOutput, signed. Negative = worse than min,
@@ -198,6 +235,8 @@ async function handleFilled(
   const row: FilledEventRow = {
     intentHash,
     filledOutputAmount,
+    creator: ctx.creator,
+    solver: ctx.solver,
     srcChainId: ctx.srcChainId,
     dstChainId: ctx.dstChainId,
     slippage,
@@ -213,18 +252,21 @@ async function handleFilled(
 async function handleCancelled(
   log: ethers.Log,
   blockTs: BlockTimestampCache,
+  lookupContext: ContextLookup,
 ): Promise<void> {
   const abi = ethers.AbiCoder.defaultAbiCoder();
   const decoded = abi.decode(['bytes32'], log.data);
   const intentHash = decoded[0] as string;
 
   // Same orphan guard as fills: only record cancels for intents we created.
-  const ctx = await getCreatedContext(intentHash);
+  const ctx = await lookupContext(intentHash);
   if (ctx === null) return;
 
   const ts = await blockTs.get(log.blockNumber);
   const row: CancelledEventRow = {
     intentHash,
+    creator: ctx.creator,
+    solver: ctx.solver,
     srcChainId: ctx.srcChainId,
     dstChainId: ctx.dstChainId,
     blockNumber: log.blockNumber,
@@ -254,21 +296,76 @@ async function processBatch(fromBlock: number, toBlock: number): Promise<void> {
     return (a.index ?? 0) - (b.index ?? 0);
   });
 
+  // Preload created contexts for every fill/cancel hash in this batch with
+  // one query, instead of one SELECT per log. The lookup falls back to a
+  // single-row query only for hashes whose CreateIntent log lives in the
+  // SAME batch (preload runs before handleCreated inserts those rows, so
+  // they can't appear in the map). Pre-batch creates are cached either way.
+  const lookupContext = makeContextLookup(
+    await getCreatedContextsByIntentHashes(extractIntentHashes(logs)),
+  );
+
+  let failures = 0;
   for (const log of logs) {
     try {
       const topic0 = log.topics[0];
       if (topic0 === INTENT_CREATED_TOPIC) {
         await handleCreated(log, blockTs);
       } else if (topic0 === INTENT_FILLED_TOPIC) {
-        await handleFilled(log, blockTs);
+        await handleFilled(log, blockTs, lookupContext);
       } else if (topic0 === INTENT_CANCELLED_TOPIC) {
-        await handleCancelled(log, blockTs);
+        await handleCancelled(log, blockTs, lookupContext);
       }
     } catch (err) {
+      failures++;
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`hub-intents: failed to process log ${log.transactionHash}#${log.index}:`, msg);
     }
   }
+
+  // Any per-log failure must block cursor advance. A failed handleCreated
+  // would otherwise leave its sibling fill/cancel orphaned forever (the
+  // context lookup returns null and the event is silently skipped) once the
+  // cursor moves past this block range. The inserts are idempotent via the
+  // (tx_hash, log_index) unique constraint, so the next tick replays the
+  // whole batch safely. Persistent failures will loop visibly in logs.
+  if (failures > 0) {
+    throw new Error(
+      `hub-intents: ${failures}/${logs.length} log(s) failed in [${fromBlock}, ${toBlock}] — not advancing cursor`,
+    );
+  }
+}
+
+// Pulls the first bytes32 word out of each fill/cancel log's `data` — that's
+// the intent hash in both event signatures. Avoids running ABI decode just to
+// build the preload key set; the per-event handlers still decode the full
+// payload when they actually process the log.
+function extractIntentHashes(logs: ethers.Log[]): string[] {
+  const out: string[] = [];
+  for (const log of logs) {
+    const topic0 = log.topics[0];
+    if (topic0 !== INTENT_FILLED_TOPIC && topic0 !== INTENT_CANCELLED_TOPIC) continue;
+    if (typeof log.data !== 'string' || log.data.length < 66) continue;
+    out.push(`0x${log.data.slice(2, 66)}`.toLowerCase());
+  }
+  return out;
+}
+
+function makeContextLookup(preload: Map<string, CreatedContext>): ContextLookup {
+  // Case-insensitive lookup: bytes32 hashes round-trip from RPC in lowercase
+  // hex but downstream code shouldn't have to care which casing came back.
+  const lower = new Map<string, CreatedContext>();
+  for (const [k, v] of preload) lower.set(k.toLowerCase(), v);
+  return async (intentHash: string) => {
+    const key = intentHash.toLowerCase();
+    const hit = lower.get(key);
+    if (hit) return hit;
+    // Miss = either the CreateIntent landed in this same batch (preload
+    // captured a snapshot before handleCreated wrote it) or it's a true
+    // orphan. One per-miss query handles the former and lets the latter
+    // return null as before.
+    return getCreatedContext(intentHash);
+  };
 }
 
 async function runOnce(): Promise<void> {

@@ -22,8 +22,10 @@ pool.on('error', function (error, client) {
 // negation keeps them distinct too. One row per on-chain event (created/filled/
 // cancelled), all sharing intent_tx_hash — mirrors the relayer one-row-per-message
 // model. The event tx is the source tx; these are single-tx hub events (no dest leg).
-// Status: filled→executed, cancelled→rollbacked; a created row is pending until a
-// fill or cancel for the same intent exists, then it reflects that outcome.
+// Status: hub events confirm in the same tx (no relay-leg waiting), so each row
+// reflects its own event only — cancelled→rollbacked, everything else→executed.
+// `created_at` is mapped from on-chain block_timestamp (not the indexer's ingest
+// time) so list ordering and date-range filters match the relayer-side rows.
 const UNIFIED_SUBQUERY = `(
     SELECT
         id, sn, status, src_network, src_block_number, src_block_timestamp, src_tx_hash, src_app, src_error,
@@ -69,7 +71,12 @@ const UNIFIED_SUBQUERY = `(
         e.action_type::varchar AS action_type,
         e.action_detail::varchar AS action_detail,
         NULL::varchar AS action_amount_usd,
-        e.created_at,
+        -- created_at must reflect on-chain time so the unified list sorts and
+        -- date-range filters correctly against relayer rows (whose created_at
+        -- is itself the chain time of the source tx). e.created_at on
+        -- hub_intent_events is the indexer's ingest time — only useful as a
+        -- fallback if block_timestamp wasn't populated.
+        COALESCE(e.block_timestamp, e.created_at) AS created_at,
         e.updated_at,
         e.intent_hash::varchar AS intent_tx_hash,
         e.slippage::varchar    AS slippage
@@ -163,7 +170,7 @@ const getMessages = async (skip, limit, status, src_network, dest_network, src_a
         sqlMessages = `SELECT ${LIST_FIELDS}
                        FROM ${UNIFIED_SUBQUERY}
                        WHERE ${conditions.join(' AND ')}
-                       ORDER BY created_at DESC
+                       ORDER BY created_at DESC, sn DESC NULLS LAST
                        OFFSET $${conditions.length + 1} LIMIT $${conditions.length + 2}`
     }
 
