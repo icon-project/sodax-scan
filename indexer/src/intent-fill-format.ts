@@ -3,20 +3,16 @@
  * where the EVM handler's input-calldata decode fell through to the raw event
  * tuple. The handler still parses the intent hash and the raw filled output
  * from the IntentFilled event log; this module supplies the missing token /
- * chain / decimals context from other rows we already have indexed.
+ * chain / decimals context from the sibling CreateIntent row.
  *
- * Two recovery sources, tried in order:
- *   1. hub_intent_events.filled — same on-chain event, already nicely formatted
- *      by the hub poller AND carries computed slippage. Copy both verbatim.
- *   2. The intent's sibling CreateIntent message (linked by intent_tx_hash).
- *      Parse its action_detail "IntentSwap … -> <minOut> <outTok>(<dstChain>)"
- *      to get the output token name + dst chain. Look up decimals from chains
- *      config and format the raw filled value; compute slippage from minOut.
+ * Source: the CreateIntent messages row for the same intent (linked by
+ * intent_tx_hash). Hub-native creates land in `messages` directly via the
+ * hub poller, so this single source covers both hub-only and relayer flows
+ * — no separate hub_intent_events lookup is needed any more.
  *
- * Returns null when neither source can resolve the format (e.g. sibling
- * CreateIntent hasn't arrived yet, intent_tx_hash still blank elsewhere).
- * Callers should keep their existing action_detail in that case; the periodic
- * scripts/backfill-fill-action-detail.ts is the safety net.
+ * Returns null when the create sibling hasn't arrived yet or its action_detail
+ * isn't parseable. Callers keep their existing action_detail in that case;
+ * the periodic scripts/backfill-fill-action-detail.ts is the safety net.
  */
 import pool from './db/db';
 import { chains, idToChainNameMap } from './configs';
@@ -65,31 +61,18 @@ function slippagePercent(expected: bigint, actual: bigint): string {
   return `${isNegative ? '-' : ''}${intPart}.${decPart}%`;
 }
 
-async function fromHubEvent(intentHash: string): Promise<FillFormatResult | null> {
-  const r = await pool.query(
-    `SELECT action_detail, slippage
-       FROM hub_intent_events
-      WHERE intent_hash = $1 AND event_type = 'filled'
-      LIMIT 1`,
-    [intentHash],
-  );
-  if (r.rows.length === 0) return null;
-  const row = r.rows[0];
-  if (!row.action_detail || !row.action_detail.startsWith('IntentFilled ')) return null;
-  return { actionDetail: row.action_detail, slippage: row.slippage ?? '' };
-}
-
-async function fromSiblingCreate(intentHash: string, filledRaw: bigint): Promise<FillFormatResult | null> {
-  const r = await pool.query(
-    `SELECT action_detail FROM messages
-      WHERE action_type = 'CreateIntent'
-        AND intent_tx_hash = $1
-        AND action_detail LIKE 'IntentSwap %'
-      LIMIT 1`,
-    [intentHash],
-  );
-  if (r.rows.length === 0) return null;
-  const m = CREATE_RE.exec(r.rows[0].action_detail);
+/**
+ * Pure helper: given a CreateIntent row's action_detail string and the raw
+ * filled output amount, returns the formatted fill action_detail + slippage.
+ * Returns null when the create action_detail isn't parseable or the token /
+ * decimals lookup fails. Used by both the hub poller (at fill insert time)
+ * and the recovery path below (after-the-fact for relayer-side rows).
+ */
+export function formatFillFromCreateActionDetail(
+  createActionDetail: string,
+  filledRaw: bigint,
+): FillFormatResult | null {
+  const m = CREATE_RE.exec(createActionDetail);
   if (!m) return null;
   const minOutputStr = m[4];
   const outputTokenName = m[5];
@@ -112,15 +95,30 @@ async function fromSiblingCreate(intentHash: string, filledRaw: bigint): Promise
   return { actionDetail, slippage };
 }
 
+async function fromSiblingCreate(intentHash: string, filledRaw: bigint): Promise<FillFormatResult | null> {
+  // Hub creates land in `messages` with sn IS NULL; relayer creates land with
+  // sn IS NOT NULL. We want either — the format we parse out is the same.
+  const r = await pool.query(
+    `SELECT action_detail FROM messages
+      WHERE action_type = 'CreateIntent'
+        AND intent_tx_hash = $1
+        AND action_detail LIKE 'IntentSwap %'
+      LIMIT 1`,
+    [intentHash],
+  );
+  if (r.rows.length === 0) return null;
+  return formatFillFromCreateActionDetail(r.rows[0].action_detail, filledRaw);
+}
+
 /**
- * Returns a nicely-formatted IntentFilled action_detail + slippage if either
- * recovery source resolves; otherwise null.
+ * Returns a nicely-formatted IntentFilled action_detail + slippage if the
+ * create sibling resolves; otherwise null.
  */
 export async function recoverIntentFilledFormat(
   intentHash: string,
   filledRaw: bigint,
 ): Promise<FillFormatResult | null> {
-  return (await fromHubEvent(intentHash)) ?? (await fromSiblingCreate(intentHash, filledRaw));
+  return fromSiblingCreate(intentHash, filledRaw);
 }
 
 const RAW_TUPLE_RE = /^IntentFilled 0x[0-9a-fA-F]{64},/;

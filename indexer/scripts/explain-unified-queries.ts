@@ -1,6 +1,6 @@
 /**
  * Diagnostic for PR #128 review point P9: is the UNION ALL in db.js's
- * UNIFIED_SUBQUERY actually expensive on prod-sized data, or is Postgres
+ * DEDUPED_MESSAGES actually expensive on prod-sized data, or is Postgres
  * pushing predicates into both sides effectively?
  *
  * Runs EXPLAIN (ANALYZE, BUFFERS) for the four query shapes the API uses:
@@ -31,62 +31,35 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-// Keep this in sync with api/db.js UNIFIED_SUBQUERY. Duplicated rather than
+// Keep this in sync with api/db.js DEDUPED_MESSAGES. Duplicated rather than
 // imported because the API module pulls in app config.
-const UNIFIED_SUBQUERY = `(
-    SELECT
-        id, sn, status, src_network, src_block_number, src_block_timestamp, src_tx_hash, src_app, src_error,
-        dest_network, dest_block_number, dest_block_timestamp, dest_tx_hash, dest_app, dest_error,
-        response_block_number, response_block_timestamp, response_tx_hash, response_error,
-        rollback_block_number, rollback_block_timestamp, rollback_tx_hash, rollback_error,
-        value, fee, action_type, action_detail, action_amount_usd,
-        created_at, updated_at, intent_tx_hash, slippage
-    FROM messages
-    UNION ALL
-    SELECT
-        -e.id AS id,
-        NULL::bigint AS sn,
-        (CASE WHEN e.event_type = 'cancelled' THEN 'rollbacked' ELSE 'executed' END)::varchar AS status,
-        e.src_chain_id::varchar AS src_network,
-        e.block_number          AS src_block_number,
-        e.block_timestamp       AS src_block_timestamp,
-        e.tx_hash::varchar      AS src_tx_hash,
-        e.creator::varchar      AS src_app,
-        NULL::varchar           AS src_error,
-        e.dst_chain_id::varchar AS dest_network,
-        NULL::bigint AS dest_block_number, NULL::bigint AS dest_block_timestamp,
-        NULL::varchar AS dest_tx_hash, e.solver::varchar AS dest_app, NULL::varchar AS dest_error,
-        NULL::bigint AS response_block_number, NULL::bigint AS response_block_timestamp,
-        NULL::varchar AS response_tx_hash, NULL::varchar AS response_error,
-        NULL::bigint AS rollback_block_number, NULL::bigint AS rollback_block_timestamp,
-        NULL::varchar AS rollback_tx_hash, NULL::varchar AS rollback_error,
-        NULL::varchar AS value, NULL::varchar AS fee,
-        e.action_type::varchar AS action_type, e.action_detail::varchar AS action_detail,
-        NULL::varchar AS action_amount_usd,
-        COALESCE(e.block_timestamp, e.created_at) AS created_at,
-        e.updated_at,
-        e.intent_hash::varchar AS intent_tx_hash,
-        e.slippage::varchar AS slippage
-    FROM hub_intent_events e
-    WHERE NOT EXISTS (
-        SELECT 1 FROM messages m
-        WHERE m.src_tx_hash = e.tx_hash
-          AND m.action_type = e.action_type::varchar
-    )
-) u`;
+const DEDUPED_MESSAGES = `(
+    SELECT m.*
+      FROM messages m
+     WHERE NOT (
+        m.sn IS NULL
+        AND m.action_type IN ('IntentFilled', 'CancelIntent')
+        AND EXISTS (
+            SELECT 1 FROM messages r
+             WHERE r.src_tx_hash = m.src_tx_hash
+               AND r.action_type = m.action_type
+               AND r.sn IS NOT NULL
+        )
+     )
+) m`;
 
 type Probe = { label: string; sql: string; params?: any[] };
 
 const probes: Probe[] = [
   {
     label: '1. unfiltered list page (skip=0 limit=20)',
-    sql: `SELECT id, created_at FROM ${UNIFIED_SUBQUERY}
+    sql: `SELECT id, created_at FROM ${DEDUPED_MESSAGES}
           ORDER BY created_at DESC, sn DESC NULLS LAST
           OFFSET 0 LIMIT 20`,
   },
   {
     label: '2. filtered list (status=executed + src_network=146 sonic)',
-    sql: `SELECT id FROM ${UNIFIED_SUBQUERY}
+    sql: `SELECT id FROM ${DEDUPED_MESSAGES}
           WHERE status = $1 AND src_network = ANY(string_to_array($2, ','))
           ORDER BY created_at DESC, sn DESC NULLS LAST
           LIMIT 20`,
@@ -96,14 +69,14 @@ const probes: Probe[] = [
     label: '3. search by intent_tx_hash',
     // Substitute a real hash before running; this version returns nothing
     // but still exercises the index path.
-    sql: `SELECT id FROM ${UNIFIED_SUBQUERY}
+    sql: `SELECT id FROM ${DEDUPED_MESSAGES}
           WHERE intent_tx_hash = $1
           ORDER BY src_block_timestamp DESC NULLS LAST`,
     params: ['0x0000000000000000000000000000000000000000000000000000000000000000'],
   },
   {
     label: '4. total_messages count (no filters)',
-    sql: `SELECT count(*) FROM ${UNIFIED_SUBQUERY}`,
+    sql: `SELECT count(*) FROM ${DEDUPED_MESSAGES}`,
   },
 ];
 

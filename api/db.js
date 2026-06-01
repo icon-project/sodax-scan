@@ -16,87 +16,37 @@ pool.on('error', function (error, client) {
     logger.error(error)
 })
 
-// Unified messages view: messages table + hub_intent_events shaped to the same columns.
-// hub_intent_events rows get negative ids so they never collide with messages.id
-// (BIGSERIAL, always positive); each event row already has a distinct id, so the
-// negation keeps them distinct too. One row per on-chain event (created/filled/
-// cancelled), all sharing intent_tx_hash — mirrors the relayer one-row-per-message
-// model. The event tx is the source tx; these are single-tx hub events (no dest leg).
-// Status: hub events confirm in the same tx (no relay-leg waiting), so each row
-// reflects its own event only — cancelled→rollbacked, everything else→executed.
-// `created_at` is mapped from on-chain block_timestamp (not the indexer's ingest
-// time) so list ordering and date-range filters match the relayer-side rows.
-const UNIFIED_SUBQUERY = `(
-    SELECT
-        id, sn, status, src_network, src_block_number, src_block_timestamp, src_tx_hash, src_app, src_error,
-        dest_network, dest_block_number, dest_block_timestamp, dest_tx_hash, dest_app, dest_error,
-        response_block_number, response_block_timestamp, response_tx_hash, response_error,
-        rollback_block_number, rollback_block_timestamp, rollback_tx_hash, rollback_error,
-        value, fee, action_type, action_detail, action_amount_usd,
-        created_at, updated_at, intent_tx_hash, slippage
-    FROM messages
-    UNION ALL
-    SELECT
-        -e.id AS id,
-        NULL::bigint AS sn,
-        -- Hub events are single-tx on-chain actions that confirm immediately —
-        -- there's no relay-leg waiting step. So each row's status reflects
-        -- only its own event: created/filled = executed, cancelled = rollbacked.
-        (CASE
-            WHEN e.event_type = 'cancelled' THEN 'rollbacked'
-            ELSE 'executed'
-        END)::varchar AS status,
-        e.src_chain_id::varchar           AS src_network,
-        e.block_number                    AS src_block_number,
-        e.block_timestamp                 AS src_block_timestamp,
-        e.tx_hash::varchar                AS src_tx_hash,
-        e.creator::varchar                AS src_app,
-        NULL::varchar                     AS src_error,
-        e.dst_chain_id::varchar           AS dest_network,
-        NULL::bigint                      AS dest_block_number,
-        NULL::bigint                      AS dest_block_timestamp,
-        NULL::varchar                     AS dest_tx_hash,
-        e.solver::varchar                 AS dest_app,
-        NULL::varchar                     AS dest_error,
-        NULL::bigint                      AS response_block_number,
-        NULL::bigint                      AS response_block_timestamp,
-        NULL::varchar                     AS response_tx_hash,
-        NULL::varchar                     AS response_error,
-        NULL::bigint                      AS rollback_block_number,
-        NULL::bigint                      AS rollback_block_timestamp,
-        NULL::varchar                     AS rollback_tx_hash,
-        NULL::varchar                     AS rollback_error,
-        NULL::varchar AS value,
-        NULL::varchar AS fee,
-        e.action_type::varchar AS action_type,
-        e.action_detail::varchar AS action_detail,
-        NULL::varchar AS action_amount_usd,
-        -- created_at must reflect on-chain time so the unified list sorts and
-        -- date-range filters correctly against relayer rows (whose created_at
-        -- is itself the chain time of the source tx). e.created_at on
-        -- hub_intent_events is the indexer's ingest time — only useful as a
-        -- fallback if block_timestamp wasn't populated.
-        COALESCE(e.block_timestamp, e.created_at) AS created_at,
-        e.updated_at,
-        e.intent_hash::varchar AS intent_tx_hash,
-        e.slippage::varchar    AS slippage
-    FROM hub_intent_events e
-    -- Skip hub rows already covered by a relayer-indexed message on the same
-    -- Sonic tx for the same action. Hub-native intents whose fill leg delivers
-    -- cross-chain end up indexed twice (relayer scanner picks up the Sonic
-    -- fill tx as IntentFilled, hub poller indexes the same on-chain event).
-    -- The relayer row is the richer one — sn, value, fees, dest leg — so it
-    -- wins; we keep hub rows only when the relayer didn't already capture the
-    -- same (tx_hash, action_type) pair. Hub created rows are never dropped
-    -- (hub-native creates have no matching relayer message); Transfer logs on
-    -- a Sonic fill tx coexist with the hub IntentFilled because they have a
-    -- different action_type. See scripts/check-hub-relayer-overlap.ts.
-    WHERE NOT EXISTS (
-        SELECT 1 FROM messages m
-        WHERE m.src_tx_hash = e.tx_hash
-          AND m.action_type = e.action_type::varchar
-    )
-) u`
+// Read-side view of the messages table with hub-poller fill/cancel duplicates
+// hidden.
+//
+// Background: the hub poller writes every on-chain hub event (CreateIntent /
+// IntentFilled / CancelIntent) directly into `messages` with `sn = NULL` as
+// the hub-origin marker. For hub-native intents that fill cross-chain, the
+// upstream relayer scanner also writes a row for the same Sonic fill tx,
+// with a real `sn` and the destination-leg fields populated. The relayer's
+// row is the richer one, so at read time we hide the hub twin when a relayer
+// twin exists. CreateIntent rows always survive (relayer never captures
+// hub-native creates), and intra-hub fill/cancel rows survive too (no
+// relayer twin can exist for them).
+//
+// The dedup key is (src_tx_hash, action_type). `action_type` is reclassified
+// from the upstream's 'SendMsg' default to its real value by this indexer's
+// updateTransactionInfo. During the brief reclassification window both rows
+// remain visible — acceptable, the indexer catches up within seconds.
+const DEDUPED_MESSAGES = `(
+    SELECT m.*
+      FROM messages m
+     WHERE NOT (
+        m.sn IS NULL
+        AND m.action_type IN ('IntentFilled', 'CancelIntent')
+        AND EXISTS (
+            SELECT 1 FROM messages r
+             WHERE r.src_tx_hash = m.src_tx_hash
+               AND r.action_type = m.action_type
+               AND r.sn IS NOT NULL
+        )
+     )
+) m`
 
 const buildWhereSql = (status, src_network, dest_network, src_address, dest_address, from_timestamp, to_timestamp, action_type, intent_tx_hash) => {
     let values = []
@@ -175,15 +125,15 @@ const getMessages = async (skip, limit, status, src_network, dest_network, src_a
         intent_tx_hash
     )
 
-    let sqlTotal = `SELECT count(*) FROM ${UNIFIED_SUBQUERY}`
+    let sqlTotal = `SELECT count(*) FROM ${DEDUPED_MESSAGES}`
     let sqlMessages = `SELECT ${LIST_FIELDS}
-                       FROM ${UNIFIED_SUBQUERY}
+                       FROM ${DEDUPED_MESSAGES}
                        ORDER BY created_at DESC, sn DESC NULLS LAST
                        OFFSET $1 LIMIT $2`
     if (conditions.length > 0) {
-        sqlTotal = `SELECT count(*) FROM ${UNIFIED_SUBQUERY} WHERE ${conditions.join(' AND ')}`
+        sqlTotal = `SELECT count(*) FROM ${DEDUPED_MESSAGES} WHERE ${conditions.join(' AND ')}`
         sqlMessages = `SELECT ${LIST_FIELDS}
-                       FROM ${UNIFIED_SUBQUERY}
+                       FROM ${DEDUPED_MESSAGES}
                        WHERE ${conditions.join(' AND ')}
                        ORDER BY created_at DESC, sn DESC NULLS LAST
                        OFFSET $${conditions.length + 1} LIMIT $${conditions.length + 2}`
@@ -207,7 +157,7 @@ const getMessages = async (skip, limit, status, src_network, dest_network, src_a
 }
 
 const getMessageById = async (id) => {
-    const sql = `SELECT ${DETAIL_FIELDS} FROM ${UNIFIED_SUBQUERY} WHERE id = $1`
+    const sql = `SELECT ${DETAIL_FIELDS} FROM ${DEDUPED_MESSAGES} WHERE id = $1`
     const messagesRs = await pool.query(sql, [id])
     return {
         data: messagesRs.rows,
@@ -220,7 +170,7 @@ const getMessageById = async (id) => {
 const searchMessages = async (value) => {
     const messagesRs = await pool.query(
         `SELECT ${SEARCH_FIELDS}
-         FROM ${UNIFIED_SUBQUERY}
+         FROM ${DEDUPED_MESSAGES}
          WHERE src_tx_hash = $1 OR dest_tx_hash = $1 OR response_tx_hash = $1 OR rollback_tx_hash = $1 OR sn = $2 OR intent_tx_hash = $1
          ORDER BY src_block_timestamp DESC NULLS LAST`,
         [value, value.startsWith('0x') || !Number.isInteger(Number(value)) ? '0' : value]
@@ -235,13 +185,13 @@ const searchMessages = async (value) => {
 
 // TODO: to be removed
 const getStatistic = async () => {
-    const totalRs = await pool.query(`SELECT count(*) FROM ${UNIFIED_SUBQUERY}`)
+    const totalRs = await pool.query(`SELECT count(*) FROM ${DEDUPED_MESSAGES}`)
     const messages = Number(totalRs.rows[0].count)
     const fees = {}
     const networks = Object.values(NETWORK)
     for (let index = 0; index < networks.length; index++) {
         const network = networks[index]
-        const feeRs = await pool.query(`SELECT sum(cast(value as decimal)) FROM ${UNIFIED_SUBQUERY} WHERE src_network = $1`, [network])
+        const feeRs = await pool.query(`SELECT sum(cast(value as decimal)) FROM ${DEDUPED_MESSAGES} WHERE src_network = $1`, [network])
         fees[network] = feeRs.rows[0].sum ? feeRs.rows[0].sum.toString() : '0'
     }
 
@@ -260,7 +210,7 @@ const getTotalMessages = async (status, src_networks, dest_networks, src_address
     let data = {}
 
     let { conditions, values } = buildWhereSql(status, src_networks, dest_networks, src_address, dest_address, from_timestamp, to_timestamp)
-    let sql = `SELECT count(*) as total FROM ${UNIFIED_SUBQUERY}`
+    let sql = `SELECT count(*) as total FROM ${DEDUPED_MESSAGES}`
     if (conditions.length == 0) {
         const totalRs = await pool.query(sql, values)
         const total = Number(totalRs.rows[0].total)
@@ -268,7 +218,7 @@ const getTotalMessages = async (status, src_networks, dest_networks, src_address
     } else {
         if (!src_networks && !dest_networks) {
             sql = `SELECT count(*) as total
-                    FROM ${UNIFIED_SUBQUERY}
+                    FROM ${DEDUPED_MESSAGES}
                     WHERE ${conditions.join(' AND ')}`
             const totalRs = await pool.query(sql, values)
             const total = Number(totalRs.rows[0].total)
@@ -277,7 +227,7 @@ const getTotalMessages = async (status, src_networks, dest_networks, src_address
             if (src_networks) {
                 let { conditions, values } = buildWhereSql(status, src_networks, undefined, src_address, dest_address, from_timestamp, to_timestamp)
                 sql = `SELECT src_network, count(*) as total
-                    FROM ${UNIFIED_SUBQUERY}
+                    FROM ${DEDUPED_MESSAGES}
                     WHERE ${conditions.join(' AND ')}
                     GROUP BY src_network
                     ORDER BY src_network`
@@ -290,7 +240,7 @@ const getTotalMessages = async (status, src_networks, dest_networks, src_address
             if (dest_networks) {
                 let { conditions, values } = buildWhereSql(status, undefined, dest_networks, src_address, dest_address, from_timestamp, to_timestamp)
                 sql = `SELECT dest_network, count(*) as total
-                    FROM ${UNIFIED_SUBQUERY}
+                    FROM ${DEDUPED_MESSAGES}
                     WHERE ${conditions.join(' AND ')}
                     GROUP BY dest_network
                     ORDER BY dest_network`

@@ -1,39 +1,14 @@
 import pool from '../db/db';
 
-export interface CreatedEventRow {
-  intentHash: string;
-  creator: string;
-  solver: string;
-  inputToken: string;
-  outputToken: string;
-  inputAmount: string;
-  minOutputAmount: string;
-  srcChainId: string;
-  dstChainId: string;
-  blockNumber: number;
-  blockTimestamp: number;
-  txHash: string;
-  logIndex: number;
-  actionDetail: string;
-}
+// Hub events are written directly into the `messages` table with `sn = NULL`
+// as the hub-origin marker. There's no separate hub_intent_events table any
+// more — the read-side dedup in api/db.js hides the hub fill/cancel rows
+// whose relayer twin (sn IS NOT NULL) covers the same on-chain action.
 
-export interface FilledEventRow {
+export interface HubEventRow {
   intentHash: string;
-  filledOutputAmount: string;
-  creator: string | null;
-  solver: string | null;
-  srcChainId: string;
-  dstChainId: string;
-  slippage?: string;
-  blockNumber: number;
-  blockTimestamp: number;
-  txHash: string;
-  logIndex: number;
-  actionDetail: string;
-}
-
-export interface CancelledEventRow {
-  intentHash: string;
+  eventType: 'created' | 'filled' | 'cancelled';
+  actionType: 'CreateIntent' | 'IntentFilled' | 'CancelIntent';
   creator: string | null;
   solver: string | null;
   srcChainId: string;
@@ -41,182 +16,117 @@ export interface CancelledEventRow {
   blockNumber: number;
   blockTimestamp: number;
   txHash: string;
-  logIndex: number;
   actionDetail: string;
+  slippage: string | null;
 }
 
-// Subset of a created event needed to enrich later fill/cancel events:
-//   - slippage baseline (minOutputAmount) for the fill % calculation;
-//   - token/chain context for action_detail formatting;
-//   - creator/solver so fill/cancel rows surface in the API's address filters
-//     (the IntentFilled / IntentCancelled events don't carry these themselves).
+// Subset of a CreateIntent row needed to enrich subsequent fill/cancel events
+// (creator/solver for src_app/dest_app, chain ids + parseable action_detail
+// for slippage and fill action_detail formatting).
 export interface CreatedContext {
-  minOutputAmount: bigint | null;
-  outputToken: string;
-  inputToken: string;
-  srcChainId: string;
-  dstChainId: string;
   creator: string | null;
   solver: string | null;
+  srcChainId: string;
+  dstChainId: string;
+  actionDetail: string;
 }
 
 const nowSec = () => Math.floor(Date.now() / 1000);
 
-export async function insertCreatedEvent(row: CreatedEventRow): Promise<void> {
+// Insert a hub event as a messages row with sn=NULL. Idempotent against the
+// hub poller's own re-runs (same intent_hash, action_type, sn IS NULL ⇒ skip).
+// Does NOT dedupe against relayer-written rows (sn IS NOT NULL): we want both
+// rows to exist so that intra-hub flows survive even when no relayer twin
+// will ever arrive; the read-side dedup in api/db.js hides the hub twin when
+// a relayer twin does exist.
+export async function insertHubEventAsMessage(row: HubEventRow): Promise<void> {
+  const status = row.eventType === 'cancelled' ? 'rollbacked' : 'executed';
+  const now = nowSec();
   const sql = `
-    INSERT INTO hub_intent_events (
-      intent_hash, event_type, action_type, creator, solver,
-      input_token, output_token, input_amount, min_output_amount,
-      src_chain_id, dst_chain_id, block_number, block_timestamp,
-      tx_hash, log_index, action_detail, created_at, updated_at
-    ) VALUES ($1,'created','CreateIntent',$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$15)
-    ON CONFLICT (tx_hash, log_index) DO NOTHING
+    INSERT INTO messages (
+      sn, status,
+      src_network, src_block_number, src_block_timestamp, src_tx_hash, src_app,
+      dest_network, dest_app,
+      action_type, action_detail, intent_tx_hash, slippage,
+      created_at, updated_at
+    )
+    SELECT NULL, $1,
+           $2, $3, $4, $5, $6,
+           $7, $8,
+           $9, $10, $11, $12,
+           $4, $13
+    WHERE NOT EXISTS (
+      SELECT 1 FROM messages
+      WHERE intent_tx_hash = $11
+        AND action_type    = $9
+        AND sn IS NULL
+    )
   `;
   await pool.query(sql, [
-    row.intentHash,
-    row.creator,
-    row.solver,
-    row.inputToken,
-    row.outputToken,
-    row.inputAmount,
-    row.minOutputAmount,
+    status,
     row.srcChainId,
-    row.dstChainId,
     row.blockNumber,
     row.blockTimestamp,
     row.txHash,
-    row.logIndex,
-    row.actionDetail,
-    nowSec(),
-  ]);
-}
-
-export async function insertFilledEvent(row: FilledEventRow): Promise<void> {
-  // creator/solver are denormalised from the CreateIntent sibling so the
-  // unified API's src_address / dest_address filters return fill rows for the
-  // same intent. The IntentFilled event itself doesn't carry these fields.
-  const sql = `
-    INSERT INTO hub_intent_events (
-      intent_hash, event_type, action_type, filled_output_amount,
-      creator, solver,
-      src_chain_id, dst_chain_id, block_number, block_timestamp,
-      tx_hash, log_index, action_detail, slippage, created_at, updated_at
-    ) VALUES ($1,'filled','IntentFilled',$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$13)
-    ON CONFLICT (tx_hash, log_index) DO NOTHING
-  `;
-  await pool.query(sql, [
-    row.intentHash,
-    row.filledOutputAmount,
     row.creator,
-    row.solver,
-    row.srcChainId,
     row.dstChainId,
-    row.blockNumber,
-    row.blockTimestamp,
-    row.txHash,
-    row.logIndex,
+    row.solver,
+    row.actionType,
     row.actionDetail,
-    row.slippage ?? null,
-    nowSec(),
-  ]);
-}
-
-export async function insertCancelledEvent(row: CancelledEventRow): Promise<void> {
-  // Same address-filter rationale as insertFilledEvent.
-  const sql = `
-    INSERT INTO hub_intent_events (
-      intent_hash, event_type, action_type,
-      creator, solver,
-      src_chain_id, dst_chain_id, block_number, block_timestamp,
-      tx_hash, log_index, action_detail, created_at, updated_at
-    ) VALUES ($1,'cancelled','CancelIntent',$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$11)
-    ON CONFLICT (tx_hash, log_index) DO NOTHING
-  `;
-  await pool.query(sql, [
     row.intentHash,
-    row.creator,
-    row.solver,
-    row.srcChainId,
-    row.dstChainId,
-    row.blockNumber,
-    row.blockTimestamp,
-    row.txHash,
-    row.logIndex,
-    row.actionDetail,
-    nowSec(),
+    row.slippage,
+    now,
   ]);
 }
 
-// Returns the created-event context for an intent, or null when we never
-// indexed its creation (e.g. non-hub-origin intent, or created before
-// START_BLOCK). Callers use null to skip orphan fill/cancel events.
+// Read CreatedContext for a single intent from its CreateIntent messages row.
+// Returns null when the create hasn't been indexed yet (or never was — e.g.
+// the intent was created before HUB_INTENT_START_BLOCK).
 export async function getCreatedContext(intentHash: string): Promise<CreatedContext | null> {
   const r = await pool.query(
-    `SELECT min_output_amount, output_token, input_token, src_chain_id, dst_chain_id, creator, solver
-       FROM hub_intent_events
-      WHERE intent_hash = $1 AND event_type = 'created'
+    `SELECT src_app, dest_app, src_network, dest_network, action_detail
+       FROM messages
+      WHERE intent_tx_hash = $1
+        AND action_type    = 'CreateIntent'
+        AND sn IS NULL
       LIMIT 1`,
     [intentHash],
   );
   if (r.rows.length === 0) return null;
   const row = r.rows[0];
-  let minOutputAmount: bigint | null = null;
-  if (row.min_output_amount !== null && row.min_output_amount !== undefined) {
-    try {
-      minOutputAmount = BigInt(row.min_output_amount);
-    } catch {
-      minOutputAmount = null;
-    }
-  }
   return {
-    minOutputAmount,
-    outputToken: row.output_token,
-    inputToken: row.input_token,
-    srcChainId: row.src_chain_id,
-    dstChainId: row.dst_chain_id,
-    creator: row.creator,
-    solver: row.solver,
+    creator: row.src_app,
+    solver: row.dest_app,
+    srcChainId: row.src_network,
+    dstChainId: row.dest_network,
+    actionDetail: row.action_detail,
   };
 }
 
 // Batch variant of getCreatedContext: returns a Map keyed by intent_hash for
-// every hash in `intentHashes` that has a 'created' row. Used by the poller
-// to avoid N+1 SELECTs when a single getLogs batch contains many fills /
-// cancels — one round trip covers them all. Hashes with no created row are
-// simply absent from the map; callers should treat missing keys as the same
-// "orphan event" signal that the single-row getCreatedContext returns null
-// for.
+// every hash in `intentHashes` that has a hub-origin CreateIntent row.
+// Hashes with no create are simply absent from the map.
 export async function getCreatedContextsByIntentHashes(
   intentHashes: string[],
 ): Promise<Map<string, CreatedContext>> {
   const out = new Map<string, CreatedContext>();
   if (intentHashes.length === 0) return out;
-  // De-dupe so a fill+cancel for the same intent doesn't double-fetch.
   const unique = Array.from(new Set(intentHashes));
   const r = await pool.query(
-    `SELECT intent_hash, min_output_amount, output_token, input_token,
-            src_chain_id, dst_chain_id, creator, solver
-       FROM hub_intent_events
-      WHERE intent_hash = ANY($1) AND event_type = 'created'`,
+    `SELECT intent_tx_hash, src_app, dest_app, src_network, dest_network, action_detail
+       FROM messages
+      WHERE intent_tx_hash = ANY($1)
+        AND action_type    = 'CreateIntent'
+        AND sn IS NULL`,
     [unique],
   );
   for (const row of r.rows) {
-    let minOutputAmount: bigint | null = null;
-    if (row.min_output_amount !== null && row.min_output_amount !== undefined) {
-      try {
-        minOutputAmount = BigInt(row.min_output_amount);
-      } catch {
-        minOutputAmount = null;
-      }
-    }
-    out.set(row.intent_hash, {
-      minOutputAmount,
-      outputToken: row.output_token,
-      inputToken: row.input_token,
-      srcChainId: row.src_chain_id,
-      dstChainId: row.dst_chain_id,
-      creator: row.creator,
-      solver: row.solver,
+    out.set(row.intent_tx_hash, {
+      creator: row.src_app,
+      solver: row.dest_app,
+      srcChainId: row.src_network,
+      dstChainId: row.dest_network,
+      actionDetail: row.action_detail,
     });
   }
   return out;

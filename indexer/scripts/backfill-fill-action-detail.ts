@@ -8,13 +8,16 @@
  * fails) and dump the IntentFilled event tuple verbatim. The fourth field is
  * the raw filled output amount; with token decimals + name we can render it.
  *
- * Two recovery sources, tried in order:
- *   1. hub_intent_events.filled — same on-chain event, already nicely formatted
- *      by the hub poller AND carries computed slippage. Copy both.
- *   2. The intent's sibling CreateIntent message (linked by intent_tx_hash).
- *      Its action_detail "IntentSwap <inAmt> <inTok>(<src>) -> <outMin> <outTok>(<dst>)"
- *      gives us output token + dst chain. Look up decimals from chains config,
- *      format the filled raw value, and compute slippage from <outMin> vs filled.
+ * Recovery source: the intent's sibling CreateIntent message (linked by
+ * intent_tx_hash). Its action_detail
+ *   "IntentSwap <inAmt> <inTok>(<src>) -> <outMin> <outTok>(<dst>)"
+ * gives us output token + dst chain. Look up decimals from chains config,
+ * format the filled raw value, and compute slippage from <outMin> vs filled.
+ *
+ * After the hub_intent_events → messages unification, hub-native creates
+ * land in `messages` directly with sn=NULL, so the sibling lookup covers
+ * both relayer creates and hub-native creates from one table. The previous
+ * "hub_intent_events.filled" recovery path is gone.
  *
  * Rows still unlinked (intent_tx_hash blank) are skipped — they're picked up
  * by the existing backfill-intent-tx-hash.ts once that finishes.
@@ -128,31 +131,7 @@ async function main() {
     }
   }
 
-  // --------------- Source 1: hub_intent_events.filled (preferred) ---------------
-  console.log(`\nQuerying hub_intent_events recoveries…`);
-  const hubSql = `
-    SELECT m.id, e.action_detail AS new_detail, e.slippage AS new_slippage,
-           m.action_detail AS bad_detail
-    FROM messages m
-    JOIN hub_intent_events e ON e.intent_hash = m.intent_tx_hash AND e.event_type='filled'
-    WHERE m.action_type='IntentFilled'
-      AND m.action_detail ~ '^IntentFilled 0x[0-9a-fA-F]{64},'
-      AND e.action_detail LIKE 'IntentFilled %'
-    ${limit ? `LIMIT ${limit}` : ""}
-  `;
-  const hubRs = await pool.query(hubSql);
-  console.log(`  hub_intent_events rows: ${hubRs.rows.length}`);
-  let fixedFromHub = 0;
-  const sampleHub: { id: number; before: string; after: string; slippage?: string }[] = [];
-  for (const row of hubRs.rows) {
-    if (sampleHub.length < 5) {
-      sampleHub.push({ id: row.id, before: row.bad_detail, after: row.new_detail, slippage: row.new_slippage });
-    }
-    updates.push({ id: row.id, action_detail: row.new_detail, slippage: row.new_slippage ?? "" });
-    fixedFromHub++;
-  }
-
-  // --------------- Source 2: sibling CreateIntent (fallback) ---------------
+  // --------------- Recovery: sibling CreateIntent ---------------
   console.log(`Querying sibling-CreateIntent recoveries…`);
   const sibSql = `
     SELECT m.id, m.action_detail AS bad_detail, c.action_detail AS create_detail
@@ -162,10 +141,6 @@ async function main() {
       AND m.action_detail ~ '^IntentFilled 0x[0-9a-fA-F]{64},'
       AND m.intent_tx_hash LIKE '0x%'
       AND c.action_detail LIKE 'IntentSwap %'
-      AND NOT EXISTS (
-        SELECT 1 FROM hub_intent_events e
-        WHERE e.intent_hash = m.intent_tx_hash AND e.event_type='filled'
-      )
     ${limit ? `LIMIT ${limit}` : ""}
   `;
   const sibRs = await pool.query(sibSql);
@@ -216,7 +191,6 @@ async function main() {
   }
   await pool.end();
 
-  console.log(`\nFixed from hub_intent_events:   ${fixedFromHub}${apply ? "" : " (would fix)"}`);
   console.log(`Fixed via sibling CreateIntent: ${fixedFromSibling}${apply ? "" : " (would fix)"}`);
   console.log(`Unrecoverable parses:           ${unrecoverable}`);
   if (Object.keys(reasons).length > 0) {
@@ -224,12 +198,6 @@ async function main() {
     for (const [k, v] of Object.entries(reasons).sort((a, b) => b[1] - a[1])) {
       console.log(`  ${v.toString().padStart(6, " ")}  ${k}`);
     }
-  }
-  console.log(`\nSample fixes from hub_intent_events (first ${sampleHub.length}):`);
-  for (const s of sampleHub) {
-    console.log(`  #${s.id}`);
-    console.log(`    before: ${s.before}`);
-    console.log(`    after:  ${s.after}${s.slippage ? `  (slippage: ${s.slippage})` : ""}`);
   }
   console.log(`\nSample fixes from sibling CreateIntent (first ${sampleSib.length}):`);
   for (const s of sampleSib) {

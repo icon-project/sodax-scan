@@ -1,26 +1,16 @@
 import { ethers } from 'ethers';
 import { RPC_URLS, sonic, chains, idToChainNameMap } from '../configs';
 import { bigintDivisionToDecimalString } from '../utils';
+import { formatFillFromCreateActionDetail } from '../intent-fill-format';
 import {
   CreatedContext,
-  CreatedEventRow,
-  FilledEventRow,
-  CancelledEventRow,
+  HubEventRow,
   getCreatedContext,
   getCreatedContextsByIntentHashes,
   getCursor,
-  insertCancelledEvent,
-  insertCreatedEvent,
-  insertFilledEvent,
+  insertHubEventAsMessage,
   setCursor,
 } from './repo';
-
-// Resolves the created-event context for an intent. Backed by a per-batch
-// preload (one SELECT for all known intent_hashes in the batch) with a
-// single-row fallback for cases the preload couldn't cover — namely intents
-// whose CreateIntent log is in the same batch (the preload runs before
-// handleCreated inserts those rows, so they wouldn't appear in the map).
-type ContextLookup = (intentHash: string) => Promise<CreatedContext | null>;
 
 const CURSOR_NAME = 'sonic_hub_intents';
 
@@ -79,20 +69,12 @@ function getProvider(): ethers.JsonRpcProvider {
   return provider;
 }
 
-function slippagePercent(expected: bigint, actual: bigint): string {
-  if (expected === 0n) return '';
-  const decimals = 4;
-  const diff = actual - expected;
-  const isNegative = diff < 0n;
-  const absDiff = diff < 0n ? -diff : diff;
-  const SCALE = BigInt(10 ** decimals);
-  const scaled = (absDiff * SCALE * 100n) / expected;
-  let s = scaled.toString();
-  if (s.length <= decimals) s = s.padStart(decimals + 1, '0');
-  const intPart = s.slice(0, s.length - decimals);
-  const decPart = s.slice(s.length - decimals);
-  return `${isNegative ? '-' : ''}${intPart}.${decPart}%`;
-}
+// Resolves the CreateIntent context for a given intent. Backed by a per-batch
+// preload (one SELECT for all known intent hashes in the batch) with a
+// single-row fallback for intents whose CreateIntent log is in the same batch
+// (the preload runs before handleCreated writes those rows so they wouldn't
+// appear in the map yet).
+type ContextLookup = (intentHash: string) => Promise<CreatedContext | null>;
 
 // EVM/ICON hex addresses (0x…, cx…) are case-insensitive — normalise them so
 // checksum vs all-lowercase variants both match registry keys. Base58/bech32
@@ -181,23 +163,21 @@ async function handleCreated(
   const actionDetail = `IntentSwap ${inAmt} ${inInfo.name}(${srcName}) -> ${outAmt} ${outInfo.name}(${dstName})`;
 
   const ts = await blockTs.get(log.blockNumber);
-  const row: CreatedEventRow = {
+  const row: HubEventRow = {
     intentHash,
+    eventType: 'created',
+    actionType: 'CreateIntent',
     creator,
     solver,
-    inputToken,
-    outputToken,
-    inputAmount: inputAmountRaw.toString(),
-    minOutputAmount: minOutputAmountRaw.toString(),
     srcChainId,
     dstChainId,
     blockNumber: log.blockNumber,
     blockTimestamp: ts,
     txHash: log.transactionHash,
-    logIndex: log.index ?? 0,
     actionDetail,
+    slippage: null,
   };
-  await insertCreatedEvent(row);
+  await insertHubEventAsMessage(row);
 }
 
 async function handleFilled(
@@ -211,7 +191,6 @@ async function handleFilled(
   const t = decoded[0] as ethers.Result;
   const intentHash = t[0] as string;
   const filledOutputRaw = t[3] as bigint;
-  const filledOutputAmount = filledOutputRaw.toString();
 
   // Only record fills for intents we created (hub-origin). A null context means
   // the IntentFilled belongs to an intent the created-filter skipped or one
@@ -219,34 +198,29 @@ async function handleFilled(
   const ctx = await lookupContext(intentHash);
   if (ctx === null) return;
 
-  // Slippage = (filled - minOutput) / minOutput, signed. Negative = worse than min,
-  // which should be impossible per contract invariants but we report it honestly.
-  let slippage: string | undefined;
-  if (ctx.minOutputAmount !== null && ctx.minOutputAmount > 0n) {
-    slippage = slippagePercent(ctx.minOutputAmount, filledOutputRaw);
-  }
-
-  const outInfo = tokenInfo(ctx.dstChainId, ctx.outputToken);
-  const outAmt = bigintDivisionToDecimalString(filledOutputRaw, outInfo.decimals);
-  const dstName = idToChainNameMap[ctx.dstChainId] || ctx.dstChainId;
-  const actionDetail = `IntentFilled ${outAmt} ${outInfo.name}(${dstName})`;
+  // Format the fill via the same logic used by intent-fill-format.ts: parse
+  // the create row's action_detail to recover output token / dst chain /
+  // decimals, format the filled amount, compute slippage.
+  const fmt = formatFillFromCreateActionDetail(ctx.actionDetail, filledOutputRaw);
+  const actionDetail = fmt?.actionDetail ?? `IntentFilled ${filledOutputRaw.toString()}`;
+  const slippage = fmt?.slippage ? fmt.slippage : null;
 
   const ts = await blockTs.get(log.blockNumber);
-  const row: FilledEventRow = {
+  const row: HubEventRow = {
     intentHash,
-    filledOutputAmount,
+    eventType: 'filled',
+    actionType: 'IntentFilled',
     creator: ctx.creator,
     solver: ctx.solver,
     srcChainId: ctx.srcChainId,
     dstChainId: ctx.dstChainId,
-    slippage,
     blockNumber: log.blockNumber,
     blockTimestamp: ts,
     txHash: log.transactionHash,
-    logIndex: log.index ?? 0,
     actionDetail,
+    slippage,
   };
-  await insertFilledEvent(row);
+  await insertHubEventAsMessage(row);
 }
 
 async function handleCancelled(
@@ -263,8 +237,10 @@ async function handleCancelled(
   if (ctx === null) return;
 
   const ts = await blockTs.get(log.blockNumber);
-  const row: CancelledEventRow = {
+  const row: HubEventRow = {
     intentHash,
+    eventType: 'cancelled',
+    actionType: 'CancelIntent',
     creator: ctx.creator,
     solver: ctx.solver,
     srcChainId: ctx.srcChainId,
@@ -272,10 +248,10 @@ async function handleCancelled(
     blockNumber: log.blockNumber,
     blockTimestamp: ts,
     txHash: log.transactionHash,
-    logIndex: log.index ?? 0,
     actionDetail: 'IntentCancelled',
+    slippage: null,
   };
-  await insertCancelledEvent(row);
+  await insertHubEventAsMessage(row);
 }
 
 async function processBatch(fromBlock: number, toBlock: number): Promise<void> {
@@ -327,8 +303,9 @@ async function processBatch(fromBlock: number, toBlock: number): Promise<void> {
   // would otherwise leave its sibling fill/cancel orphaned forever (the
   // context lookup returns null and the event is silently skipped) once the
   // cursor moves past this block range. The inserts are idempotent via the
-  // (tx_hash, log_index) unique constraint, so the next tick replays the
-  // whole batch safely. Persistent failures will loop visibly in logs.
+  // WHERE NOT EXISTS clause keyed on (intent_tx_hash, action_type, sn IS NULL),
+  // so the next tick replays the whole batch safely. Persistent failures
+  // will loop visibly in logs.
   if (failures > 0) {
     throw new Error(
       `hub-intents: ${failures}/${logs.length} log(s) failed in [${fromBlock}, ${toBlock}] — not advancing cursor`,
