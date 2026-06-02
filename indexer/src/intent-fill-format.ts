@@ -1,18 +1,12 @@
 /**
- * Recover a nicely-formatted IntentFilled action_detail (+ slippage) for cases
- * where the EVM handler's input-calldata decode fell through to the raw event
- * tuple. The handler still parses the intent hash and the raw filled output
- * from the IntentFilled event log; this module supplies the missing token /
- * chain / decimals context from the sibling CreateIntent row.
+ * Recover a formatted IntentFilled action_detail (+ slippage) when the EVM
+ * handler's calldata decode falls through to the raw event tuple. The
+ * caller supplies the intent hash and the raw filled output amount; we
+ * resolve token / chain / decimals from the sibling CreateIntent row in
+ * `messages` (linked by intent_tx_hash).
  *
- * Source: the CreateIntent messages row for the same intent (linked by
- * intent_tx_hash). Hub-native creates land in `messages` directly via the
- * hub poller, so this single source covers both hub-only and relayer flows
- * — no separate hub_intent_events lookup is needed any more.
- *
- * Returns null when the create sibling hasn't arrived yet or its action_detail
- * isn't parseable. Callers keep their existing action_detail in that case;
- * the periodic scripts/backfill-fill-action-detail.ts is the safety net.
+ * Returns null when the sibling hasn't been ingested yet or its
+ * action_detail isn't parseable; the caller keeps its existing text.
  */
 import pool from './db/db';
 import { chains, idToChainNameMap } from './configs';
@@ -95,9 +89,18 @@ export function formatFillFromCreateActionDetail(
   return { actionDetail, slippage };
 }
 
-async function fromSiblingCreate(intentHash: string, filledRaw: bigint): Promise<FillFormatResult | null> {
-  // Hub creates land in `messages` with sn IS NULL; relayer creates land with
-  // sn IS NOT NULL. We want either — the format we parse out is the same.
+/**
+ * Returns a nicely-formatted IntentFilled action_detail + slippage by looking
+ * up the intent's CreateIntent sibling in `messages` and parsing its
+ * action_detail. Hub creates land with sn IS NULL, relayer creates with sn
+ * IS NOT NULL — either works, the format we parse is the same. Returns null
+ * when the sibling hasn't been ingested yet or its action_detail can't be
+ * parsed.
+ */
+export async function recoverIntentFilledFormat(
+  intentHash: string,
+  filledRaw: bigint,
+): Promise<FillFormatResult | null> {
   const r = await pool.query(
     `SELECT action_detail FROM messages
       WHERE action_type = 'CreateIntent'
@@ -108,17 +111,6 @@ async function fromSiblingCreate(intentHash: string, filledRaw: bigint): Promise
   );
   if (r.rows.length === 0) return null;
   return formatFillFromCreateActionDetail(r.rows[0].action_detail, filledRaw);
-}
-
-/**
- * Returns a nicely-formatted IntentFilled action_detail + slippage if the
- * create sibling resolves; otherwise null.
- */
-export async function recoverIntentFilledFormat(
-  intentHash: string,
-  filledRaw: bigint,
-): Promise<FillFormatResult | null> {
-  return fromSiblingCreate(intentHash, filledRaw);
 }
 
 const RAW_TUPLE_RE = /^IntentFilled 0x[0-9a-fA-F]{64},/;

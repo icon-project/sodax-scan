@@ -69,11 +69,8 @@ function getProvider(): ethers.JsonRpcProvider {
   return provider;
 }
 
-// Resolves the CreateIntent context for a given intent. Backed by a per-batch
-// preload (one SELECT for all known intent hashes in the batch) with a
-// single-row fallback for intents whose CreateIntent log is in the same batch
-// (the preload runs before handleCreated writes those rows so they wouldn't
-// appear in the map yet).
+// Looks up the CreateIntent context for an intent. Backed by a per-batch
+// preload with a single-row fallback for same-batch creates.
 type ContextLookup = (intentHash: string) => Promise<CreatedContext | null>;
 
 // EVM/ICON hex addresses (0x…, cx…) are case-insensitive — normalise them so
@@ -198,9 +195,10 @@ async function handleFilled(
   const ctx = await lookupContext(intentHash);
   if (ctx === null) return;
 
-  // Format the fill via the same logic used by intent-fill-format.ts: parse
-  // the create row's action_detail to recover output token / dst chain /
-  // decimals, format the filled amount, compute slippage.
+  // Cross-chain fills produce a Sonic→spoke delivery message that the
+  // upstream relayer already indexes — only intra-hub fills are written here.
+  if (ctx.dstChainId !== sonic) return;
+
   const fmt = formatFillFromCreateActionDetail(ctx.actionDetail, filledOutputRaw);
   const actionDetail = fmt?.actionDetail ?? `IntentFilled ${filledOutputRaw.toString()}`;
   const slippage = fmt?.slippage ? fmt.slippage : null;
@@ -236,6 +234,9 @@ async function handleCancelled(
   const ctx = await lookupContext(intentHash);
   if (ctx === null) return;
 
+  // Same cross-chain skip as fills: rollback delivery is relayer-indexed.
+  if (ctx.dstChainId !== sonic) return;
+
   const ts = await blockTs.get(log.blockNumber);
   const row: HubEventRow = {
     intentHash,
@@ -265,18 +266,16 @@ async function processBatch(fromBlock: number, toBlock: number): Promise<void> {
 
   const blockTs = makeBlockTsCache();
 
-  // Process strictly in order: created → filled / cancelled within same batch
-  // would otherwise risk updating a row that hasn't been inserted yet.
+  // Order matters: a fill / cancel handler looks up its CreateIntent's
+  // context, and when the matching create lives in the same batch the
+  // lookup's fallback query needs the create row already inserted.
   logs.sort((a, b) => {
     if (a.blockNumber !== b.blockNumber) return a.blockNumber - b.blockNumber;
     return (a.index ?? 0) - (b.index ?? 0);
   });
 
-  // Preload created contexts for every fill/cancel hash in this batch with
-  // one query, instead of one SELECT per log. The lookup falls back to a
-  // single-row query only for hashes whose CreateIntent log lives in the
-  // SAME batch (preload runs before handleCreated inserts those rows, so
-  // they can't appear in the map). Pre-batch creates are cached either way.
+  // One preload SELECT for every fill/cancel in this batch (vs. N round
+  // trips). Same-batch creates land in the fallback single-row query.
   const lookupContext = makeContextLookup(
     await getCreatedContextsByIntentHashes(extractIntentHashes(logs)),
   );
@@ -299,13 +298,10 @@ async function processBatch(fromBlock: number, toBlock: number): Promise<void> {
     }
   }
 
-  // Any per-log failure must block cursor advance. A failed handleCreated
-  // would otherwise leave its sibling fill/cancel orphaned forever (the
-  // context lookup returns null and the event is silently skipped) once the
-  // cursor moves past this block range. The inserts are idempotent via the
-  // WHERE NOT EXISTS clause keyed on (intent_tx_hash, action_type, sn IS NULL),
-  // so the next tick replays the whole batch safely. Persistent failures
-  // will loop visibly in logs.
+  // Block cursor advance on any per-log failure: a failed create would
+  // otherwise orphan its sibling fill/cancel once the cursor moves past
+  // this range (context lookup returns null → skipped silently). Inserts
+  // are idempotent so the next tick replays the whole batch safely.
   if (failures > 0) {
     throw new Error(
       `hub-intents: ${failures}/${logs.length} log(s) failed in [${fromBlock}, ${toBlock}] — not advancing cursor`,
@@ -313,10 +309,8 @@ async function processBatch(fromBlock: number, toBlock: number): Promise<void> {
   }
 }
 
-// Pulls the first bytes32 word out of each fill/cancel log's `data` — that's
-// the intent hash in both event signatures. Avoids running ABI decode just to
-// build the preload key set; the per-event handlers still decode the full
-// payload when they actually process the log.
+// First bytes32 of `data` is the intent hash in both fill and cancel event
+// signatures — extract it without a full ABI decode.
 function extractIntentHashes(logs: ethers.Log[]): string[] {
   const out: string[] = [];
   for (const log of logs) {
@@ -329,18 +323,14 @@ function extractIntentHashes(logs: ethers.Log[]): string[] {
 }
 
 function makeContextLookup(preload: Map<string, CreatedContext>): ContextLookup {
-  // Case-insensitive lookup: bytes32 hashes round-trip from RPC in lowercase
-  // hex but downstream code shouldn't have to care which casing came back.
+  // Normalize hash case so callers don't have to think about it.
   const lower = new Map<string, CreatedContext>();
   for (const [k, v] of preload) lower.set(k.toLowerCase(), v);
   return async (intentHash: string) => {
     const key = intentHash.toLowerCase();
     const hit = lower.get(key);
     if (hit) return hit;
-    // Miss = either the CreateIntent landed in this same batch (preload
-    // captured a snapshot before handleCreated wrote it) or it's a true
-    // orphan. One per-miss query handles the former and lets the latter
-    // return null as before.
+    // Miss: either a same-batch create the preload didn't see, or an orphan.
     return getCreatedContext(intentHash);
   };
 }

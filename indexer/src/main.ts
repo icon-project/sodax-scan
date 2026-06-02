@@ -76,15 +76,11 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                 actionType.swapInputToken = payload.swapInputToken;
                 actionType.swapOutputToken = payload.swapOutputToken;
 
-                // If the handler emitted the raw event-tuple fallback
-                // ("IntentFilled 0xHASH,bool,…,FILLED,…"), recover a proper
-                // human-readable format using the intent hash + raw filled
-                // amount the handler provided. Source: the sibling
-                // CreateIntent messages row (linked by intent_tx_hash) —
-                // covers both hub-native creates (written here by the hub
-                // poller) and relayer creates (written by the upstream
-                // scanner). If it hasn't been ingested yet, keep the
-                // existing text; the periodic backfill script catches it.
+                // Raw event-tuple fallback ("IntentFilled 0xHASH,bool,…")
+                // means the calldata decode failed — try to recover the
+                // proper action_detail + slippage from the sibling
+                // CreateIntent row. If unavailable yet, keep the raw text;
+                // the periodic backfill script catches it later.
                 if (
                     isRawTupleActionText(actionType.actionText) &&
                     payload.intentTxHash &&

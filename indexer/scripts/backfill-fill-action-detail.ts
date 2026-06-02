@@ -8,16 +8,11 @@
  * fails) and dump the IntentFilled event tuple verbatim. The fourth field is
  * the raw filled output amount; with token decimals + name we can render it.
  *
- * Recovery source: the intent's sibling CreateIntent message (linked by
- * intent_tx_hash). Its action_detail
+ * Recovery source: the intent's sibling CreateIntent message in `messages`
+ * (linked by intent_tx_hash). Its action_detail
  *   "IntentSwap <inAmt> <inTok>(<src>) -> <outMin> <outTok>(<dst>)"
  * gives us output token + dst chain. Look up decimals from chains config,
  * format the filled raw value, and compute slippage from <outMin> vs filled.
- *
- * After the hub_intent_events → messages unification, hub-native creates
- * land in `messages` directly with sn=NULL, so the sibling lookup covers
- * both relayer creates and hub-native creates from one table. The previous
- * "hub_intent_events.filled" recovery path is gone.
  *
  * Rows still unlinked (intent_tx_hash blank) are skipped — they're picked up
  * by the existing backfill-intent-tx-hash.ts once that finishes.

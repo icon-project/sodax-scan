@@ -16,37 +16,10 @@ pool.on('error', function (error, client) {
     logger.error(error)
 })
 
-// Read-side view of the messages table with hub-poller fill/cancel duplicates
-// hidden.
-//
-// Background: the hub poller writes every on-chain hub event (CreateIntent /
-// IntentFilled / CancelIntent) directly into `messages` with `sn = NULL` as
-// the hub-origin marker. For hub-native intents that fill cross-chain, the
-// upstream relayer scanner also writes a row for the same Sonic fill tx,
-// with a real `sn` and the destination-leg fields populated. The relayer's
-// row is the richer one, so at read time we hide the hub twin when a relayer
-// twin exists. CreateIntent rows always survive (relayer never captures
-// hub-native creates), and intra-hub fill/cancel rows survive too (no
-// relayer twin can exist for them).
-//
-// The dedup key is (src_tx_hash, action_type). `action_type` is reclassified
-// from the upstream's 'SendMsg' default to its real value by this indexer's
-// updateTransactionInfo. During the brief reclassification window both rows
-// remain visible — acceptable, the indexer catches up within seconds.
-const DEDUPED_MESSAGES = `(
-    SELECT m.*
-      FROM messages m
-     WHERE NOT (
-        m.sn IS NULL
-        AND m.action_type IN ('IntentFilled', 'CancelIntent')
-        AND EXISTS (
-            SELECT 1 FROM messages r
-             WHERE r.src_tx_hash = m.src_tx_hash
-               AND r.action_type = m.action_type
-               AND r.sn IS NOT NULL
-        )
-     )
-) m`
+// Hub-origin rows are written into `messages` with sn = NULL; relayer rows
+// have sn IS NOT NULL. The two writers' row sets don't overlap by
+// construction (the hub poller only emits hub-native creates and intra-hub
+// fills/cancels), so no read-time dedup is needed.
 
 const buildWhereSql = (status, src_network, dest_network, src_address, dest_address, from_timestamp, to_timestamp, action_type, intent_tx_hash) => {
     let values = []
@@ -125,15 +98,15 @@ const getMessages = async (skip, limit, status, src_network, dest_network, src_a
         intent_tx_hash
     )
 
-    let sqlTotal = `SELECT count(*) FROM ${DEDUPED_MESSAGES}`
+    let sqlTotal = `SELECT count(*) FROM messages`
     let sqlMessages = `SELECT ${LIST_FIELDS}
-                       FROM ${DEDUPED_MESSAGES}
+                       FROM messages
                        ORDER BY created_at DESC, sn DESC NULLS LAST
                        OFFSET $1 LIMIT $2`
     if (conditions.length > 0) {
-        sqlTotal = `SELECT count(*) FROM ${DEDUPED_MESSAGES} WHERE ${conditions.join(' AND ')}`
+        sqlTotal = `SELECT count(*) FROM messages WHERE ${conditions.join(' AND ')}`
         sqlMessages = `SELECT ${LIST_FIELDS}
-                       FROM ${DEDUPED_MESSAGES}
+                       FROM messages
                        WHERE ${conditions.join(' AND ')}
                        ORDER BY created_at DESC, sn DESC NULLS LAST
                        OFFSET $${conditions.length + 1} LIMIT $${conditions.length + 2}`
@@ -157,7 +130,7 @@ const getMessages = async (skip, limit, status, src_network, dest_network, src_a
 }
 
 const getMessageById = async (id) => {
-    const sql = `SELECT ${DETAIL_FIELDS} FROM ${DEDUPED_MESSAGES} WHERE id = $1`
+    const sql = `SELECT ${DETAIL_FIELDS} FROM messages WHERE id = $1`
     const messagesRs = await pool.query(sql, [id])
     return {
         data: messagesRs.rows,
@@ -170,7 +143,7 @@ const getMessageById = async (id) => {
 const searchMessages = async (value) => {
     const messagesRs = await pool.query(
         `SELECT ${SEARCH_FIELDS}
-         FROM ${DEDUPED_MESSAGES}
+         FROM messages
          WHERE src_tx_hash = $1 OR dest_tx_hash = $1 OR response_tx_hash = $1 OR rollback_tx_hash = $1 OR sn = $2 OR intent_tx_hash = $1
          ORDER BY src_block_timestamp DESC NULLS LAST`,
         [value, value.startsWith('0x') || !Number.isInteger(Number(value)) ? '0' : value]
@@ -185,13 +158,13 @@ const searchMessages = async (value) => {
 
 // TODO: to be removed
 const getStatistic = async () => {
-    const totalRs = await pool.query(`SELECT count(*) FROM ${DEDUPED_MESSAGES}`)
+    const totalRs = await pool.query(`SELECT count(*) FROM messages`)
     const messages = Number(totalRs.rows[0].count)
     const fees = {}
     const networks = Object.values(NETWORK)
     for (let index = 0; index < networks.length; index++) {
         const network = networks[index]
-        const feeRs = await pool.query(`SELECT sum(cast(value as decimal)) FROM ${DEDUPED_MESSAGES} WHERE src_network = $1`, [network])
+        const feeRs = await pool.query(`SELECT sum(cast(value as decimal)) FROM messages WHERE src_network = $1`, [network])
         fees[network] = feeRs.rows[0].sum ? feeRs.rows[0].sum.toString() : '0'
     }
 
@@ -210,7 +183,7 @@ const getTotalMessages = async (status, src_networks, dest_networks, src_address
     let data = {}
 
     let { conditions, values } = buildWhereSql(status, src_networks, dest_networks, src_address, dest_address, from_timestamp, to_timestamp)
-    let sql = `SELECT count(*) as total FROM ${DEDUPED_MESSAGES}`
+    let sql = `SELECT count(*) as total FROM messages`
     if (conditions.length == 0) {
         const totalRs = await pool.query(sql, values)
         const total = Number(totalRs.rows[0].total)
@@ -218,7 +191,7 @@ const getTotalMessages = async (status, src_networks, dest_networks, src_address
     } else {
         if (!src_networks && !dest_networks) {
             sql = `SELECT count(*) as total
-                    FROM ${DEDUPED_MESSAGES}
+                    FROM messages
                     WHERE ${conditions.join(' AND ')}`
             const totalRs = await pool.query(sql, values)
             const total = Number(totalRs.rows[0].total)
@@ -227,7 +200,7 @@ const getTotalMessages = async (status, src_networks, dest_networks, src_address
             if (src_networks) {
                 let { conditions, values } = buildWhereSql(status, src_networks, undefined, src_address, dest_address, from_timestamp, to_timestamp)
                 sql = `SELECT src_network, count(*) as total
-                    FROM ${DEDUPED_MESSAGES}
+                    FROM messages
                     WHERE ${conditions.join(' AND ')}
                     GROUP BY src_network
                     ORDER BY src_network`
@@ -240,7 +213,7 @@ const getTotalMessages = async (status, src_networks, dest_networks, src_address
             if (dest_networks) {
                 let { conditions, values } = buildWhereSql(status, undefined, dest_networks, src_address, dest_address, from_timestamp, to_timestamp)
                 sql = `SELECT dest_network, count(*) as total
-                    FROM ${DEDUPED_MESSAGES}
+                    FROM messages
                     WHERE ${conditions.join(' AND ')}
                     GROUP BY dest_network
                     ORDER BY dest_network`

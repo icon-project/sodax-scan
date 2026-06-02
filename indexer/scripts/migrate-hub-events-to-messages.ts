@@ -1,10 +1,16 @@
 /**
  * One-shot migration for the hub-events-into-messages unification.
  *
- * Copies every row from `hub_intent_events` into `messages` with sn=NULL,
- * mapping columns as defined below. Idempotent — re-running is a no-op
- * because of the WHERE NOT EXISTS clause keyed on (intent_tx_hash,
- * action_type, sn IS NULL).
+ * Copies hub events from `hub_intent_events` into `messages` with sn=NULL,
+ * matching what the new poller writes:
+ *   - all CreateIntent rows (no relayer counterpart ever exists)
+ *   - intra-hub fills/cancels only (src=dst=sonic). Cross-chain hub fills
+ *     and cancels are skipped because the relayer scanner already writes a
+ *     row for the corresponding delivery message — copying them would only
+ *     produce duplicates.
+ *
+ * Idempotent — re-running is a no-op via WHERE NOT EXISTS on
+ * (intent_tx_hash, action_type, sn IS NULL).
  *
  * Column mapping:
  *   intent_hash        → intent_tx_hash
@@ -36,6 +42,8 @@ import { Pool } from 'pg';
 const apply = process.argv.includes('--apply');
 const dropTable = process.argv.includes('--drop-table');
 
+const SONIC = '146';
+
 const pool = new Pool({
   user: process.env.DB_USER,
   host: process.env.DB_HOST,
@@ -44,6 +52,14 @@ const pool = new Pool({
   port: Number(process.env.DB_PORT || 5432),
   ssl: { rejectUnauthorized: false },
 });
+
+// Match the new poller's write filter: creates always, fills/cancels only
+// when intra-hub. Cross-chain fill/cancel rows in hub_intent_events have a
+// relayer twin already, so migrating them would create duplicates.
+const SCOPE_FILTER = `
+  e.event_type = 'created'
+  OR (e.event_type IN ('filled','cancelled') AND e.src_chain_id = $2 AND e.dst_chain_id = $2)
+`;
 
 const COPY_SQL = `
   INSERT INTO messages (
@@ -61,24 +77,31 @@ const COPY_SQL = `
     e.action_type, e.action_detail, e.intent_hash, e.slippage,
     e.block_timestamp, $1
   FROM hub_intent_events e
-  WHERE NOT EXISTS (
-    SELECT 1 FROM messages m
-    WHERE m.intent_tx_hash = e.intent_hash
-      AND m.action_type    = e.action_type
-      AND m.sn IS NULL
-  )
+  WHERE (${SCOPE_FILTER})
+    AND NOT EXISTS (
+      SELECT 1 FROM messages m
+      WHERE m.intent_tx_hash = e.intent_hash
+        AND m.action_type    = e.action_type
+        AND m.sn IS NULL
+    )
 `;
 
 const COUNT_SOURCE = `SELECT count(*) AS n FROM hub_intent_events`;
+const COUNT_IN_SCOPE = `
+  SELECT count(*) AS n
+    FROM hub_intent_events e
+   WHERE ${SCOPE_FILTER}
+`;
 const COUNT_PENDING = `
   SELECT count(*) AS n
     FROM hub_intent_events e
-   WHERE NOT EXISTS (
-     SELECT 1 FROM messages m
-     WHERE m.intent_tx_hash = e.intent_hash
-       AND m.action_type    = e.action_type
-       AND m.sn IS NULL
-   )
+   WHERE (${SCOPE_FILTER})
+     AND NOT EXISTS (
+       SELECT 1 FROM messages m
+       WHERE m.intent_tx_hash = e.intent_hash
+         AND m.action_type    = e.action_type
+         AND m.sn IS NULL
+     )
 `;
 
 async function tableExists(name: string): Promise<boolean> {
@@ -97,10 +120,13 @@ async function main(): Promise<void> {
   }
 
   const total = Number((await pool.query(COUNT_SOURCE)).rows[0].n);
-  const pending = Number((await pool.query(COUNT_PENDING)).rows[0].n);
-  console.log(`hub_intent_events rows total: ${total}`);
-  console.log(`rows that would be inserted : ${pending}`);
-  console.log(`rows already in messages    : ${total - pending}`);
+  const inScope = Number((await pool.query(COUNT_IN_SCOPE, [SONIC])).rows[0].n);
+  const pending = Number((await pool.query(COUNT_PENDING, [SONIC])).rows[0].n);
+  console.log(`hub_intent_events rows total       : ${total}`);
+  console.log(`in scope (creates + intra-hub f/c) : ${inScope}`);
+  console.log(`out of scope (cross-chain f/c)     : ${total - inScope}`);
+  console.log(`rows that would be inserted        : ${pending}`);
+  console.log(`rows already in messages           : ${inScope - pending}`);
 
   if (!apply) {
     console.log('\nDry run — pass --apply to commit.');
@@ -109,7 +135,7 @@ async function main(): Promise<void> {
   }
 
   const nowSec = Math.floor(Date.now() / 1000);
-  const rs = await pool.query(COPY_SQL, [nowSec]);
+  const rs = await pool.query(COPY_SQL, [nowSec, SONIC]);
   console.log(`\nInserted ${rs.rowCount} row(s) into messages.`);
 
   if (dropTable) {

@@ -1,9 +1,8 @@
 import pool from '../db/db';
 
-// Hub events are written directly into the `messages` table with `sn = NULL`
-// as the hub-origin marker. There's no separate hub_intent_events table any
-// more — the read-side dedup in api/db.js hides the hub fill/cancel rows
-// whose relayer twin (sn IS NOT NULL) covers the same on-chain action.
+// Hub events go into the `messages` table with sn = NULL as the hub-origin
+// marker. Only hub-native creates and intra-hub (src=dst=sonic) fills/cancels
+// are written here; cross-chain fills/cancels are left to the upstream relayer.
 
 export interface HubEventRow {
   intentHash: string;
@@ -33,12 +32,8 @@ export interface CreatedContext {
 
 const nowSec = () => Math.floor(Date.now() / 1000);
 
-// Insert a hub event as a messages row with sn=NULL. Idempotent against the
-// hub poller's own re-runs (same intent_hash, action_type, sn IS NULL ⇒ skip).
-// Does NOT dedupe against relayer-written rows (sn IS NOT NULL): we want both
-// rows to exist so that intra-hub flows survive even when no relayer twin
-// will ever arrive; the read-side dedup in api/db.js hides the hub twin when
-// a relayer twin does exist.
+// Insert a hub event as a messages row with sn = NULL. The WHERE NOT EXISTS
+// clause makes re-processing the same block range a no-op.
 export async function insertHubEventAsMessage(row: HubEventRow): Promise<void> {
   const status = row.eventType === 'cancelled' ? 'rollbacked' : 'executed';
   const now = nowSec();
