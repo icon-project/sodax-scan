@@ -16,38 +16,6 @@ pool.on('error', function (error, client) {
     logger.error(error)
 })
 
-// Read-side view of the messages table with hub-poller fill/cancel duplicates
-// hidden.
-//
-// Background: the hub poller writes every on-chain hub event (CreateIntent /
-// IntentFilled / CancelIntent) directly into `messages` with `sn = NULL` as
-// the hub-origin marker. For hub-native intents that fill cross-chain, the
-// upstream relayer scanner also writes a row for the same Sonic fill tx,
-// with a real `sn` and the destination-leg fields populated. The relayer's
-// row is the richer one, so at read time we hide the hub twin when a relayer
-// twin exists. CreateIntent rows always survive (relayer never captures
-// hub-native creates), and intra-hub fill/cancel rows survive too (no
-// relayer twin can exist for them).
-//
-// The dedup key is (src_tx_hash, action_type). `action_type` is reclassified
-// from the upstream's 'SendMsg' default to its real value by this indexer's
-// updateTransactionInfo. During the brief reclassification window both rows
-// remain visible — acceptable, the indexer catches up within seconds.
-const DEDUPED_MESSAGES = `(
-    SELECT m.*
-      FROM messages m
-     WHERE NOT (
-        m.sn IS NULL
-        AND m.action_type IN ('IntentFilled', 'CancelIntent')
-        AND EXISTS (
-            SELECT 1 FROM messages r
-             WHERE r.src_tx_hash = m.src_tx_hash
-               AND r.action_type = m.action_type
-               AND r.sn IS NOT NULL
-        )
-     )
-) m`
-
 const buildWhereSql = (status, src_network, dest_network, src_address, dest_address, from_timestamp, to_timestamp, action_type, intent_tx_hash) => {
     let values = []
     let conditions = []
@@ -76,9 +44,9 @@ const buildWhereSql = (status, src_network, dest_network, src_address, dest_addr
         values.push(from_timestamp)
     }
     if (to_timestamp) {
-        conditions.push(`(created_at <= $${conditions.length + 1} OR
-                            dest_block_timestamp <= $${conditions.length + 1} OR
-                            response_block_timestamp <= $${conditions.length + 1} OR
+        conditions.push(`(created_at <= $${conditions.length + 1} OR 
+                            dest_block_timestamp <= $${conditions.length + 1} OR 
+                            response_block_timestamp <= $${conditions.length + 1} OR 
                             rollback_block_timestamp <= $${conditions.length + 1})`)
         values.push(to_timestamp)
     }
@@ -94,25 +62,8 @@ const buildWhereSql = (status, src_network, dest_network, src_address, dest_addr
     return { conditions, values }
 }
 
-const LIST_FIELDS = ` id, sn, status, src_network, src_block_number, src_block_timestamp, src_tx_hash, src_app as src_address, src_error,
-                      dest_network, dest_block_number, dest_block_timestamp, dest_tx_hash, dest_app as dest_address, dest_error,
-                      response_block_number, response_block_timestamp, response_tx_hash, response_error,
-                      rollback_block_number, rollback_block_timestamp, rollback_tx_hash, rollback_error,
-                      action_type, created_at, updated_at, intent_tx_hash, slippage `
-
-const DETAIL_FIELDS = ` id, sn, status, src_network, src_block_number, src_block_timestamp, src_tx_hash, src_app as src_address, src_error,
-                        dest_network, dest_block_number, dest_block_timestamp, dest_tx_hash, dest_app as dest_address, dest_error,
-                        response_block_number, response_block_timestamp, response_tx_hash, response_error,
-                        rollback_block_number, rollback_block_timestamp, rollback_tx_hash, rollback_error,
-                        value, fee, action_type, action_detail, action_amount_usd, created_at, updated_at, slippage, intent_tx_hash `
-
-const SEARCH_FIELDS = ` id, sn, status, src_network, src_block_number, src_block_timestamp, src_tx_hash, src_app as src_address, src_error,
-                        dest_network, dest_block_number, dest_block_timestamp, dest_tx_hash, dest_app as dest_address, dest_error,
-                        response_block_number, response_block_timestamp, response_tx_hash, response_error,
-                        rollback_block_number, rollback_block_timestamp, rollback_tx_hash, rollback_error,
-                        value, fee, created_at, updated_at, action_type, action_detail, intent_tx_hash, slippage `
-
 const getMessages = async (skip, limit, status, src_network, dest_network, src_address, dest_address, from_timestamp, to_timestamp, action_type, intent_tx_hash) => {
+    // build sql
     let { conditions, values } = buildWhereSql(
         status,
         src_network,
@@ -125,20 +76,23 @@ const getMessages = async (skip, limit, status, src_network, dest_network, src_a
         intent_tx_hash
     )
 
-    let sqlTotal = `SELECT count(*) FROM ${DEDUPED_MESSAGES}`
-    let sqlMessages = `SELECT ${LIST_FIELDS}
-                       FROM ${DEDUPED_MESSAGES}
-                       ORDER BY created_at DESC, sn DESC NULLS LAST
-                       OFFSET $1 LIMIT $2`
+    let sqlTotal = `SELECT count(*) FROM messages`
+    const selectFields = ` id, sn, status, src_network, src_block_number, src_block_timestamp, src_tx_hash, src_app as src_address, src_error, 
+                                dest_network, dest_block_number, dest_block_timestamp, dest_tx_hash, dest_app as dest_address, dest_error, 
+                                response_block_number, response_block_timestamp, response_tx_hash, response_error, 
+                                rollback_block_number, rollback_block_timestamp, rollback_tx_hash, rollback_error, action_type, created_at,updated_at,intent_tx_hash,slippage `
+    let sqlMessages = `SELECT ${selectFields} 
+                        FROM messages ORDER BY created_at DESC,sn DESC OFFSET $1 LIMIT $2`
     if (conditions.length > 0) {
-        sqlTotal = `SELECT count(*) FROM ${DEDUPED_MESSAGES} WHERE ${conditions.join(' AND ')}`
-        sqlMessages = `SELECT ${LIST_FIELDS}
-                       FROM ${DEDUPED_MESSAGES}
-                       WHERE ${conditions.join(' AND ')}
-                       ORDER BY created_at DESC, sn DESC NULLS LAST
-                       OFFSET $${conditions.length + 1} LIMIT $${conditions.length + 2}`
+        sqlTotal = `SELECT count(*) FROM messages WHERE ${conditions.join(' AND ')} `
+        sqlMessages = `SELECT ${selectFields}  
+                        FROM messages 
+                        WHERE ${conditions.join(' AND ')} 
+                        ORDER BY created_at DESC 
+                        OFFSET $${conditions.length + 1} LIMIT $${conditions.length + 2}`
     }
 
+    // query data
     const totalRs = await pool.query(sqlTotal, values)
     const messagesRs = await pool.query(sqlMessages, values.concat([skip, limit]))
 
@@ -157,7 +111,12 @@ const getMessages = async (skip, limit, status, src_network, dest_network, src_a
 }
 
 const getMessageById = async (id) => {
-    const sql = `SELECT ${DETAIL_FIELDS} FROM ${DEDUPED_MESSAGES} WHERE id = $1`
+    const sql = `SELECT id, sn, status, src_network, src_block_number, src_block_timestamp, src_tx_hash, src_app as src_address, src_error, 
+                    dest_network, dest_block_number, dest_block_timestamp, dest_tx_hash, dest_app as dest_address, dest_error, 
+                    response_block_number, response_block_timestamp, response_tx_hash, response_error, 
+                    rollback_block_number, rollback_block_timestamp, rollback_tx_hash, rollback_error, 
+                    value, fee, action_type, action_detail, action_amount_usd, created_at, updated_at,slippage,intent_tx_hash 
+                FROM messages WHERE id = $1`
     const messagesRs = await pool.query(sql, [id])
     return {
         data: messagesRs.rows,
@@ -168,11 +127,18 @@ const getMessageById = async (id) => {
 }
 
 const searchMessages = async (value) => {
+    // console.log(value.startsWith('0x'), Number.isInteger(Number(value)))
+    // const sn =  Number.isInteger(Number(value)) ? parseInt(value) : 0
+    // console.log(value, Number.isInteger(Number(value)), parseInt(value) ,  sn)
     const messagesRs = await pool.query(
-        `SELECT ${SEARCH_FIELDS}
-         FROM ${DEDUPED_MESSAGES}
-         WHERE src_tx_hash = $1 OR dest_tx_hash = $1 OR response_tx_hash = $1 OR rollback_tx_hash = $1 OR sn = $2 OR intent_tx_hash = $1
-         ORDER BY src_block_timestamp DESC NULLS LAST`,
+        `SELECT id, sn, status, src_network, src_block_number, src_block_timestamp, src_tx_hash, src_app as src_address, src_error, 
+            dest_network, dest_block_number, dest_block_timestamp, dest_tx_hash, dest_app as dest_address, dest_error, 
+            response_block_number, response_block_timestamp, response_tx_hash, response_error, 
+            rollback_block_number, rollback_block_timestamp, rollback_tx_hash, rollback_error, 
+            value, fee, created_at, updated_at, action_type, action_detail ,intent_tx_hash,slippage
+        FROM messages 
+        WHERE src_tx_hash = $1 OR dest_tx_hash = $1 OR response_tx_hash = $1 OR rollback_tx_hash = $1 OR sn = $2 OR intent_tx_hash = $1
+        ORDER BY src_block_timestamp DESC`,
         [value, value.startsWith('0x') || !Number.isInteger(Number(value)) ? '0' : value]
     )
     return {
@@ -185,13 +151,13 @@ const searchMessages = async (value) => {
 
 // TODO: to be removed
 const getStatistic = async () => {
-    const totalRs = await pool.query(`SELECT count(*) FROM ${DEDUPED_MESSAGES}`)
+    const totalRs = await pool.query('SELECT count(*) FROM messages')
     const messages = Number(totalRs.rows[0].count)
     const fees = {}
     const networks = Object.values(NETWORK)
     for (let index = 0; index < networks.length; index++) {
         const network = networks[index]
-        const feeRs = await pool.query(`SELECT sum(cast(value as decimal)) FROM ${DEDUPED_MESSAGES} WHERE src_network = $1`, [network])
+        const feeRs = await pool.query(`select sum(cast(value as decimal)) from messages where src_network = '${network}'`)
         fees[network] = feeRs.rows[0].sum ? feeRs.rows[0].sum.toString() : '0'
     }
 
@@ -209,16 +175,18 @@ const getStatistic = async () => {
 const getTotalMessages = async (status, src_networks, dest_networks, src_address, dest_address, from_timestamp, to_timestamp) => {
     let data = {}
 
+    // build sql
     let { conditions, values } = buildWhereSql(status, src_networks, dest_networks, src_address, dest_address, from_timestamp, to_timestamp)
-    let sql = `SELECT count(*) as total FROM ${DEDUPED_MESSAGES}`
+    let sql = `SELECT count(*) as total FROM messages`
     if (conditions.length == 0) {
+        // query data
         const totalRs = await pool.query(sql, values)
         const total = Number(totalRs.rows[0].total)
         data.total = total
     } else {
         if (!src_networks && !dest_networks) {
-            sql = `SELECT count(*) as total
-                    FROM ${DEDUPED_MESSAGES}
+            sql = `SELECT count(*) as total   
+                    FROM messages 
                     WHERE ${conditions.join(' AND ')}`
             const totalRs = await pool.query(sql, values)
             const total = Number(totalRs.rows[0].total)
@@ -226,9 +194,9 @@ const getTotalMessages = async (status, src_networks, dest_networks, src_address
         } else {
             if (src_networks) {
                 let { conditions, values } = buildWhereSql(status, src_networks, undefined, src_address, dest_address, from_timestamp, to_timestamp)
-                sql = `SELECT src_network, count(*) as total
-                    FROM ${DEDUPED_MESSAGES}
-                    WHERE ${conditions.join(' AND ')}
+                sql = `SELECT src_network, count(*) as total   
+                    FROM messages 
+                    WHERE ${conditions.join(' AND ')} 
                     GROUP BY src_network
                     ORDER BY src_network`
                 const srcNetworkTotalRs = await pool.query(sql, values)
@@ -239,9 +207,9 @@ const getTotalMessages = async (status, src_networks, dest_networks, src_address
             }
             if (dest_networks) {
                 let { conditions, values } = buildWhereSql(status, undefined, dest_networks, src_address, dest_address, from_timestamp, to_timestamp)
-                sql = `SELECT dest_network, count(*) as total
-                    FROM ${DEDUPED_MESSAGES}
-                    WHERE ${conditions.join(' AND ')}
+                sql = `SELECT dest_network, count(*) as total  
+                    FROM messages 
+                    WHERE ${conditions.join(' AND ')} 
                     GROUP BY dest_network
                     ORDER BY dest_network`
                 const destNetworkTotalRs = await pool.query(sql, values)
@@ -263,5 +231,5 @@ module.exports = {
     getMessageById,
     searchMessages,
     getStatistic,
-    getTotalMessages,
+    getTotalMessages
 }

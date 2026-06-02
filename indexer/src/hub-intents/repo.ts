@@ -1,14 +1,14 @@
+import { promises as fs } from 'fs';
+import path from 'path';
 import pool from '../db/db';
 
-// Hub events are written directly into the `messages` table with `sn = NULL`
-// as the hub-origin marker. There's no separate hub_intent_events table any
-// more — the read-side dedup in api/db.js hides the hub fill/cancel rows
-// whose relayer twin (sn IS NOT NULL) covers the same on-chain action.
+// Hub-native CreateIntent events are written directly into the `messages`
+// table with `sn = NULL` as the hub-origin marker. Only IntentCreated is
+// indexed here — fills/cancels are not recorded by the hub poller.
 
 export interface HubEventRow {
   intentHash: string;
-  eventType: 'created' | 'filled' | 'cancelled';
-  actionType: 'CreateIntent' | 'IntentFilled' | 'CancelIntent';
+  actionType: 'CreateIntent';
   creator: string | null;
   solver: string | null;
   srcChainId: string;
@@ -20,27 +20,13 @@ export interface HubEventRow {
   slippage: string | null;
 }
 
-// Subset of a CreateIntent row needed to enrich subsequent fill/cancel events
-// (creator/solver for src_app/dest_app, chain ids + parseable action_detail
-// for slippage and fill action_detail formatting).
-export interface CreatedContext {
-  creator: string | null;
-  solver: string | null;
-  srcChainId: string;
-  dstChainId: string;
-  actionDetail: string;
-}
-
 const nowSec = () => Math.floor(Date.now() / 1000);
 
-// Insert a hub event as a messages row with sn=NULL. Idempotent against the
-// hub poller's own re-runs (same intent_hash, action_type, sn IS NULL ⇒ skip).
-// Does NOT dedupe against relayer-written rows (sn IS NOT NULL): we want both
-// rows to exist so that intra-hub flows survive even when no relayer twin
-// will ever arrive; the read-side dedup in api/db.js hides the hub twin when
-// a relayer twin does exist.
+// Insert a hub CreateIntent event as a messages row with sn=NULL. Idempotent:
+// skips when a row for the same intent already exists (same intent_tx_hash +
+// action_type). This makes re-processing safe when the cursor is reset and the
+// same blocks are scanned again — no duplicate rows.
 export async function insertHubEventAsMessage(row: HubEventRow): Promise<void> {
-  const status = row.eventType === 'cancelled' ? 'rollbacked' : 'executed';
   const now = nowSec();
   const sql = `
     INSERT INTO messages (
@@ -50,20 +36,18 @@ export async function insertHubEventAsMessage(row: HubEventRow): Promise<void> {
       action_type, action_detail, intent_tx_hash, slippage,
       created_at, updated_at
     )
-    SELECT NULL, $1,
-           $2, $3, $4, $5, $6,
-           $7, $8,
-           $9, $10, $11, $12,
-           $4, $13
+    SELECT NULL, 'executed',
+           $1, $2, $3, $4, $5,
+           $6, $7,
+           $8, $9, $10, $11,
+           $3, $12
     WHERE NOT EXISTS (
       SELECT 1 FROM messages
-      WHERE intent_tx_hash = $11
-        AND action_type    = $9
-        AND sn IS NULL
+      WHERE intent_tx_hash = $10
+        AND action_type    = $8
     )
   `;
   await pool.query(sql, [
-    status,
     row.srcChainId,
     row.blockNumber,
     row.blockTimestamp,
@@ -79,70 +63,38 @@ export async function insertHubEventAsMessage(row: HubEventRow): Promise<void> {
   ]);
 }
 
-// Read CreatedContext for a single intent from its CreateIntent messages row.
-// Returns null when the create hasn't been indexed yet (or never was — e.g.
-// the intent was created before HUB_INTENT_START_BLOCK).
-export async function getCreatedContext(intentHash: string): Promise<CreatedContext | null> {
-  const r = await pool.query(
-    `SELECT src_app, dest_app, src_network, dest_network, action_detail
-       FROM messages
-      WHERE intent_tx_hash = $1
-        AND action_type    = 'CreateIntent'
-        AND sn IS NULL
-      LIMIT 1`,
-    [intentHash],
-  );
-  if (r.rows.length === 0) return null;
-  const row = r.rows[0];
-  return {
-    creator: row.src_app,
-    solver: row.dest_app,
-    srcChainId: row.src_network,
-    dstChainId: row.dest_network,
-    actionDetail: row.action_detail,
-  };
-}
+// Cursor persistence is file-based (a local JSON map of name -> last_block),
+// not a DB table. Override the location with HUB_INTENT_CURSOR_FILE.
+const CURSOR_FILE = process.env.HUB_INTENT_CURSOR_FILE
+  || path.resolve(process.cwd(), 'hub-intents-cursor.json');
 
-// Batch variant of getCreatedContext: returns a Map keyed by intent_hash for
-// every hash in `intentHashes` that has a hub-origin CreateIntent row.
-// Hashes with no create are simply absent from the map.
-export async function getCreatedContextsByIntentHashes(
-  intentHashes: string[],
-): Promise<Map<string, CreatedContext>> {
-  const out = new Map<string, CreatedContext>();
-  if (intentHashes.length === 0) return out;
-  const unique = Array.from(new Set(intentHashes));
-  const r = await pool.query(
-    `SELECT intent_tx_hash, src_app, dest_app, src_network, dest_network, action_detail
-       FROM messages
-      WHERE intent_tx_hash = ANY($1)
-        AND action_type    = 'CreateIntent'
-        AND sn IS NULL`,
-    [unique],
-  );
-  for (const row of r.rows) {
-    out.set(row.intent_tx_hash, {
-      creator: row.src_app,
-      solver: row.dest_app,
-      srcChainId: row.src_network,
-      dstChainId: row.dest_network,
-      actionDetail: row.action_detail,
-    });
+async function readCursorFile(): Promise<Record<string, number>> {
+  try {
+    const raw = await fs.readFile(CURSOR_FILE, 'utf8');
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed as Record<string, number> : {};
+  } catch (err: any) {
+    if (err?.code === 'ENOENT') return {};
+    console.error(
+      `hub-intents: cursor file unreadable (${CURSOR_FILE}) — treating as empty:`,
+      err?.message ?? err,
+    );
+    return {};
   }
-  return out;
 }
 
 export async function getCursor(name: string): Promise<number | null> {
-  const r = await pool.query(`SELECT last_block FROM indexer_cursors WHERE name = $1`, [name]);
-  if (r.rows.length === 0) return null;
-  return Number(r.rows[0].last_block);
+  const data = await readCursorFile();
+  const v = data[name];
+  return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
 
 export async function setCursor(name: string, lastBlock: number): Promise<void> {
-  await pool.query(
-    `INSERT INTO indexer_cursors (name, last_block, updated_at)
-     VALUES ($1, $2, $3)
-     ON CONFLICT (name) DO UPDATE SET last_block = EXCLUDED.last_block, updated_at = EXCLUDED.updated_at`,
-    [name, lastBlock, nowSec()],
-  );
+  const data = await readCursorFile();
+  data[name] = lastBlock;
+  // Write to a temp file then rename so a crash mid-write can't corrupt the
+  // cursor (rename is atomic on the same filesystem).
+  const tmp = `${CURSOR_FILE}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify(data, null, 2));
+  await fs.rename(tmp, CURSOR_FILE);
 }

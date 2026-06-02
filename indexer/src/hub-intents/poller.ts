@@ -1,12 +1,8 @@
 import { ethers } from 'ethers';
 import { RPC_URLS, sonic, chains, idToChainNameMap } from '../configs';
 import { bigintDivisionToDecimalString } from '../utils';
-import { formatFillFromCreateActionDetail } from '../intent-fill-format';
 import {
-  CreatedContext,
   HubEventRow,
-  getCreatedContext,
-  getCreatedContextsByIntentHashes,
   getCursor,
   insertHubEventAsMessage,
   setCursor,
@@ -18,12 +14,6 @@ const INTENT_CREATED_TOPIC = ethers.keccak256(
   ethers.toUtf8Bytes(
     'IntentCreated(bytes32,(uint256,address,address,address,uint256,uint256,uint256,bool,uint256,uint256,bytes,bytes,address,bytes))',
   ),
-);
-const INTENT_FILLED_TOPIC = ethers.keccak256(
-  ethers.toUtf8Bytes('IntentFilled(bytes32,(bool,uint256,uint256,bool))'),
-);
-const INTENT_CANCELLED_TOPIC = ethers.keccak256(
-  ethers.toUtf8Bytes('IntentCancelled(bytes32)'),
 );
 
 const CREATED_TUPLE =
@@ -39,7 +29,6 @@ function envInt(name: string, fallback: number): number {
 const CONTRACT_ADDRESS = (
   process.env.HUB_INTENT_CONTRACT || '0x6382D6ccD780758C5e8A6123c33ee8F4472F96ef'
 ).toLowerCase();
-const START_BLOCK = envInt('HUB_INTENT_START_BLOCK', 18681775);
 const POLL_INTERVAL_MS = envInt('HUB_INTENT_POLL_INTERVAL_MS', 30_000);
 const BATCH_SIZE = envInt('HUB_INTENT_BATCH_SIZE', 5_000);
 const CONFIRMATIONS = envInt('HUB_INTENT_CONFIRMATIONS', 12);
@@ -68,13 +57,6 @@ function getProvider(): ethers.JsonRpcProvider {
   }
   return provider;
 }
-
-// Resolves the CreateIntent context for a given intent. Backed by a per-batch
-// preload (one SELECT for all known intent hashes in the batch) with a
-// single-row fallback for intents whose CreateIntent log is in the same batch
-// (the preload runs before handleCreated writes those rows so they wouldn't
-// appear in the map yet).
-type ContextLookup = (intentHash: string) => Promise<CreatedContext | null>;
 
 // EVM/ICON hex addresses (0x…, cx…) are case-insensitive — normalise them so
 // checksum vs all-lowercase variants both match registry keys. Base58/bech32
@@ -148,11 +130,15 @@ async function handleCreated(
   const dstChainId = (tuple[9] as bigint).toString();
   const solver = (tuple[12] as string).toLowerCase();
 
-  // Hub-origin filter: source leg on Sonic means the intent was created
-  // hub-native (did not arrive via the relayer, so the relayer path won't
-  // have it). Destination may be any chain — cross-network intents still
-  // originate here and must be indexed.
-  if (srcChainId !== sonic) return;
+  // Hub-only filter: a hub-native intent is created by a direct call to the
+  // hub contract (tx.to === hub). Relayer-driven intents emit the same
+  // IntentCreated event but arrive via the relayer router / multicall
+  // (tx.to is that contract, not the hub) and are recorded by the upstream
+  // scanner from their spoke origin — skip them here. The intent's own
+  // src/dst chains are irrelevant to this distinction. `getLogs` omits the
+  // transaction's `to`, so resolve it with one getTransaction per create.
+  const txn = await rpcGate(() => getProvider().getTransaction(log.transactionHash));
+  if (txn?.to?.toLowerCase() !== CONTRACT_ADDRESS) return;
 
   const inInfo = tokenInfo(srcChainId, inputToken);
   const outInfo = tokenInfo(dstChainId, outputToken);
@@ -165,7 +151,6 @@ async function handleCreated(
   const ts = await blockTs.get(log.blockNumber);
   const row: HubEventRow = {
     intentHash,
-    eventType: 'created',
     actionType: 'CreateIntent',
     creator,
     solver,
@@ -177,81 +162,20 @@ async function handleCreated(
     actionDetail,
     slippage: null,
   };
-  await insertHubEventAsMessage(row);
-}
-
-async function handleFilled(
-  log: ethers.Log,
-  blockTs: BlockTimestampCache,
-  lookupContext: ContextLookup,
-): Promise<void> {
-  const abi = ethers.AbiCoder.defaultAbiCoder();
-  // Match existing flattened-tuple decode pattern.
-  const decoded = abi.decode(['(bytes32,bool,uint256,uint256,bool)'], log.data);
-  const t = decoded[0] as ethers.Result;
-  const intentHash = t[0] as string;
-  const filledOutputRaw = t[3] as bigint;
-
-  // Only record fills for intents we created (hub-origin). A null context means
-  // the IntentFilled belongs to an intent the created-filter skipped or one
-  // created before our START_BLOCK — recording it would orphan the event.
-  const ctx = await lookupContext(intentHash);
-  if (ctx === null) return;
-
-  // Format the fill via the same logic used by intent-fill-format.ts: parse
-  // the create row's action_detail to recover output token / dst chain /
-  // decimals, format the filled amount, compute slippage.
-  const fmt = formatFillFromCreateActionDetail(ctx.actionDetail, filledOutputRaw);
-  const actionDetail = fmt?.actionDetail ?? `IntentFilled ${filledOutputRaw.toString()}`;
-  const slippage = fmt?.slippage ? fmt.slippage : null;
-
-  const ts = await blockTs.get(log.blockNumber);
-  const row: HubEventRow = {
+  console.log("intent created",{
     intentHash,
-    eventType: 'filled',
-    actionType: 'IntentFilled',
-    creator: ctx.creator,
-    solver: ctx.solver,
-    srcChainId: ctx.srcChainId,
-    dstChainId: ctx.dstChainId,
+    actionType: 'CreateIntent',
+    creator,
+    solver,
+    srcChainId,
+    dstChainId,
     blockNumber: log.blockNumber,
     blockTimestamp: ts,
     txHash: log.transactionHash,
     actionDetail,
-    slippage,
-  };
-  await insertHubEventAsMessage(row);
-}
-
-async function handleCancelled(
-  log: ethers.Log,
-  blockTs: BlockTimestampCache,
-  lookupContext: ContextLookup,
-): Promise<void> {
-  const abi = ethers.AbiCoder.defaultAbiCoder();
-  const decoded = abi.decode(['bytes32'], log.data);
-  const intentHash = decoded[0] as string;
-
-  // Same orphan guard as fills: only record cancels for intents we created.
-  const ctx = await lookupContext(intentHash);
-  if (ctx === null) return;
-
-  const ts = await blockTs.get(log.blockNumber);
-  const row: HubEventRow = {
-    intentHash,
-    eventType: 'cancelled',
-    actionType: 'CancelIntent',
-    creator: ctx.creator,
-    solver: ctx.solver,
-    srcChainId: ctx.srcChainId,
-    dstChainId: ctx.dstChainId,
-    blockNumber: log.blockNumber,
-    blockTimestamp: ts,
-    txHash: log.transactionHash,
-    actionDetail: 'IntentCancelled',
     slippage: null,
-  };
-  await insertHubEventAsMessage(row);
+  })
+  // await insertHubEventAsMessage(row);
 }
 
 async function processBatch(fromBlock: number, toBlock: number): Promise<void> {
@@ -259,39 +183,16 @@ async function processBatch(fromBlock: number, toBlock: number): Promise<void> {
     address: CONTRACT_ADDRESS,
     fromBlock,
     toBlock,
-    topics: [[INTENT_CREATED_TOPIC, INTENT_FILLED_TOPIC, INTENT_CANCELLED_TOPIC]],
+    topics: [INTENT_CREATED_TOPIC],
   }));
   if (logs.length === 0) return;
 
   const blockTs = makeBlockTsCache();
 
-  // Process strictly in order: created → filled / cancelled within same batch
-  // would otherwise risk updating a row that hasn't been inserted yet.
-  logs.sort((a, b) => {
-    if (a.blockNumber !== b.blockNumber) return a.blockNumber - b.blockNumber;
-    return (a.index ?? 0) - (b.index ?? 0);
-  });
-
-  // Preload created contexts for every fill/cancel hash in this batch with
-  // one query, instead of one SELECT per log. The lookup falls back to a
-  // single-row query only for hashes whose CreateIntent log lives in the
-  // SAME batch (preload runs before handleCreated inserts those rows, so
-  // they can't appear in the map). Pre-batch creates are cached either way.
-  const lookupContext = makeContextLookup(
-    await getCreatedContextsByIntentHashes(extractIntentHashes(logs)),
-  );
-
   let failures = 0;
   for (const log of logs) {
     try {
-      const topic0 = log.topics[0];
-      if (topic0 === INTENT_CREATED_TOPIC) {
-        await handleCreated(log, blockTs);
-      } else if (topic0 === INTENT_FILLED_TOPIC) {
-        await handleFilled(log, blockTs, lookupContext);
-      } else if (topic0 === INTENT_CANCELLED_TOPIC) {
-        await handleCancelled(log, blockTs, lookupContext);
-      }
+      await handleCreated(log, blockTs);
     } catch (err) {
       failures++;
       const msg = err instanceof Error ? err.message : String(err);
@@ -299,13 +200,10 @@ async function processBatch(fromBlock: number, toBlock: number): Promise<void> {
     }
   }
 
-  // Any per-log failure must block cursor advance. A failed handleCreated
-  // would otherwise leave its sibling fill/cancel orphaned forever (the
-  // context lookup returns null and the event is silently skipped) once the
-  // cursor moves past this block range. The inserts are idempotent via the
-  // WHERE NOT EXISTS clause keyed on (intent_tx_hash, action_type, sn IS NULL),
-  // so the next tick replays the whole batch safely. Persistent failures
-  // will loop visibly in logs.
+  // Any per-log failure must block cursor advance so the next tick replays the
+  // whole batch. Inserts are idempotent via the WHERE NOT EXISTS clause keyed
+  // on (intent_tx_hash, action_type, sn IS NULL). Persistent failures loop
+  // visibly in logs.
   if (failures > 0) {
     throw new Error(
       `hub-intents: ${failures}/${logs.length} log(s) failed in [${fromBlock}, ${toBlock}] — not advancing cursor`,
@@ -313,45 +211,21 @@ async function processBatch(fromBlock: number, toBlock: number): Promise<void> {
   }
 }
 
-// Pulls the first bytes32 word out of each fill/cancel log's `data` — that's
-// the intent hash in both event signatures. Avoids running ABI decode just to
-// build the preload key set; the per-event handlers still decode the full
-// payload when they actually process the log.
-function extractIntentHashes(logs: ethers.Log[]): string[] {
-  const out: string[] = [];
-  for (const log of logs) {
-    const topic0 = log.topics[0];
-    if (topic0 !== INTENT_FILLED_TOPIC && topic0 !== INTENT_CANCELLED_TOPIC) continue;
-    if (typeof log.data !== 'string' || log.data.length < 66) continue;
-    out.push(`0x${log.data.slice(2, 66)}`.toLowerCase());
-  }
-  return out;
-}
-
-function makeContextLookup(preload: Map<string, CreatedContext>): ContextLookup {
-  // Case-insensitive lookup: bytes32 hashes round-trip from RPC in lowercase
-  // hex but downstream code shouldn't have to care which casing came back.
-  const lower = new Map<string, CreatedContext>();
-  for (const [k, v] of preload) lower.set(k.toLowerCase(), v);
-  return async (intentHash: string) => {
-    const key = intentHash.toLowerCase();
-    const hit = lower.get(key);
-    if (hit) return hit;
-    // Miss = either the CreateIntent landed in this same batch (preload
-    // captured a snapshot before handleCreated wrote it) or it's a true
-    // orphan. One per-miss query handles the former and lets the latter
-    // return null as before.
-    return getCreatedContext(intentHash);
-  };
-}
-
 async function runOnce(): Promise<void> {
-  const cursor = (await getCursor(CURSOR_NAME)) ?? START_BLOCK - 1;
   const head = await rpcGate(() => getProvider().getBlockNumber());
   const safeHead = head - CONFIRMATIONS;
-  if (safeHead <= cursor) return;
 
-  let from = cursor + 1;
+  const stored = await getCursor(CURSOR_NAME);
+  // First run (no cursor): start from the current chain head — skip historical
+  // blocks and only index intents created from now on. Persist the starting
+  // point so the next tick advances forward from here.
+  if (stored === null) {
+    await setCursor(CURSOR_NAME, safeHead);
+    return;
+  }
+  if (safeHead <= stored) return;
+
+  let from = stored + 1;
   while (from <= safeHead) {
     const to = Math.min(from + BATCH_SIZE - 1, safeHead);
     await processBatch(from, to);

@@ -7,9 +7,7 @@ import dotenv from 'dotenv';
 import { SendMessage, SodaxScannerResponse, Transfer } from "./types";
 import { bigintDivisionToDecimalString, multiplyDecimalBy10Pow18, srcHasHashedPayload, extractConnSn } from "./utils";
 import pool from './db/db';
-import { ensureHubIntentsSchema } from './hub-intents/schema';
 import { startHubIntentsPoller } from './hub-intents/poller';
-import { isRawTupleActionText, recoverIntentFilledFormat } from './intent-fill-format';
 
 dotenv.config();
 const SODAXSCAN_CONFIG = {
@@ -75,35 +73,6 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                 actionType.actionText = payload.actionText;
                 actionType.swapInputToken = payload.swapInputToken;
                 actionType.swapOutputToken = payload.swapOutputToken;
-
-                // If the handler emitted the raw event-tuple fallback
-                // ("IntentFilled 0xHASH,bool,…,FILLED,…"), recover a proper
-                // human-readable format using the intent hash + raw filled
-                // amount the handler provided. Source: the sibling
-                // CreateIntent messages row (linked by intent_tx_hash) —
-                // covers both hub-native creates (written here by the hub
-                // poller) and relayer creates (written by the upstream
-                // scanner). If it hasn't been ingested yet, keep the
-                // existing text; the periodic backfill script catches it.
-                if (
-                    isRawTupleActionText(actionType.actionText) &&
-                    payload.intentTxHash &&
-                    payload.filledOutputAmount
-                ) {
-                    try {
-                        const fmt = await recoverIntentFilledFormat(
-                            payload.intentTxHash,
-                            BigInt(payload.filledOutputAmount),
-                        );
-                        if (fmt) {
-                            actionType.actionText = fmt.actionDetail;
-                            if (fmt.slippage) payload.slippage = fmt.slippage;
-                        }
-                    } catch (err) {
-                        const msg = err instanceof Error ? err.message : String(err);
-                        console.log('IntentFilled format recovery failed:', msg);
-                    }
-                }
             }
             if (payload.intentCancelled) {
                 actionType.action = "CancelIntent";
@@ -219,21 +188,7 @@ const main = async () => {
 
     const args = process.argv.slice(2);
     if (args.length === 0) {
-        // Gate the hub poller behind a successful schema bootstrap. Starting
-        // it after a failed CREATE would just spam "relation does not exist"
-        // errors every poll interval until manual intervention — better to
-        // log loud and leave the relayer-side indexer running on its own.
-        let hubSchemaReady = false;
-        try {
-            await ensureHubIntentsSchema();
-            hubSchemaReady = true;
-        } catch (err) {
-            console.error(
-                'hub-intents: schema bootstrap failed — poller will NOT start. Fix DB privileges / connectivity and restart.',
-                err,
-            );
-        }
-        const hubIntentsTimer = hubSchemaReady ? startHubIntentsPoller() : null;
+        const hubIntentsTimer = startHubIntentsPoller();
         processSodaxStream().catch(console.error).finally(() => {
             isRunning = false;
         });
