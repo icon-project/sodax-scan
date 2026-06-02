@@ -16,8 +16,21 @@ const INTENT_CREATED_TOPIC = ethers.keccak256(
   ),
 );
 
-const CREATED_TUPLE =
+const INTENT_CANCELLED_TOPIC = ethers.keccak256(
+  ethers.toUtf8Bytes('IntentCancelled(bytes32)'),
+);
+
+// A Message event in the cancel tx means the cancel arrived cross-chain via the
+// relayer (recorded by the upstream scanner from its spoke origin). Hub-native
+// cancels are direct calls to the hub and emit no Message — that absence is the
+// hub-only signal.
+const MESSAGE_EVENT_TOPIC = ethers.keccak256(
+  ethers.toUtf8Bytes('Message(uint256,bytes,uint256,uint256,bytes,bytes)'),
+);
+
+const INTENT_TUPLE =
   '(uint256,address,address,address,uint256,uint256,uint256,bool,uint256,uint256,bytes,bytes,address,bytes)';
+const CREATED_TUPLE = INTENT_TUPLE;
 
 function envInt(name: string, fallback: number): number {
   const v = process.env[name];
@@ -178,12 +191,67 @@ async function handleCreated(
   // await insertHubEventAsMessage(row);
 }
 
+async function handleCancelled(
+  log: ethers.Log,
+  blockTs: BlockTimestampCache,
+): Promise<void> {
+  const abi = ethers.AbiCoder.defaultAbiCoder();
+  const intentHash = abi.decode(['bytes32'], log.data)[0] as string;
+
+  // Hub-only filter: skip cancels that arrived cross-chain. A relayer-driven
+  // cancel emits a Message event in the same tx; a hub-native cancel does not.
+  const receipt = await rpcGate(() => getProvider().getTransactionReceipt(log.transactionHash));
+  if (!receipt) return;
+  if (receipt.logs.some(l => l.topics[0] === MESSAGE_EVENT_TOPIC)) return;
+
+  // IntentCancelled carries only the intent hash, so recover token/amounts from
+  // the cancel call's calldata: cancelIntent(SwapIntent) — the same tuple shape
+  // IntentCreated emits.
+  const txn = await rpcGate(() => getProvider().getTransaction(log.transactionHash));
+  if (!txn?.data || txn.data.length <= 10) return;
+  const tuple = abi.decode([INTENT_TUPLE], `0x${txn.data.slice(10)}`)[0] as ethers.Result;
+
+  const creator = (tuple[1] as string).toLowerCase();
+  const inputToken = normalizeAddr(tuple[2] as string);
+  const outputToken = normalizeAddr(tuple[3] as string);
+  const inputAmountRaw = tuple[4] as bigint;
+  const minOutputAmountRaw = tuple[5] as bigint;
+  const srcChainId = (tuple[8] as bigint).toString();
+  const dstChainId = (tuple[9] as bigint).toString();
+  const solver = (tuple[12] as string).toLowerCase();
+
+  const inInfo = tokenInfo(srcChainId, inputToken);
+  const outInfo = tokenInfo(dstChainId, outputToken);
+  const inAmt = bigintDivisionToDecimalString(inputAmountRaw, inInfo.decimals);
+  const outAmt = bigintDivisionToDecimalString(minOutputAmountRaw, outInfo.decimals);
+  const srcName = idToChainNameMap[srcChainId] || srcChainId;
+  const dstName = idToChainNameMap[dstChainId] || dstChainId;
+  const actionDetail = `IntentCancelled ${inAmt} ${inInfo.name}(${srcName}) -> ${outAmt} ${outInfo.name}(${dstName})`;
+
+  const ts = await blockTs.get(log.blockNumber);
+  const row: HubEventRow = {
+    intentHash,
+    actionType: 'CancelIntent',
+    creator,
+    solver,
+    srcChainId,
+    dstChainId,
+    blockNumber: log.blockNumber,
+    blockTimestamp: ts,
+    txHash: log.transactionHash,
+    actionDetail,
+    slippage: null,
+  };
+  console.log("intent cancelled", row);
+  // await insertHubEventAsMessage(row);
+}
+
 async function processBatch(fromBlock: number, toBlock: number): Promise<void> {
   const logs = await rpcGate(() => getProvider().getLogs({
     address: CONTRACT_ADDRESS,
     fromBlock,
     toBlock,
-    topics: [INTENT_CREATED_TOPIC],
+    topics: [[INTENT_CREATED_TOPIC, INTENT_CANCELLED_TOPIC]],
   }));
   if (logs.length === 0) return;
 
@@ -192,7 +260,11 @@ async function processBatch(fromBlock: number, toBlock: number): Promise<void> {
   let failures = 0;
   for (const log of logs) {
     try {
-      await handleCreated(log, blockTs);
+      if (log.topics[0] === INTENT_CANCELLED_TOPIC) {
+        await handleCancelled(log, blockTs);
+      } else {
+        await handleCreated(log, blockTs);
+      }
     } catch (err) {
       failures++;
       const msg = err instanceof Error ? err.message : String(err);

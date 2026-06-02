@@ -2,13 +2,13 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import pool from '../db/db';
 
-// Hub-native CreateIntent events are written directly into the `messages`
-// table with `sn = NULL` as the hub-origin marker. Only IntentCreated is
-// indexed here — fills/cancels are not recorded by the hub poller.
+// Hub-native intent events are written directly into the `messages` table with
+// `sn = NULL` as the hub-origin marker. IntentCreated and IntentCancelled are
+// indexed here — fills are not recorded by the hub poller.
 
 export interface HubEventRow {
   intentHash: string;
-  actionType: 'CreateIntent';
+  actionType: 'CreateIntent' | 'CancelIntent';
   creator: string | null;
   solver: string | null;
   srcChainId: string;
@@ -32,13 +32,13 @@ export async function insertHubEventAsMessage(row: HubEventRow): Promise<void> {
     INSERT INTO messages (
       sn, status,
       src_network, src_block_number, src_block_timestamp, src_tx_hash, src_app,
-      dest_network, dest_app,
+      dest_network, dest_tx_hash, dest_app,
       action_type, action_detail, intent_tx_hash, slippage,
       created_at, updated_at
     )
     SELECT NULL, 'executed',
            $1, $2, $3, $4, $5,
-           $6, $7,
+           $6, $4, $7,
            $8, $9, $10, $11,
            $3, $12
     WHERE NOT EXISTS (
