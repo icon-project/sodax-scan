@@ -7,6 +7,8 @@ import dotenv from 'dotenv';
 import { SendMessage, SodaxScannerResponse, Transfer } from "./types";
 import { bigintDivisionToDecimalString, multiplyDecimalBy10Pow18, srcHasHashedPayload, extractConnSn } from "./utils";
 import pool from './db/db';
+import { startHubIntentsPoller } from './hub-intents/poller';
+import { isRawTupleActionText, recoverIntentFilledFormat } from './intent-fill-format';
 
 dotenv.config();
 const SODAXSCAN_CONFIG = {
@@ -72,6 +74,31 @@ async function parseTransactionEvent(response: SodaxScannerResponse) {
                 actionType.actionText = payload.actionText;
                 actionType.swapInputToken = payload.swapInputToken;
                 actionType.swapOutputToken = payload.swapOutputToken;
+
+                // Raw event-tuple fallback ("IntentFilled 0xHASH,bool,…")
+                // means the calldata decode failed — try to recover the
+                // proper action_detail + slippage from the sibling
+                // CreateIntent row. If unavailable yet, keep the raw text;
+                // the periodic backfill script catches it later.
+                if (
+                    isRawTupleActionText(actionType.actionText) &&
+                    payload.intentTxHash &&
+                    payload.filledOutputAmount
+                ) {
+                    try {
+                        const fmt = await recoverIntentFilledFormat(
+                            payload.intentTxHash,
+                            BigInt(payload.filledOutputAmount),
+                        );
+                        if (fmt) {
+                            actionType.actionText = fmt.actionDetail;
+                            if (fmt.slippage) payload.slippage = fmt.slippage;
+                        }
+                    } catch (err) {
+                        const msg = err instanceof Error ? err.message : String(err);
+                        console.log('IntentFilled format recovery failed:', msg);
+                    }
+                }
             }
             if (payload.intentCancelled) {
                 actionType.action = "CancelIntent";
@@ -187,6 +214,7 @@ const main = async () => {
 
     const args = process.argv.slice(2);
     if (args.length === 0) {
+        const hubIntentsTimer = startHubIntentsPoller();
         processSodaxStream().catch(console.error).finally(() => {
             isRunning = false;
         });
@@ -201,6 +229,7 @@ const main = async () => {
             return () => {
                 console.log(`Received ${signal}. Cleaning up...`);
                 clearInterval(intervalId);
+                clearInterval(hubIntentsTimer);
                 process.exit(0); // Exit cleanly
             };
         }

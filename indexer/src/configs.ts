@@ -187,7 +187,13 @@ export async function enrichChainsFromApi(): Promise<void> {
       // under the same AssetInfo. Local config.json entries still win.
       for (const candidate of [addr, info.asset]) {
         if (!candidate) continue;
-        const key = candidate.toLowerCase();
+        // Only EVM/ICON hex addresses are case-insensitive — lowercasing them
+        // normalises checksum vs all-lowercase variants from different sources.
+        // Base58/bech32/etc. (Solana, Stellar, Stacks, Sui, Bitcoin) are
+        // case-sensitive; lowercasing destroys them and breaks the runtime
+        // lookup (where decoders return the canonical mixed-case form).
+        const isHexAddress = /^(0x|cx)[0-9a-fA-F]+$/.test(candidate);
+        const key = isHexAddress ? candidate.toLowerCase() : candidate;
         if (key in chainEntry.Assets) continue;
         chainEntry.Assets[key] = entry;
         added++;

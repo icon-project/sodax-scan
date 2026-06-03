@@ -31,11 +31,20 @@ function renderDestHashLink(item, meta) {
             </div>
         )
         linkClass = `${linkClass} relative inline-block -left-4`
-        link = <div className={linkClass}>{item.rollback_tx_hash}</div>
+        link = <div className={linkClass}><span className="tx-hash" data-hash={item.rollback_tx_hash}>{item.rollback_tx_hash}</span></div>
     } else if (item.dest_tx_hash) {
         scanUrl = meta.urls.tx[item.dest_network]
         networkImg = <Image alt={item.dest_network} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[item.dest_network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
-        link = <div className={linkClass}>{item.dest_tx_hash}</div>
+        link = <div className={linkClass}><span className="tx-hash" data-hash={item.dest_tx_hash}>{item.dest_tx_hash}</span></div>
+    } else if (item.sn == null) {
+        // Hub-intent event (no serial number): single-tx event on the hub with
+        // no separate destination leg. Mirror the source tx + chain into the
+        // dest column so the row reads symmetrically instead of as a half-empty
+        // relay leg. The intent's actual destination chain still shows in
+        // action_detail (e.g. "IntentSwap … -> SOL(solana)").
+        scanUrl = meta.urls.tx[item.src_network]
+        networkImg = <Image alt={item.src_network} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[item.src_network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
+        link = <div className={linkClass}><span className="tx-hash" data-hash={item.src_tx_hash}>{item.src_tx_hash}</span></div>
     } else {
         networkImg = <Image alt={item.dest_network} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[item.dest_network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
         link = <div></div>
@@ -69,11 +78,11 @@ function renderHashLink(scanUrl, network, hash, isFull = false) {
     }
     networkImg = <Image alt={network} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
     link = !isFull || isOdHash ? (
-        <div className={linkClass}>{hash}</div>
+        <div className={linkClass}><span className="tx-hash" data-hash={hash}>{hash}</span></div>
     ) : (
         <div className="flex">
             <Link className={linkClass} href={href} target="_blank">
-                {hash}
+                <span className="tx-hash" data-hash={hash}>{hash}</span>
             </Link>
             {copyButton}
         </div>
