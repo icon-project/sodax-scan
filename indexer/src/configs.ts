@@ -165,6 +165,23 @@ export async function enrichChainsFromApi(): Promise<void> {
     return;
   }
 
+  // Only EVM/ICON hex addresses are case-insensitive — lowercasing them
+  // normalises checksum vs all-lowercase variants from different sources.
+  // Base58/bech32/etc. (Solana, Stellar, Stacks, Sui, Bitcoin) are
+  // case-sensitive; lowercasing destroys them and breaks the runtime lookup
+  // (where decoders return the canonical mixed-case form).
+  const normalizeKey = (a: string): string =>
+    /^(0x|cx)[0-9a-fA-F]+$/.test(a) ? a.toLowerCase() : a;
+
+  const register = (chainEntry: ChainAssets, address: string, entry: AssetInfo): boolean => {
+    const key = normalizeKey(address);
+    if (key in chainEntry.Assets) return false;
+    chainEntry.Assets[key] = entry;
+    return true;
+  };
+
+  const hubChain = chains[sonic];
+
   let added = 0;
   for (const [apiChainKey, assets] of Object.entries(hubAssets)) {
     const chainId = relayMap[apiChainKey];
@@ -181,23 +198,14 @@ export async function enrichChainsFromApi(): Promise<void> {
         // "Soda <Asset>" name pattern identifies hub liquid wraps (Soda BNB, SODA NEAR, Soda WEETH, …)
         isSodaWrap: info.name?.toLowerCase().startsWith("soda ") ?? false,
       };
-      // API exposes two addresses per token: the dict key (canonical "spoke
-      // key") and `info.asset` (often the wrapped contract address). The
-      // indexer's action_detail rows may reference either, so register both
-      // under the same AssetInfo. Local config.json entries still win.
-      for (const candidate of [addr, info.asset]) {
-        if (!candidate) continue;
-        // Only EVM/ICON hex addresses are case-insensitive — lowercasing them
-        // normalises checksum vs all-lowercase variants from different sources.
-        // Base58/bech32/etc. (Solana, Stellar, Stacks, Sui, Bitcoin) are
-        // case-sensitive; lowercasing destroys them and breaks the runtime
-        // lookup (where decoders return the canonical mixed-case form).
-        const isHexAddress = /^(0x|cx)[0-9a-fA-F]+$/.test(candidate);
-        const key = isHexAddress ? candidate.toLowerCase() : candidate;
-        if (key in chainEntry.Assets) continue;
-        chainEntry.Assets[key] = entry;
-        added++;
-      }
+      // Two distinct addresses for the same token live on two different
+      // chains: `addr` is the canonical address on `apiChainKey`'s chain
+      // (e.g. USDT on Ethereum), `info.asset` is the hub-side wrapped
+      // contract on Sonic. Register each under the chain it actually exists
+      // on so tokenInfo(chainId, address) lookups succeed regardless of
+      // which side an intent references.
+      if (register(chainEntry, addr, entry)) added++;
+      if (info.asset && hubChain && register(hubChain, info.asset, entry)) added++;
     }
   }
   console.log(`enrichChainsFromApi: added ${added} asset entries from hub/assets API.`);
