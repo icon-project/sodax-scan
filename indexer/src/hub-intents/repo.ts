@@ -37,7 +37,11 @@ export interface CreatedContext {
 const nowSec = () => Math.floor(Date.now() / 1000);
 
 // Insert a hub event as a messages row with sn = NULL. WHERE NOT EXISTS
-export async function insertHubEventAsMessage(row: HubEventRow): Promise<void> {
+// Returns true when a row was written, false when the WHERE NOT EXISTS
+// matched (i.e. the same (intent_tx_hash, action_type, sn IS NULL) was
+// already present). Lets the caller surface a write/skip ratio for
+// monitoring.
+export async function insertHubEventAsMessage(row: HubEventRow): Promise<boolean> {
   const status = row.eventType === 'cancelled' ? 'rollbacked' : 'executed';
   const now = nowSec();
   const sql = `
@@ -60,7 +64,7 @@ export async function insertHubEventAsMessage(row: HubEventRow): Promise<void> {
         AND sn IS NULL
     )
   `;
-  await pool.query(sql, [
+  const result = await pool.query(sql, [
     status,
     row.srcChainId,
     row.blockNumber,
@@ -75,6 +79,7 @@ export async function insertHubEventAsMessage(row: HubEventRow): Promise<void> {
     row.slippage,
     now,
   ]);
+  return result.rowCount === 1;
 }
 
 // Read CreatedContext for a single intent from its CreateIntent messages row.

@@ -123,10 +123,15 @@ function makeBlockTsCache(): BlockTimestampCache {
   };
 }
 
+// Handlers return:
+//   true  → row was newly written to messages
+//   false → row already existed (WHERE NOT EXISTS matched, no write)
+//   void  → event filtered out before any INSERT attempt
+// processBatch aggregates these to log a per-batch write/skip summary.
 async function handleCreated(
   log: ethers.Log,
   blockTs: BlockTimestampCache,
-): Promise<void> {
+): Promise<boolean> {
   const abi = ethers.AbiCoder.defaultAbiCoder();
   const decoded = abi.decode(['bytes32', CREATED_TUPLE], log.data);
   const intentHash = decoded[0] as string;
@@ -168,14 +173,14 @@ async function handleCreated(
     actionDetail,
     slippage: null,
   };
-  await insertHubEventAsMessage(row);
+  return insertHubEventAsMessage(row);
 }
 
 async function handleFilled(
   log: ethers.Log,
   blockTs: BlockTimestampCache,
   lookupContext: ContextLookup,
-): Promise<void> {
+): Promise<boolean | void> {
   const abi = ethers.AbiCoder.defaultAbiCoder();
   // Match existing flattened-tuple decode pattern.
   const decoded = abi.decode(['(bytes32,bool,uint256,uint256,bool)'], log.data);
@@ -212,14 +217,14 @@ async function handleFilled(
     actionDetail,
     slippage,
   };
-  await insertHubEventAsMessage(row);
+  return insertHubEventAsMessage(row);
 }
 
 async function handleCancelled(
   log: ethers.Log,
   blockTs: BlockTimestampCache,
   lookupContext: ContextLookup,
-): Promise<void> {
+): Promise<boolean | void> {
   const abi = ethers.AbiCoder.defaultAbiCoder();
   const decoded = abi.decode(['bytes32'], log.data);
   const intentHash = decoded[0] as string;
@@ -246,7 +251,7 @@ async function handleCancelled(
     actionDetail: 'IntentCancelled',
     slippage: null,
   };
-  await insertHubEventAsMessage(row);
+  return insertHubEventAsMessage(row);
 }
 
 async function processBatch(fromBlock: number, toBlock: number): Promise<void> {
@@ -275,21 +280,34 @@ async function processBatch(fromBlock: number, toBlock: number): Promise<void> {
   );
 
   let failures = 0;
+  let wrote = 0;
+  let skippedExisting = 0;
   for (const log of logs) {
     try {
       const topic0 = log.topics[0];
+      let result: boolean | void = undefined;
       if (topic0 === INTENT_CREATED_TOPIC) {
-        await handleCreated(log, blockTs);
+        result = await handleCreated(log, blockTs);
       } else if (topic0 === INTENT_FILLED_TOPIC) {
-        await handleFilled(log, blockTs, lookupContext);
+        result = await handleFilled(log, blockTs, lookupContext);
       } else if (topic0 === INTENT_CANCELLED_TOPIC) {
-        await handleCancelled(log, blockTs, lookupContext);
+        result = await handleCancelled(log, blockTs, lookupContext);
       }
+      if (result === true) wrote++;
+      else if (result === false) skippedExisting++;
     } catch (err) {
       failures++;
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`hub-intents: failed to process log ${log.transactionHash}#${log.index}:`, msg);
     }
+  }
+
+  // Surface the write/skip mix so we can monitor the rate of redundant
+  // INSERT attempts (skippedExisting = row was already in messages).
+  if (wrote > 0 || skippedExisting > 0) {
+    console.log(
+      `hub-intents: [${fromBlock}-${toBlock}] wrote=${wrote} skipped_existing=${skippedExisting}`,
+    );
   }
 
   // Block cursor advance on any per-log failure: a failed create would
