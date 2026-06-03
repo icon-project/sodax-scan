@@ -141,22 +141,16 @@ async function handleCreated(
   const outputToken = normalizeAddr(tuple[3] as string);
   const inputAmountRaw = tuple[4] as bigint;
   const minOutputAmountRaw = tuple[5] as bigint;
-  const srcChainId = (tuple[8] as bigint).toString();
-  const dstChainId = (tuple[9] as bigint).toString();
+  const tupleSrcChainId = (tuple[8] as bigint).toString();
+  const tupleDstChainId = (tuple[9] as bigint).toString();
   const solver = (tuple[12] as string).toLowerCase();
 
-  // Hub-origin filter: source leg on Sonic means the intent was created
-  // hub-native (did not arrive via the relayer, so the relayer path won't
-  // have it). Destination may be any chain — cross-network intents still
-  // originate here and must be indexed.
-  if (srcChainId !== sonic) return;
-
-  const inInfo = tokenInfo(srcChainId, inputToken);
-  const outInfo = tokenInfo(dstChainId, outputToken);
+  const inInfo = tokenInfo(tupleSrcChainId, inputToken);
+  const outInfo = tokenInfo(tupleDstChainId, outputToken);
   const inAmt = bigintDivisionToDecimalString(inputAmountRaw, inInfo.decimals);
   const outAmt = bigintDivisionToDecimalString(minOutputAmountRaw, outInfo.decimals);
-  const srcName = idToChainNameMap[srcChainId] || srcChainId;
-  const dstName = idToChainNameMap[dstChainId] || dstChainId;
+  const srcName = idToChainNameMap[tupleSrcChainId] || tupleSrcChainId;
+  const dstName = idToChainNameMap[tupleDstChainId] || tupleDstChainId;
   const actionDetail = `IntentSwap ${inAmt} ${inInfo.name}(${srcName}) -> ${outAmt} ${outInfo.name}(${dstName})`;
 
   const ts = await blockTs.get(log.blockNumber);
@@ -166,8 +160,8 @@ async function handleCreated(
     actionType: 'CreateIntent',
     creator,
     solver,
-    srcChainId,
-    dstChainId,
+    srcChainId: sonic,
+    dstChainId: tupleDstChainId,
     blockNumber: log.blockNumber,
     blockTimestamp: ts,
     txHash: log.transactionHash,
@@ -189,9 +183,9 @@ async function handleFilled(
   const intentHash = t[0] as string;
   const filledOutputRaw = t[3] as bigint;
 
-  // Only record fills for intents we created (hub-origin). A null context means
-  // the IntentFilled belongs to an intent the created-filter skipped or one
-  // created before our START_BLOCK — recording it would orphan the event.
+  // A null context means the IntentCreated log for this intent is missing
+  // (typically created before HUB_INTENT_START_BLOCK). Recording the fill
+  // without it would orphan the event from its create.
   const ctx = await lookupContext(intentHash);
   if (ctx === null) return;
 

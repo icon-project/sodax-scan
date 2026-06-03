@@ -17,9 +17,10 @@ pool.on('error', function (error, client) {
 })
 
 // Hub-origin rows are written into `messages` with sn = NULL; relayer rows
-// have sn IS NOT NULL. The two writers' row sets don't overlap by
-// construction (the hub poller only emits hub-native creates and intra-hub
-// fills/cancels), so no read-time dedup is needed.
+// have sn IS NOT NULL. They share the same `intent_tx_hash`, so for
+// spoke-originated intents an intent's CreateIntent appears twice: once as
+// the cross-chain message (relayer) and once as the on-chain hub event
+// (hub poller). The intent-siblings panel groups them.
 
 const buildWhereSql = (status, src_network, dest_network, src_address, dest_address, from_timestamp, to_timestamp, action_type, intent_tx_hash) => {
     let values = []

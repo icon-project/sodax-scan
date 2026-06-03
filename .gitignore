@@ -15,6 +15,9 @@ pids
 *.seed
 *.pid.lock
 
+# Indexer cursor state (per-deployment, not source-controlled)
+.cursors/
+
 #IDE folder
 .idea
 

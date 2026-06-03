@@ -1,8 +1,12 @@
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import pool from '../db/db';
 
 // Hub events go into the `messages` table with sn = NULL as the hub-origin
-// marker. Only hub-native creates and intra-hub (src=dst=sonic) fills/cancels
-// are written here; cross-chain fills/cancels are left to the upstream relayer.
+// marker. Creates are written for every IntentCreated event on the hub
+// contract; fills/cancels are written only when intra-hub (dst=sonic), since
+// cross-chain fill/cancel deliveries already land in messages via the
+// relayer.
 
 export interface HubEventRow {
   intentHash: string;
@@ -32,8 +36,7 @@ export interface CreatedContext {
 
 const nowSec = () => Math.floor(Date.now() / 1000);
 
-// Insert a hub event as a messages row with sn = NULL. The WHERE NOT EXISTS
-// clause makes re-processing the same block range a no-op.
+// Insert a hub event as a messages row with sn = NULL. WHERE NOT EXISTS
 export async function insertHubEventAsMessage(row: HubEventRow): Promise<void> {
   const status = row.eventType === 'cancelled' ? 'rollbacked' : 'executed';
   const now = nowSec();
@@ -48,12 +51,12 @@ export async function insertHubEventAsMessage(row: HubEventRow): Promise<void> {
     SELECT NULL, $1,
            $2, $3, $4, $5, $6,
            $7, $8,
-           $9, $10, $11, $12,
+           $9::varchar, $10, $11::varchar, $12,
            $4, $13
     WHERE NOT EXISTS (
       SELECT 1 FROM messages
-      WHERE intent_tx_hash = $11
-        AND action_type    = $9
+      WHERE intent_tx_hash = $11::varchar
+        AND action_type    = $9::varchar
         AND sn IS NULL
     )
   `;
@@ -127,17 +130,31 @@ export async function getCreatedContextsByIntentHashes(
   return out;
 }
 
+const CURSOR_DIR = process.env.HUB_INTENTS_CURSOR_DIR || path.resolve('.cursors');
+
+function cursorPath(name: string): string {
+  return path.join(CURSOR_DIR, `${name}.json`);
+}
+
 export async function getCursor(name: string): Promise<number | null> {
-  const r = await pool.query(`SELECT last_block FROM indexer_cursors WHERE name = $1`, [name]);
-  if (r.rows.length === 0) return null;
-  return Number(r.rows[0].last_block);
+  try {
+    const raw = await fs.promises.readFile(cursorPath(name), 'utf8');
+    const parsed = JSON.parse(raw) as { lastBlock?: number };
+    if (typeof parsed.lastBlock !== 'number' || !Number.isFinite(parsed.lastBlock)) return null;
+    return parsed.lastBlock;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw err;
+  }
 }
 
 export async function setCursor(name: string, lastBlock: number): Promise<void> {
-  await pool.query(
-    `INSERT INTO indexer_cursors (name, last_block, updated_at)
-     VALUES ($1, $2, $3)
-     ON CONFLICT (name) DO UPDATE SET last_block = EXCLUDED.last_block, updated_at = EXCLUDED.updated_at`,
-    [name, lastBlock, nowSec()],
-  );
+  // Write to a temp file then rename so a crash mid-write can't leave a
+  // partial / corrupt JSON file behind.
+  await fs.promises.mkdir(CURSOR_DIR, { recursive: true });
+  const finalPath = cursorPath(name);
+  const tmpPath = `${finalPath}.tmp`;
+  const payload = JSON.stringify({ lastBlock, updatedAt: nowSec() });
+  await fs.promises.writeFile(tmpPath, payload, 'utf8');
+  await fs.promises.rename(tmpPath, finalPath);
 }

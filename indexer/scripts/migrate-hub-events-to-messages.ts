@@ -56,9 +56,11 @@ const pool = new Pool({
 // Match the new poller's write filter: creates always, fills/cancels only
 // when intra-hub. Cross-chain fill/cancel rows in hub_intent_events have a
 // relayer twin already, so migrating them would create duplicates.
+// SONIC is inlined rather than parameterised because it's a hardcoded
+// constant — keeps every query in this file single-parameter or none.
 const SCOPE_FILTER = `
   e.event_type = 'created'
-  OR (e.event_type IN ('filled','cancelled') AND e.src_chain_id = $2 AND e.dst_chain_id = $2)
+  OR (e.event_type IN ('filled','cancelled') AND e.src_chain_id = '${SONIC}' AND e.dst_chain_id = '${SONIC}')
 `;
 
 const COPY_SQL = `
@@ -120,8 +122,8 @@ async function main(): Promise<void> {
   }
 
   const total = Number((await pool.query(COUNT_SOURCE)).rows[0].n);
-  const inScope = Number((await pool.query(COUNT_IN_SCOPE, [SONIC])).rows[0].n);
-  const pending = Number((await pool.query(COUNT_PENDING, [SONIC])).rows[0].n);
+  const inScope = Number((await pool.query(COUNT_IN_SCOPE)).rows[0].n);
+  const pending = Number((await pool.query(COUNT_PENDING)).rows[0].n);
   console.log(`hub_intent_events rows total       : ${total}`);
   console.log(`in scope (creates + intra-hub f/c) : ${inScope}`);
   console.log(`out of scope (cross-chain f/c)     : ${total - inScope}`);
@@ -135,7 +137,7 @@ async function main(): Promise<void> {
   }
 
   const nowSec = Math.floor(Date.now() / 1000);
-  const rs = await pool.query(COPY_SQL, [nowSec, SONIC]);
+  const rs = await pool.query(COPY_SQL, [nowSec]);
   console.log(`\nInserted ${rs.rowCount} row(s) into messages.`);
 
   if (dropTable) {
