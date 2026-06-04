@@ -30,9 +30,17 @@ const processSodaxStream = async () => {
     lastScannedId = response.data[0].id
 }
 
-async function parseTransactionEvent(response: SodaxScannerResponse) {
+export async function parseTransactionEvent(response: SodaxScannerResponse) {
     for (const transaction of response.data) {
         const id = transaction.id;
+
+        // Hub-origin rows (sn = NULL, written by the hub-intents poller) are
+        // complete at insert — re-parsing them here would overwrite their
+        // action_type/action_detail with garbage and break the poller's
+        // duplicate check. Only relayer rows (sn set) need enrichment.
+        if (transaction.sn == null) {
+            continue;
+        }
 
         // Skip only if we've already seen this message and have nothing left to do for it.
         const alreadySeen = lastScannedId !== 0 && id <= lastScannedId;
@@ -257,5 +265,9 @@ function cleanupRecords() {
     retries = {};
 }
 
-main().catch(console.error)
-setInterval(() => cleanupRecords(), 1800 * 1000);
+// Only auto-start when executed directly — scripts import
+// parseTransactionEvent without booting the pollers.
+if (require.main === module) {
+    main().catch(console.error)
+    setInterval(() => cleanupRecords(), 1800 * 1000);
+}
