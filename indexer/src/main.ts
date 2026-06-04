@@ -30,7 +30,7 @@ const processSodaxStream = async () => {
     lastScannedId = response.data[0].id
 }
 
-async function parseTransactionEvent(response: SodaxScannerResponse) {
+export async function parseTransactionEvent(response: SodaxScannerResponse) {
     for (const transaction of response.data) {
         const id = transaction.id;
 
@@ -265,5 +265,9 @@ function cleanupRecords() {
     retries = {};
 }
 
-main().catch(console.error)
-setInterval(() => cleanupRecords(), 1800 * 1000);
+// Only auto-start when executed directly — scripts import
+// parseTransactionEvent without booting the pollers.
+if (require.main === module) {
+    main().catch(console.error)
+    setInterval(() => cleanupRecords(), 1800 * 1000);
+}
