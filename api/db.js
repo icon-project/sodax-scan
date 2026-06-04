@@ -17,10 +17,12 @@ pool.on('error', function (error, client) {
 })
 
 // Hub-origin rows are written into `messages` with sn = NULL; relayer rows
-// have sn IS NOT NULL. They share the same `intent_tx_hash`, so for
-// spoke-originated intents an intent's CreateIntent appears twice: once as
-// the cross-chain message (relayer) and once as the on-chain hub event
-// (hub poller). The intent-siblings panel groups them.
+// have sn IS NOT NULL. They share the same `intent_tx_hash`. The hub
+// poller skips its CreateIntent row when the relayer already has an
+// enriched one (spoke-originated creation), so an intent normally has a
+// single CreateIntent. A hub create row with no relayer twin means the
+// intent was created directly on the hub — or the relay row never
+// enriched and the hub event is the only usable record.
 
 const buildWhereSql = (status, src_network, dest_network, src_address, dest_address, from_timestamp, to_timestamp, action_type, intent_tx_hash) => {
     let values = []

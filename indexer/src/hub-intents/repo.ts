@@ -3,10 +3,11 @@ import * as path from 'node:path';
 import pool from '../db/db';
 
 // Hub events go into the `messages` table with sn = NULL as the hub-origin
-// marker. Creates are written for every IntentCreated event on the hub
-// contract; fills/cancels are written only when intra-hub (dst=sonic), since
-// cross-chain fill/cancel deliveries already land in messages via the
-// relayer.
+// marker. Creates are written for IntentCreated events on the hub contract
+// unless the relayer already has an enriched CreateIntent row for the
+// intent (spoke-originated creation); fills/cancels are written only when
+// intra-hub (dst=sonic), since cross-chain fill/cancel deliveries already
+// land in messages via the relayer.
 
 export interface HubEventRow {
   intentHash: string;
@@ -36,11 +37,21 @@ export interface CreatedContext {
 
 const nowSec = () => Math.floor(Date.now() / 1000);
 
-// Insert a hub event as a messages row with sn = NULL. WHERE NOT EXISTS
-// Returns true when a row was written, false when the WHERE NOT EXISTS
-// matched (i.e. the same (intent_tx_hash, action_type, sn IS NULL) was
-// already present). Lets the caller surface a write/skip ratio for
-// monitoring.
+// Insert a hub event as a messages row with sn = NULL.
+// Returns true when a row was written, false when a guard matched (no
+// write). Lets the caller surface a write/skip ratio for monitoring.
+//
+// Two guards:
+//   1. The same (intent_tx_hash, action_type, sn IS NULL) row already
+//      exists — idempotency for cursor replays.
+//   2. CreateIntent only: the relayer already has an enriched CreateIntent
+//      row for this intent (spoke-originated creation, fully indexed) —
+//      a hub create row would only duplicate it. An unenriched relay row
+//      (still 'SendMsg') does NOT block the insert: enrichment can fail
+//      permanently (e.g. a stale RPC), and then the hub row is the only
+//      usable record. The brief window where the relay row exists but
+//      isn't enriched yet can still produce a duplicate — the
+//      cleanup-duplicate-hub-creates script sweeps those.
 export async function insertHubEventAsMessage(row: HubEventRow): Promise<boolean> {
   const status = row.eventType === 'cancelled' ? 'rollbacked' : 'executed';
   const now = nowSec();
@@ -62,6 +73,15 @@ export async function insertHubEventAsMessage(row: HubEventRow): Promise<boolean
       WHERE intent_tx_hash = $11::varchar
         AND action_type    = $9::varchar
         AND sn IS NULL
+    )
+    AND NOT (
+      $9::varchar = 'CreateIntent'
+      AND EXISTS (
+        SELECT 1 FROM messages
+        WHERE intent_tx_hash = $11::varchar
+          AND action_type    = 'CreateIntent'
+          AND sn IS NOT NULL
+      )
     )
   `;
   const result = await pool.query(sql, [
