@@ -3,11 +3,11 @@ import * as path from 'node:path';
 import pool from '../db/db';
 
 // Hub events go into the `messages` table with sn = NULL as the hub-origin
-// marker. Creates are written for IntentCreated events on the hub contract
-// unless the relayer already has an enriched CreateIntent row for the
-// intent (spoke-originated creation); fills/cancels are written only when
-// intra-hub (dst=sonic), since cross-chain fill/cancel deliveries already
-// land in messages via the relayer.
+// marker. Every event type skips its insert when the relayer already has
+// an enriched row for the same event (see insertHubEventAsMessage);
+// fills/cancels additionally are written only when intra-hub (dst=sonic),
+// since cross-chain fill deliveries already land in messages via the
+// relayer.
 
 export interface HubEventRow {
   intentHash: string;
@@ -44,14 +44,14 @@ const nowSec = () => Math.floor(Date.now() / 1000);
 // Two guards:
 //   1. The same (intent_tx_hash, action_type, sn IS NULL) row already
 //      exists — idempotency for cursor replays.
-//   2. CreateIntent only: the relayer already has an enriched CreateIntent
-//      row for this intent (spoke-originated creation, fully indexed) —
-//      a hub create row would only duplicate it. An unenriched relay row
-//      (still 'SendMsg') does NOT block the insert: enrichment can fail
-//      permanently (e.g. a stale RPC), and then the hub row is the only
-//      usable record. The brief window where the relay row exists but
-//      isn't enriched yet can still produce a duplicate — the
-//      cleanup-duplicate-hub-creates script sweeps those.
+//   2. The relayer already has an enriched row for the same event (same
+//      intent + action_type, sn IS NOT NULL) — a hub copy would only
+//      duplicate it. An unenriched relay row (still 'SendMsg') does NOT
+//      block the insert: enrichment can fail permanently (e.g. a stale
+//      RPC), and then the hub row is the only usable record. The brief
+//      window where the relay row exists but isn't enriched yet can still
+//      produce a duplicate — updateTransactionInfo deletes the hub copy
+//      when the relay row's enrichment lands.
 export async function insertHubEventAsMessage(row: HubEventRow): Promise<boolean> {
   const status = row.eventType === 'cancelled' ? 'rollbacked' : 'executed';
   const now = nowSec();
@@ -74,14 +74,11 @@ export async function insertHubEventAsMessage(row: HubEventRow): Promise<boolean
         AND action_type    = $9::varchar
         AND sn IS NULL
     )
-    AND NOT (
-      $9::varchar = 'CreateIntent'
-      AND EXISTS (
-        SELECT 1 FROM messages
-        WHERE intent_tx_hash = $11::varchar
-          AND action_type    = 'CreateIntent'
-          AND sn IS NOT NULL
-      )
+    AND NOT EXISTS (
+      SELECT 1 FROM messages
+      WHERE intent_tx_hash = $11::varchar
+        AND action_type    = $9::varchar
+        AND sn IS NOT NULL
     )
   `;
   const result = await pool.query(sql, [

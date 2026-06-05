@@ -1,21 +1,18 @@
 /**
- * Remove hub-origin CreateIntent rows that duplicate an enriched relayer
- * CreateIntent for the same intent.
+ * Remove hub-origin rows that duplicate an enriched relayer row for the
+ * same event (same intent_tx_hash + action_type).
  *
- * For spoke-originated intents the creation is indexed twice: the relayer
- * writes the cross-chain message row and the hub poller writes the
- * on-chain IntentCreated event row. The poller now skips its row when the
- * relayer's is already enriched (insertHubEventAsMessage guard), but:
- *   - rows from before that guard exist, and
- *   - the guard can't catch the window where the relay row exists but
- *     isn't enriched yet (still 'SendMsg') at hub-insert time.
- * This sweep deletes those duplicates. Safe to re-run any time — e.g.
- * periodically, to mop up the race-window stragglers.
+ * Steady-state this can't happen anymore: the poller skips its insert
+ * when the enriched relay row exists (insertHubEventAsMessage), and
+ * enrichment deletes the hub copy when it lands after the poller wrote
+ * one (updateTransactionInfo). This script is the one-time cleanup for
+ * rows from before those guards, and an on-demand consistency check —
+ * safe to re-run any time; in a healthy system it finds 0 rows.
  *
- * A hub create row is deleted ONLY when an enriched relayer CreateIntent
- * with the same intent_tx_hash exists. Hub creates whose relay twin is
+ * A hub row is deleted ONLY when an enriched relayer row with the same
+ * intent_tx_hash and action_type exists. Hub rows whose relay twin is
  * missing or stuck unenriched are kept — they're the only usable record
- * of the creation.
+ * of the event.
  *
  * Dry run by default — prints count + sample. Pass --apply to delete.
  */
@@ -36,27 +33,28 @@ const pool = new Pool({
 
 const WHERE = `
   m.sn IS NULL
-  AND m.action_type = 'CreateIntent'
   AND EXISTS (
     SELECT 1 FROM messages r
     WHERE r.intent_tx_hash = m.intent_tx_hash
-      AND r.action_type    = 'CreateIntent'
+      AND r.action_type    = m.action_type
       AND r.sn IS NOT NULL
   )
 `;
 
 async function main(): Promise<void> {
-  const count = Number(
-    (await pool.query(`SELECT count(*) AS n FROM messages m WHERE ${WHERE}`)).rows[0].n,
+  const byType = await pool.query(
+    `SELECT m.action_type, count(*) AS n FROM messages m WHERE ${WHERE} GROUP BY 1 ORDER BY 2 DESC`,
   );
-  console.log(`duplicate hub creates in scope: ${count}`);
+  const total = byType.rows.reduce((s, r) => s + Number(r.n), 0);
+  console.log(`duplicate hub rows in scope: ${total}`);
+  for (const r of byType.rows) console.log(`  ${r.action_type}: ${r.n}`);
 
   const sample = await pool.query(
-    `SELECT m.id, m.intent_tx_hash, LEFT(m.action_detail, 60) AS detail
+    `SELECT m.id, m.action_type, m.intent_tx_hash, LEFT(m.action_detail, 50) AS detail
        FROM messages m WHERE ${WHERE} ORDER BY m.id DESC LIMIT 5`,
   );
   for (const r of sample.rows) {
-    console.log(`  id=${r.id} intent=${r.intent_tx_hash} ${r.detail}`);
+    console.log(`  id=${r.id} ${r.action_type} intent=${r.intent_tx_hash} ${r.detail}`);
   }
 
   if (!apply) {
