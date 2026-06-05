@@ -48,6 +48,10 @@ export class EvmHandler implements ChainHandler {
     let intentFilledAction = ""
     let intentFilledValue = 0
     let intentHash = ""
+    // Contracts that emitted an intent event in this tx — used below to
+    // decide whether THIS message (txConnSn) is the fill/cancel delivery
+    // or an unrelated message riding along in the same tx.
+    const intentEventEmitters = new Set<string>()
     for (const log of tx.result.logs ?? []) {
       const topics: string[] = log.topics;
       if (topics.includes(INTENT_CREATED_TOPIC)) {
@@ -70,6 +74,7 @@ export class EvmHandler implements ChainHandler {
         intentFilledAction = `IntentFilled ${decoded[0]}`
         intentFilledValue = decoded[0][3]
         intentHash = decoded[0][0]
+        intentEventEmitters.add(String(log.address).toLowerCase())
       }
       if (topics.includes(INTENT_CANCELLED_TOPIC)) {
         intentCancelled = true
@@ -77,12 +82,39 @@ export class EvmHandler implements ChainHandler {
         const decoded = abi.decode(['bytes32'], log.data);
         intentCancelAction = `IntentCancelled ${decoded[0]}`
         intentHash = decoded[0]
+        intentEventEmitters.add(String(log.address).toLowerCase())
       }
       if (topics.includes(REVERSE_SWAP_TOPIC)) {
         reverseSwap = true
         const abi = ethers.AbiCoder.defaultAbiCoder();
         const decoded = abi.decode(['uint256', 'uint256'], log.data);
         reverseSwapAction = `Migrated ${bigintDivisionToDecimalString(decoded[1], 18)} Soda`
+      }
+    }
+    // Per-message fill/cancel gate. The intent events above describe the
+    // TX as a whole, but a solver tx can carry several relay messages
+    // (e.g. the fill delivery plus the solver's own transfers). Only the
+    // message whose payload was dispatched BY the intent contract is the
+    // fill/cancel delivery; siblings are plain messages and must be
+    // returned as such, or they'd all inherit the IntentFilled label
+    // (the recurring "intent filled collision" — token-name heuristics
+    // downstream cannot distinguish same-token siblings).
+    if (intentFilled || intentCancelled) {
+      const msg = findMessageEventBySn(tx.result.logs ?? [], txConnSn);
+      if (msg) {
+        const sender = transferPayloadSender(msg.payload);
+        if (sender !== null && !intentEventEmitters.has(sender)) {
+          return {
+            txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
+            payload: msg.payload,
+            intentFilled: false,
+            intentCancelled: false,
+            dstAddress: tx.result.to,
+            intentTxHash: intentHash,
+            blockNumber: Number.parseInt(tx.result.blockNumber, 16),
+            storedCallReverted,
+          };
+        }
       }
     }
     if (!intentFilled && !intentCancelled && !reverseSwap) {
@@ -186,40 +218,6 @@ export class EvmHandler implements ChainHandler {
                   const srcChainId = result[8]
                   const dstChainId = result[9]
                   intentMinOutput = result[5]
-                  const dstToken = result[3]
-                  for (const log of tx.result.logs ?? []) {
-                    const topics: string[] = log.topics;
-                    if (topics.includes(MESSAGE_EVENT_TOPIC)) {
-                      const abi = ethers.AbiCoder.defaultAbiCoder();
-                      const decoded = abi.decode(['uint256', 'bytes', 'uint256', 'uint256', 'bytes', 'bytes'], log.data);
-                      const payload = decoded[5];
-                      const connSn = decoded[2]
-                      const msgDstChainId = decoded[3]
-                      const intentDenom = getTokenDenom(dstToken.toLowerCase(), BigInt(dstChainId).toString(), BigInt(srcChainId).toString())
-                      const payloadDenom = this.parsePayloadData(payload, BigInt(dstChainId).toString(), BigInt(srcChainId).toString())
-                      if (BigInt(connSn).toString() === BigInt(txConnSn).toString()) {
-                        if (intentDenom !== payloadDenom || msgDstChainId !== dstChainId) {
-                          if (intentDenom.includes("USDC") && payloadDenom.includes("USDC")) {
-                            continue
-                          }
-                          if (intentDenom.includes("BTCB") && payloadDenom.includes("BTCB")) {
-                            continue
-                          }
-                          intentFilled = false
-                          return {
-                            txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
-                            payload: payload,
-                            intentFilled,
-                            intentCancelled,
-                            dstAddress: tx.result.to,
-                            intentTxHash: intentHash,
-                            blockNumber: Number.parseInt(tx.result.blockNumber, 16),
-                            storedCallReverted,
-                          };
-                        }
-                      }
-                    }
-                  }
                   const assetsInformation = chains[srcChainId].Assets
                   let inputToken = result[2].toLowerCase()
                   let decimals = 18
@@ -266,12 +264,8 @@ export class EvmHandler implements ChainHandler {
             if (intentFilled) {
               const parsed = this.parseFilledIntentFromInput(
                 inputData,
-                tx.result.logs ?? [],
-                txConnSn,
-                tx.result.to,
                 intentFilledValue,
                 intentHash,
-                intentCancelled,
                 txFee,
                 Number.parseInt(tx.result.blockNumber, 16),
                 storedCallReverted,
@@ -327,12 +321,8 @@ export class EvmHandler implements ChainHandler {
 
   private parseFilledIntentFromInput(
     inputData: string,
-    logs: Array<{ topics: string[]; data: string }>,
-    txConnSn: string,
-    dstAddress: string,
     intentFilledValue: number,
     intentHash: string,
-    intentCancelled: boolean,
     txFee: bigint,
     blockNumber: number,
     storedCallReverted: boolean,
@@ -355,35 +345,6 @@ export class EvmHandler implements ChainHandler {
         const dstChain = chains[dstChainId];
         if (!srcChain || !dstChain) {
           continue;
-        }
-        // Cross-check the Message log: if the intent's dst token denom or
-        // dstChainId doesn't match the message payload for this connSn, this
-        // tx is actually a regular message (multi-intent fill case), not an
-        // intent fill for the current message.
-        const dstToken = intent[3];
-        for (const log of logs) {
-          if (!log.topics?.includes(MESSAGE_EVENT_TOPIC)) continue;
-          const msgDecoded = abi.decode(['uint256', 'bytes', 'uint256', 'uint256', 'bytes', 'bytes'], log.data);
-          const payload = msgDecoded[5];
-          const connSn = msgDecoded[2];
-          const msgDstChainId = msgDecoded[3];
-          if (BigInt(connSn).toString() !== BigInt(txConnSn).toString()) continue;
-          const intentDenom = getTokenDenom(dstToken.toLowerCase(), BigInt(dstChainId).toString(), BigInt(srcChainId).toString());
-          const payloadDenom = this.parsePayloadData(payload, BigInt(dstChainId).toString(), BigInt(srcChainId).toString());
-          if (intentDenom !== payloadDenom || msgDstChainId !== dstChainId) {
-            if (intentDenom.includes("USDC") && payloadDenom.includes("USDC")) continue;
-            if (intentDenom.includes("BTCB") && payloadDenom.includes("BTCB")) continue;
-            return {
-              txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
-              payload,
-              intentFilled: false,
-              intentCancelled,
-              dstAddress,
-              intentTxHash: intentHash,
-              blockNumber,
-              storedCallReverted,
-            };
-          }
         }
         let inputToken = intent[2].toLowerCase();
         let decimals = 18;
@@ -444,6 +405,48 @@ export class EvmHandler implements ChainHandler {
     }
     return ""
   };
+}
+
+// Find the Message event whose conn sn matches the message being enriched.
+// Returns its payload, or null when the tx has no matching Message event
+// (e.g. sn missing or the message originated elsewhere).
+function findMessageEventBySn(
+  logs: Array<{ topics?: string[]; data: string }>,
+  txConnSn: string | null | undefined,
+): { payload: string } | null {
+  if (txConnSn === null || txConnSn === undefined || txConnSn === '') return null;
+  let want: bigint;
+  try {
+    want = BigInt(txConnSn);
+  } catch {
+    return null;
+  }
+  const abi = ethers.AbiCoder.defaultAbiCoder();
+  for (const log of logs) {
+    if (!log.topics?.includes(MESSAGE_EVENT_TOPIC)) continue;
+    try {
+      const decoded = abi.decode(['uint256', 'bytes', 'uint256', 'uint256', 'bytes', 'bytes'], log.data);
+      if (BigInt(decoded[2]) === want) {
+        return { payload: decoded[5] };
+      }
+    } catch {
+      // Malformed Message log — skip.
+    }
+  }
+  return null;
+}
+
+// Sender field (index 1) of the 5-field RLP transfer payload, lowercased.
+// Returns null when the payload has another shape — callers must treat
+// that as "unknown", not as "not the intent contract".
+function transferPayloadSender(payload: string): string | null {
+  try {
+    const rlp = RLP.decode(Buffer.from(payload.replace(/^0x/, ''), 'hex'));
+    if (!Array.isArray(rlp) || rlp.length !== 5) return null;
+    return `0x${Buffer.from(rlp[1] as Uint8Array).toString('hex')}`.toLowerCase();
+  } catch {
+    return null;
+  }
 }
 
 function getTokenDenom(decodedAddress: string, srcChainId: string, dstChainId: string) {
