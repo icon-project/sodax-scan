@@ -28,7 +28,12 @@ export default async function MessageDetail({ msgData, meta }) {
                         </div>
                         <div className="table-row bg-white border-b">
                             <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Serial No:</div>
-                            <div className="table-cell px-3 py-2 xl:px-6 xl:py-4 ">{msgData.sn}</div>
+                            <div className="table-cell px-3 py-2 xl:px-6 xl:py-4 ">
+                                {/* Same hub-only badge as the messages list (sn == null). */}
+                                {msgData.sn == null
+                                    ? <span className="uppercase text-xs rounded-2xl px-2 py-0.5 bg-gray-100 text-gray-600 tracking-wide">hub-only</span>
+                                    : msgData.sn}
+                            </div>
                         </div>
                         <div className="table-row bg-white border-b">
                             <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Source transaction hash:</div>
@@ -47,12 +52,12 @@ export default async function MessageDetail({ msgData, meta }) {
                                     : Render.renderHashLink(meta.urls.tx[msgData.dest_network], msgData.dest_network, msgData.dest_tx_hash, true)}
                             </div>
                         </div>
-                        <div className="table-row bg-white border-b">
+                        {msgData.fee && (<div className="table-row bg-white border-b">
                             <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Transaction fee:</div>
                             <div className="table-cell px-3 py-2 xl:px-6 xl:py-4">
                                 {msgData.fee}
                             </div>
-                        </div>
+                        </div>)}
 
                         {msgData.slippage && (<div className="table-row bg-white border-b">
                             <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Slippage:</div>
