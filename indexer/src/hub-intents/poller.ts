@@ -233,9 +233,6 @@ async function handleCancelled(
   const ctx = await lookupContext(intentHash);
   if (ctx === null) return;
 
-  // Same cross-chain skip as fills: rollback delivery is relayer-indexed.
-  if (ctx.dstChainId !== sonic) return;
-
   const ts = await blockTs.get(log.blockNumber);
   const row: HubEventRow = {
     intentHash,
