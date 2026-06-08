@@ -23,6 +23,7 @@ export const kaia = "27489"
 export const bitcoin = "627463"
 export const stacks = "60"
 export const aleo = "6694886634401"
+export const hedera = "18501"
 
 export type AssetInfo = {
   name: string;
@@ -72,6 +73,7 @@ const chainNameToIdMap: Record<string, string> = {
   bitcoin: bitcoin,
   stacks: stacks,
   aleo: aleo,
+  hedera: hedera,
 };
 
 export const idToChainNameMap: Record<string, string> = Object.fromEntries(
@@ -109,6 +111,7 @@ export const RPC_URLS: Record<string, string> = {
   [bitcoin]: requireEnv("BITCOIN_URL"),
   [stacks]: requireEnv("STACKS_URL"),
   [aleo]: requireEnv("ALEO_URL"),
+  [hedera]: requireEnv("HEDERA_URL"),
 };
 
 type ChainsById = {

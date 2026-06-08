@@ -8,7 +8,7 @@ import { SolanaHandler } from './chains/solana/index.ts';
 import { StacksHandler } from './chains/stacks/index.ts';
 import { StellarHandler } from './chains/stellar/index.ts';
 import { SuiHandler } from './chains/sui/index.ts';
-import { aleo, arbitrum, avax, base, bitcoin, botanix, bsc, ethereum, hyperliquid, icon, injective, kaia, lightlink, near, nibiru, optimism, polygon, redbelly, RPC_URLS, solana, sonic, stacks, stellar, sui } from './configs.ts';
+import { aleo, arbitrum, avax, base, bitcoin, botanix, bsc, ethereum, hyperliquid, icon, injective, kaia, lightlink, near, nibiru, optimism, polygon, redbelly, RPC_URLS, solana, sonic, stacks, stellar, sui, hedera } from './configs.ts';
 import { ChainHandler } from './types/ChainHandler';
 
 
@@ -36,6 +36,7 @@ const handlers: Record<string, ChainHandler> = {
     [bitcoin]: new BitcoinHandler({ rpcUrl: RPC_URLS[bitcoin] }),
     [stacks]: new StacksHandler({ rpcUrl: RPC_URLS[stacks] }),
     [aleo]: new AleoHandler({ rpcUrl: RPC_URLS[aleo] }),
+    [hedera]: new EvmHandler({ rpcUrl: RPC_URLS[hedera], denom:"HBAR"}),
 };
 
 export function getHandler(chain: string): ChainHandler {

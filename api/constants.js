@@ -40,7 +40,8 @@ const NETWORK = {
     REDBELLY: CONFIG_NETWORKS.redbelly.nid,
     KAIA: CONFIG_NETWORKS.kaia.nid,
     BITCOIN: CONFIG_NETWORKS.bitcoin.nid,
-    ALEO: CONFIG_NETWORKS.aleo.nid
+    ALEO: CONFIG_NETWORKS.aleo.nid,
+    HEDERA: CONFIG_NETWORKS.hedera.nid,
 }
 
 const buildProviderUrls = (urls) => {
@@ -101,6 +102,7 @@ const META_URLS = {
         [NETWORK.KAIA]: USE_MAINNET ? 'https://kaiascan.io/tx/' : 'https://kaiascan.io/tx/',
         [NETWORK.BITCOIN]: USE_MAINNET ? 'https://ordiscan.com/tx/' : 'https://uniscan.cc/signet/tx/',
         [NETWORK.ALEO]: USE_MAINNET ? 'https://explorer.provable.com/transaction/' : 'https://testnet.explorer.provable.com/transaction/',
+        [NETWORK.HEDERA]: USE_MAINNET ? 'https://hashscan.io/transaction/' : 'https://hashscan.io/testnet/transaction/',
     }
 }
 
