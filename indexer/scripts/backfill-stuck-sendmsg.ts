@@ -10,6 +10,7 @@
  * Scope: sn IS NOT NULL (relayer rows only; hub rows are complete at
  * insert) AND action_type='SendMsg'. Optional filters:
  *   --network <id>    only this src_network (e.g. 24 for optimism)
+ *   --dest <id>       only this dest_network (e.g. 18501 for hedera)
  *   --since <date>    only rows created on/after date (default 2026-05-18)
  *   --all             ignore --since, take every stuck row
  *   --limit <n>       stop after n rows (for a trial run)
@@ -30,6 +31,7 @@ function argValue(flag: string): string | undefined {
   return i >= 0 ? args[i + 1] : undefined;
 }
 const network = argValue('--network');
+const dest = argValue('--dest');
 const since = argValue('--since') || '2026-05-18';
 const all = args.includes('--all');
 const limit = Number(argValue('--limit') || 0);
@@ -51,6 +53,10 @@ async function main(): Promise<void> {
   if (network) {
     values.push(network);
     conditions.push(`src_network = $${values.length}`);
+  }
+  if (dest) {
+    values.push(dest);
+    conditions.push(`dest_network = $${values.length}`);
   }
   if (!all) {
     values.push(Math.floor(new Date(since).getTime() / 1000));

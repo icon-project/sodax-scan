@@ -2260,5 +2260,42 @@
     "aleo": {
         "AssetManager": "",
         "Assets": {}
+    },
+    "hedera": {
+        "AssetManager": "0x0df73542cc68bdc01b361d231c60f726b0e0bc05",
+        "Assets": {
+            "0x0000000000000000000000000000000000000000": {
+                "name": "HBAR",
+                "decimals": 8
+            },
+            "0x5c18c543b6B6EA97dE739F48C49CfC291B3AD465": {
+                "name": "HBAR",
+                "decimals": 8
+            },
+            "0x0000000000000000000000000000000000a0286a": {
+                "name": "bnUSD",
+                "decimals": 8
+            },
+            "0x44bE1984cd279334A630469Fa357305C7dbA2837": {
+                "name": "bnUSD",
+                "decimals": 18
+            },
+            "0x0000000000000000000000000000000000a02869": {
+                "name": "SODA",
+                "decimals": 8
+            },
+            "0x1217721376839dbffe78093ddd5d8e50d0239b3f": {
+                "name": "SODA",
+                "decimals": 8
+            },
+            "0x000000000000000000000000000000000006f89a": {
+                "name": "USDC",
+                "decimals": 6
+            },
+            "0xafafae0c1476424c4b81f09095bd7dcb858047c8": {
+                "name": "USDC",
+                "decimals": 6
+            }
+        }
     }
 }

@@ -29,6 +29,7 @@ const NETWORK = {
     KAIA: 'kaia',
     BITCOIN: 'bitcoin',
     ALEO: 'aleo',
+    HEDERA: 'hedera',
 }
 
 const NETWORK_MAPPINGS = {
@@ -56,6 +57,7 @@ const NETWORK_MAPPINGS = {
     [NETWORK.KAIA]: CONFIG_NETWORKS.kaia.nid,
     [NETWORK.BITCOIN]: CONFIG_NETWORKS.bitcoin.nid,
     [NETWORK.ALEO]: CONFIG_NETWORKS.aleo.nid,
+    [NETWORK.HEDERA]: CONFIG_NETWORKS.hedera.nid,
 }
 
 const REV_NETWORK_MAPPINGS = {
@@ -83,6 +85,7 @@ const REV_NETWORK_MAPPINGS = {
     [CONFIG_NETWORKS.kaia.nid]: [NETWORK.KAIA],
     [CONFIG_NETWORKS.bitcoin.nid]: [NETWORK.BITCOIN],
     [CONFIG_NETWORKS.aleo.nid]: [NETWORK.ALEO],
+    [CONFIG_NETWORKS.hedera.nid]: [NETWORK.HEDERA],
 }
 
 const NETWORK_DETAILS = {
@@ -229,6 +232,12 @@ const NETWORK_DETAILS = {
         name: 'aleo',
         logo: `/images/network-aleo.png`,
         nativeAsset: 'ALEO',
+    },
+    [NETWORK.HEDERA]: {
+        id: NETWORK.HEDERA,
+        name: 'hedera',
+        logo: `/images/network-hedera.svg`,
+        nativeAsset: 'HBAR',
     },
 }
 
