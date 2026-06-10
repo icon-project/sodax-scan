@@ -102,7 +102,7 @@ const META_URLS = {
         [NETWORK.KAIA]: USE_MAINNET ? 'https://kaiascan.io/tx/' : 'https://kaiascan.io/tx/',
         [NETWORK.BITCOIN]: USE_MAINNET ? 'https://ordiscan.com/tx/' : 'https://uniscan.cc/signet/tx/',
         [NETWORK.ALEO]: USE_MAINNET ? 'https://explorer.provable.com/transaction/' : 'https://testnet.explorer.provable.com/transaction/',
-        [NETWORK.HEDERA]: USE_MAINNET ? 'https://hashscan.io/transaction/' : 'https://hashscan.io/testnet/transaction/',
+        [NETWORK.HEDERA]: USE_MAINNET ? 'https://hashscan.io/mainnet/transaction/' : 'https://hashscan.io/testnet/transaction/',
     }
 }
 
