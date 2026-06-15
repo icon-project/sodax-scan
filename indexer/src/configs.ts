@@ -9,7 +9,6 @@ export const optimism = "24"
 export const nibiru = "7235938"
 export const polygon = "5"
 export const bsc = "4"
-export const botanix = "2203"
 export const stellar = "27"
 export const icon = "1768124270"
 export const solana = "1"
@@ -59,7 +58,6 @@ const chainNameToIdMap: Record<string, string> = {
   arbitrum: arbitrum,
   bsc: bsc,
   polygon: polygon,
-  botanix: botanix,
   optimism: optimism,
   icon: icon,
   solana: solana,
@@ -98,7 +96,6 @@ export const RPC_URLS: Record<string, string> = {
   [optimism]: requireEnv("OPTIMISM_URL"),
   [base]: requireEnv("BASE_URL"),
   [nibiru]: requireEnv("NIBIRU_URL"),
-  [botanix]: requireEnv("BOTANIX_URL"),
   [stellar]: requireEnv("STELLAR_URL"),
   [icon]: requireEnv("ICON_URL"),
   [sui]: requireEnv("SUI_URL"),

@@ -8,7 +8,7 @@ import { SolanaHandler } from './chains/solana/index.ts';
 import { StacksHandler } from './chains/stacks/index.ts';
 import { StellarHandler } from './chains/stellar/index.ts';
 import { SuiHandler } from './chains/sui/index.ts';
-import { aleo, arbitrum, avax, base, bitcoin, botanix, bsc, ethereum, hyperliquid, icon, injective, kaia, lightlink, near, nibiru, optimism, polygon, redbelly, RPC_URLS, solana, sonic, stacks, stellar, sui, hedera } from './configs.ts';
+import { aleo, arbitrum, avax, base, bitcoin, bsc, ethereum, hyperliquid, icon, injective, kaia, lightlink, near, nibiru, optimism, polygon, redbelly, RPC_URLS, solana, sonic, stacks, stellar, sui, hedera } from './configs.ts';
 import { ChainHandler } from './types/ChainHandler';
 
 
@@ -22,7 +22,6 @@ const handlers: Record<string, ChainHandler> = {
     [nibiru]: new EvmHandler({ rpcUrl: RPC_URLS[nibiru], denom: "NIBI" }),
     [polygon]: new EvmHandler({ rpcUrl: RPC_URLS[polygon], denom: "POL" }),
     [bsc]: new EvmHandler({ rpcUrl: RPC_URLS[bsc], denom: "BNB" }),
-    [botanix]: new EvmHandler({ rpcUrl: RPC_URLS[botanix], denom: "BTC" }),
     [lightlink]: new EvmHandler({ rpcUrl: RPC_URLS[lightlink], denom: "ETH" }),
     [stellar]: new StellarHandler({ rpcUrl: RPC_URLS[stellar] }),
     [icon]: new IconHandler({ rpcUrl: RPC_URLS[icon] }),
