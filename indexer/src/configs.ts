@@ -34,6 +34,16 @@ export type AssetInfo = {
    * force 18; intent contexts should use `decimals` as-is.
    */
   isSodaWrap?: boolean;
+  /**
+   * Spoke chain this asset is the hub-side representation of (e.g. "bsc" for
+   * the Sonic USDT that represents BSC's USDT). Set only on hub entries added
+   * by `enrichChainsFromApi`, and only when the origin differs from the hub
+   * itself. On the hub, many assets share a symbol (15 distinct "USDT"); the
+   * origin disambiguates them — both for display (USDT.bsc(sonic)) and for
+   * resolving the correct decimals, which vary by origin (BSC USDT is 18, the
+   * rest 6). Absent for native/spoke-side entries.
+   */
+  origin?: string;
 };
 
 type ChainAssets = {
@@ -191,6 +201,7 @@ export async function enrichChainsFromApi(): Promise<void> {
     }
     const chainEntry = chains[chainId];
     if (!chainEntry) continue; // chain not configured locally — skip
+    const originName = idToChainNameMap[chainId] ?? chainId;
     for (const [addr, info] of Object.entries(assets)) {
       const entry: AssetInfo = {
         name: info.symbol || info.name,
@@ -205,7 +216,15 @@ export async function enrichChainsFromApi(): Promise<void> {
       // on so tokenInfo(chainId, address) lookups succeed regardless of
       // which side an intent references.
       if (register(chainEntry, addr, entry)) added++;
-      if (info.asset && hubChain && register(hubChain, info.asset, entry)) added++;
+      // The hub-side entry carries its origin so same-symbol reps stay
+      // distinguishable (decimals differ by origin). A separate object — the
+      // spoke-side `entry` must stay origin-free. Don't tag hub-native assets
+      // (origin === hub) — they render plainly as SYMBOL(sonic).
+      if (info.asset && hubChain) {
+        const hubEntry: AssetInfo =
+          chainId === sonic ? entry : { ...entry, origin: originName };
+        if (register(hubChain, info.asset, hubEntry)) added++;
+      }
     }
   }
   console.log(`enrichChainsFromApi: added ${added} asset entries from hub/assets API.`);

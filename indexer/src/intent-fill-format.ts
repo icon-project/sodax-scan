@@ -23,11 +23,25 @@ const chainNameToId: Record<string, string> = Object.fromEntries(
   Object.entries(idToChainNameMap).map(([id, name]) => [name, id]),
 );
 
-function decimalsForTokenName(chainId: string, tokenName: string): number | null {
+/**
+ * Resolve decimals for an output leg by (symbol, origin) rather than symbol
+ * alone. On the hub, one symbol maps to many addresses with different decimals
+ * (e.g. USDT: 6 for most origins, 18 for BSC); the origin parsed out of the
+ * create string ("USDT.bsc" → origin "bsc") makes the match unique. A bare
+ * symbol (no origin) matches the native/spoke-side entry, which has no origin.
+ */
+function decimalsForTokenName(
+  chainId: string,
+  tokenName: string,
+  origin?: string,
+): number | null {
   const assets = chains[chainId]?.Assets;
   if (!assets) return null;
   for (const addr of Object.keys(assets)) {
-    if (assets[addr].name === tokenName) return assets[addr].decimals;
+    const a = assets[addr];
+    if (a.name === tokenName && (a.origin ?? undefined) === (origin ?? undefined)) {
+      return a.decimals;
+    }
   }
   return null;
 }
@@ -69,16 +83,22 @@ export function formatFillFromCreateActionDetail(
   const m = CREATE_RE.exec(createActionDetail);
   if (!m) return null;
   const minOutputStr = m[4];
-  const outputTokenName = m[5];
+  // m[5] is the rendered leg symbol, possibly origin-tagged ("USDT.bsc").
+  // Split it back into name + origin to resolve the right decimals; reuse the
+  // tagged label verbatim in the fill so create and fill read identically.
+  const outputTokenLabel = m[5];
   const dstChainName = m[6];
+  const dot = outputTokenLabel.indexOf('.');
+  const outputTokenName = dot >= 0 ? outputTokenLabel.slice(0, dot) : outputTokenLabel;
+  const outputOrigin = dot >= 0 ? outputTokenLabel.slice(dot + 1) : undefined;
 
   const dstChainId = chainNameToId[dstChainName];
   if (!dstChainId) return null;
-  const decimals = decimalsForTokenName(dstChainId, outputTokenName);
+  const decimals = decimalsForTokenName(dstChainId, outputTokenName, outputOrigin);
   if (decimals == null) return null;
 
   const formatted = bigintDivisionToDecimalString(filledRaw, decimals);
-  const actionDetail = `IntentFilled ${formatted} ${outputTokenName}(${dstChainName})`;
+  const actionDetail = `IntentFilled ${formatted} ${outputTokenLabel}(${dstChainName})`;
 
   let slippage = '';
   try {

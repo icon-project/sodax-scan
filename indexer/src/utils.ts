@@ -50,6 +50,21 @@ export function getErc20Decimals(asset: AssetInfo): number {
   return asset.isSodaWrap ? 18 : asset.decimals;
 }
 
+/**
+ * Symbol to render for a swap leg, disambiguating hub representations by their
+ * origin chain: "USDT.bsc" for the BSC-origin hub USDT, plain "USDT" for
+ * native/spoke-side assets. `origin` is set only on hub entries (see
+ * AssetInfo.origin). Falls back to `fallback` (typically the raw address) when
+ * the asset isn't known.
+ */
+export function symbolWithOrigin(
+  asset: { name: string; origin?: string } | undefined,
+  fallback: string,
+): string {
+  if (!asset) return fallback;
+  return asset.origin ? `${asset.name}.${asset.origin}` : asset.name;
+}
+
 export function resolveMoneyMarketActionText(
   action: string,
   amount: bigint,
