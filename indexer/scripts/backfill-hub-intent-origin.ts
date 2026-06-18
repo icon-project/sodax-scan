@@ -154,37 +154,50 @@ async function main(): Promise<void> {
     return;
   }
 
-  // Apply: UPDATE only hub rows (sn IS NULL), only when the value actually changes.
-  let cWrote = 0, fWrote = 0;
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    for (const u of createUpdates) {
-      const r = await client.query(
-        `UPDATE messages SET action_detail=$1, updated_at=extract(epoch from now())::bigint
-           WHERE action_type='CreateIntent' AND sn IS NULL
-             AND lower(intent_tx_hash)=$2 AND action_detail IS DISTINCT FROM $1`,
-        [u.detail, u.intentHash],
-      );
-      cWrote += r.rowCount ?? 0;
+  // Apply in batched, per-chunk-autocommitted UPDATEs (multi-row VALUES join):
+  // ~130 statements instead of ~64k round-trips, and a connection drop only
+  // loses the in-flight chunk — the IS DISTINCT guard makes a re-run resume
+  // (already-fixed rows are skipped). UPDATEs only hub rows (sn IS NULL).
+  const CHUNK = 500;
+  async function applyBatched(
+    label: string,
+    rows: unknown[][],
+    ncols: number,
+    sqlFor: (valuesClause: string) => string,
+  ): Promise<number> {
+    let wrote = 0;
+    for (let i = 0; i < rows.length; i += CHUNK) {
+      const slice = rows.slice(i, i + CHUNK);
+      const tuples = slice
+        .map((_, ri) => '(' + Array.from({ length: ncols }, (__, ci) => `$${ri * ncols + ci + 1}::text`).join(',') + ')')
+        .join(',');
+      const r = await pool.query(sqlFor(tuples), slice.flat());
+      wrote += r.rowCount ?? 0;
+      console.log(`  ${label}: ${Math.min(i + CHUNK, rows.length)}/${rows.length} processed, ${wrote} changed`);
     }
-    for (const u of fillUpdates) {
-      const r = await client.query(
-        `UPDATE messages SET action_detail=$1, slippage=$2, updated_at=extract(epoch from now())::bigint
-           WHERE action_type='IntentFilled' AND sn IS NULL
-             AND lower(intent_tx_hash)=$3
-             AND (action_detail IS DISTINCT FROM $1 OR slippage IS DISTINCT FROM $2)`,
-        [u.detail, u.slippage, u.intentHash],
-      );
-      fWrote += r.rowCount ?? 0;
-    }
-    await client.query('COMMIT');
-  } catch (e) {
-    await client.query('ROLLBACK');
-    throw e;
-  } finally {
-    client.release();
+    return wrote;
   }
+
+  const cWrote = await applyBatched(
+    'creates',
+    createUpdates.map(u => [u.intentHash, u.detail]),
+    2,
+    vals => `UPDATE messages m SET action_detail=v.detail, updated_at=extract(epoch from now())::bigint
+             FROM (VALUES ${vals}) AS v(hash, detail)
+             WHERE m.action_type='CreateIntent' AND m.sn IS NULL
+               AND lower(m.intent_tx_hash)=v.hash AND m.action_detail IS DISTINCT FROM v.detail`,
+  );
+  const fWrote = await applyBatched(
+    'fills',
+    fillUpdates.map(u => [u.intentHash, u.detail, u.slippage]),
+    3,
+    vals => `UPDATE messages m SET action_detail=v.detail, slippage=v.slippage, updated_at=extract(epoch from now())::bigint
+             FROM (VALUES ${vals}) AS v(hash, detail, slippage)
+             WHERE m.action_type='IntentFilled' AND m.sn IS NULL
+               AND lower(m.intent_tx_hash)=v.hash
+               AND (m.action_detail IS DISTINCT FROM v.detail OR m.slippage IS DISTINCT FROM v.slippage)`,
+  );
+
   console.log(`APPLIED: ${cWrote} create rows, ${fWrote} fill rows updated.`);
   console.log('NOTE: relayer raw-tuple victims (sn IS NOT NULL) are NOT fixed by this script.');
   await pool.end();
