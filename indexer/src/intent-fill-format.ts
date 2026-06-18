@@ -17,7 +17,11 @@ export interface FillFormatResult {
   slippage: string;
 }
 
-const CREATE_RE = /^IntentSwap\s+([0-9.]+)\s+(\S+?)\((\w+)\)\s*->\s*([0-9.]+)\s+(\S+?)\((\w+)\)\s*$/;
+// Matches the OUTPUT leg of an IntentSwap create — all the fill needs. Greedy
+// name + end-anchored chain so multi-word / parenthesised token names parse
+// correctly (e.g. "Circle USDC", "bnUSD (legacy)"); a `\S+?` name would break
+// on the space. Captures: 1=min output amount, 2=symbol[.origin], 3=chain.
+const CREATE_RE = /->\s*([0-9.]+)\s+(.+?)\s*\((\w+)\)\s*$/;
 
 const chainNameToId: Record<string, string> = Object.fromEntries(
   Object.entries(idToChainNameMap).map(([id, name]) => [name, id]),
@@ -82,12 +86,12 @@ export function formatFillFromCreateActionDetail(
 ): FillFormatResult | null {
   const m = CREATE_RE.exec(createActionDetail);
   if (!m) return null;
-  const minOutputStr = m[4];
-  // m[5] is the rendered leg symbol, possibly origin-tagged ("USDT.bsc").
+  const minOutputStr = m[1];
+  // m[2] is the rendered leg symbol, possibly origin-tagged ("USDT.bsc").
   // Split it back into name + origin to resolve the right decimals; reuse the
   // tagged label verbatim in the fill so create and fill read identically.
-  const outputTokenLabel = m[5];
-  const dstChainName = m[6];
+  const outputTokenLabel = m[2];
+  const dstChainName = m[3];
   const dot = outputTokenLabel.indexOf('.');
   const outputTokenName = dot >= 0 ? outputTokenLabel.slice(0, dot) : outputTokenLabel;
   const outputOrigin = dot >= 0 ? outputTokenLabel.slice(dot + 1) : undefined;
