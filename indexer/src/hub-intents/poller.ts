@@ -257,7 +257,7 @@ async function handleCancelled(
   return insertHubEventAsMessage(row);
 }
 
-async function processBatch(fromBlock: number, toBlock: number): Promise<void> {
+export async function processBatch(fromBlock: number, toBlock: number): Promise<void> {
   const logs = await rpcGate(() => getProvider().getLogs({
     address: CONTRACT_ADDRESS,
     fromBlock,

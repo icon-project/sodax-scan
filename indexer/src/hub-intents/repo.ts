@@ -1,6 +1,8 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import pool from '../db/db';
+import { sonic } from '../configs';
+import { parseDstChainIdFromCreate } from '../intent-fill-format';
 
 // Hub events go into the `messages` table with sn = NULL as the hub-origin
 // marker. Every event type skips its insert when the relayer already has
@@ -16,7 +18,7 @@ export interface HubEventRow {
   creator: string | null;
   solver: string | null;
   srcChainId: string;
-  dstChainId: string;
+  dstChainId: string | null;
   blockNumber: number;
   blockTimestamp: number;
   txHash: string;
@@ -31,8 +33,41 @@ export interface CreatedContext {
   creator: string | null;
   solver: string | null;
   srcChainId: string;
-  dstChainId: string;
+  // The intent's true OUTPUT chain. For hub-origin creates this is dest_network
+  // (handleCreated stores the real tuple dstChainId there); for relayer creates
+  // dest_network is the relay hop (always the hub), so the real dst is parsed
+  // from action_detail. null when a relayer row's action_detail isn't parseable
+  // — the fill gate then treats it as non-intra-hub (skips), which is safe.
+  dstChainId: string | null;
   actionDetail: string;
+}
+
+// Resolve a CreatedContext from a messages CreateIntent row, working for both
+// hub-origin (sn IS NULL) and relayer-indexed (sn IS NOT NULL) creates. A
+// cross-chain intent whose output lands on the hub (dst = sonic) is created on
+// a spoke and recorded only by the relayer; its intra-hub fill then has no
+// relay delivery, so the hub poller must record it — but only if it can find
+// this create context. Restricting to sn IS NULL silently dropped every such
+// fill (and cancel).
+interface CreateRow {
+  sn: string | number | null;
+  src_app: string | null;
+  dest_app: string | null;
+  src_network: string;
+  dest_network: string;
+  action_detail: string;
+}
+
+function toCreatedContext(row: CreateRow): CreatedContext {
+  const dstChainId =
+    row.sn === null ? row.dest_network : parseDstChainIdFromCreate(row.action_detail);
+  return {
+    creator: row.src_app,
+    solver: row.dest_app,
+    srcChainId: row.src_network,
+    dstChainId,
+    actionDetail: row.action_detail,
+  };
 }
 
 const nowSec = () => Math.floor(Date.now() / 1000);
@@ -100,32 +135,28 @@ export async function insertHubEventAsMessage(row: HubEventRow): Promise<boolean
 }
 
 // Read CreatedContext for a single intent from its CreateIntent messages row.
-// Returns null when the create hasn't been indexed yet (or never was — e.g.
-// the intent was created before HUB_INTENT_START_BLOCK).
+// Reads hub-origin (sn IS NULL) and relayer (sn IS NOT NULL) creates alike,
+// preferring the hub-origin row when both exist (its dest_network is the
+// authoritative output chain). Returns null only when no create row exists —
+// the intent was created before HUB_INTENT_START_BLOCK or hasn't been indexed.
 export async function getCreatedContext(intentHash: string): Promise<CreatedContext | null> {
   const r = await pool.query(
-    `SELECT src_app, dest_app, src_network, dest_network, action_detail
+    `SELECT sn, src_app, dest_app, src_network, dest_network, action_detail
        FROM messages
       WHERE intent_tx_hash = $1
         AND action_type    = 'CreateIntent'
-        AND sn IS NULL
+      ORDER BY (sn IS NULL) DESC
       LIMIT 1`,
     [intentHash],
   );
   if (r.rows.length === 0) return null;
-  const row = r.rows[0];
-  return {
-    creator: row.src_app,
-    solver: row.dest_app,
-    srcChainId: row.src_network,
-    dstChainId: row.dest_network,
-    actionDetail: row.action_detail,
-  };
+  return toCreatedContext(r.rows[0]);
 }
 
 // Batch variant of getCreatedContext: returns a Map keyed by intent_hash for
-// every hash in `intentHashes` that has a hub-origin CreateIntent row.
-// Hashes with no create are simply absent from the map.
+// every hash in `intentHashes` that has a CreateIntent row (hub-origin or
+// relayer). Hashes with no create are simply absent from the map. ORDER BY
+// (sn IS NULL) ASC makes the hub-origin row (if any) land last and win.
 export async function getCreatedContextsByIntentHashes(
   intentHashes: string[],
 ): Promise<Map<string, CreatedContext>> {
@@ -133,21 +164,15 @@ export async function getCreatedContextsByIntentHashes(
   if (intentHashes.length === 0) return out;
   const unique = Array.from(new Set(intentHashes));
   const r = await pool.query(
-    `SELECT intent_tx_hash, src_app, dest_app, src_network, dest_network, action_detail
+    `SELECT sn, intent_tx_hash, src_app, dest_app, src_network, dest_network, action_detail
        FROM messages
       WHERE intent_tx_hash = ANY($1)
         AND action_type    = 'CreateIntent'
-        AND sn IS NULL`,
+      ORDER BY (sn IS NULL) ASC`,
     [unique],
   );
   for (const row of r.rows) {
-    out.set(row.intent_tx_hash, {
-      creator: row.src_app,
-      solver: row.dest_app,
-      srcChainId: row.src_network,
-      dstChainId: row.dest_network,
-      actionDetail: row.action_detail,
-    });
+    out.set(row.intent_tx_hash, toCreatedContext(row));
   }
   return out;
 }
