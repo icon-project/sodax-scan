@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import { RPC_URLS, sonic, chains, idToChainNameMap } from '../configs';
-import { bigintDivisionToDecimalString } from '../utils';
+import { bigintDivisionToDecimalString, symbolWithOrigin } from '../utils';
 import { formatFillFromCreateActionDetail } from '../intent-fill-format';
 import {
   CreatedContext,
@@ -82,11 +82,15 @@ function normalizeAddr(addr: string): string {
   return /^(0x|cx)[0-9a-fA-F]+$/.test(addr) ? addr.toLowerCase() : addr;
 }
 
-function tokenInfo(chainId: string, addr: string): { name: string; decimals: number } {
+function tokenInfo(
+  chainId: string,
+  addr: string,
+): { name: string; decimals: number; origin?: string } {
   const key = normalizeAddr(addr);
   const assets = chains[chainId]?.Assets;
   if (assets && key in assets) {
-    return { name: assets[key].name, decimals: assets[key].decimals };
+    const a = assets[key];
+    return { name: a.name, decimals: a.decimals, origin: a.origin };
   }
   // Unknown token: action_detail will use the raw address as the symbol and
   // fall back to 18 decimals, which is wrong for USDC (6), WBTC (8), etc.
@@ -156,7 +160,9 @@ async function handleCreated(
   const outAmt = bigintDivisionToDecimalString(minOutputAmountRaw, outInfo.decimals);
   const srcName = idToChainNameMap[tupleSrcChainId] || tupleSrcChainId;
   const dstName = idToChainNameMap[tupleDstChainId] || tupleDstChainId;
-  const actionDetail = `IntentSwap ${inAmt} ${inInfo.name}(${srcName}) -> ${outAmt} ${outInfo.name}(${dstName})`;
+  const inSym = symbolWithOrigin(inInfo, inInfo.name);
+  const outSym = symbolWithOrigin(outInfo, outInfo.name);
+  const actionDetail = `IntentSwap ${inAmt} ${inSym}(${srcName}) -> ${outAmt} ${outSym}(${dstName})`;
 
   const ts = await blockTs.get(log.blockNumber);
   const row: HubEventRow = {

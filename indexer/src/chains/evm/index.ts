@@ -3,7 +3,7 @@ import { ChainHandler } from "../../types/ChainHandler";
 import { ethers } from 'ethers';
 import { TxPayload } from "../../types";
 import { chains, idToChainNameMap, sonic } from "../../configs";
-import { bigintDivisionToDecimalString } from "../../utils";
+import { bigintDivisionToDecimalString, symbolWithOrigin } from "../../utils";
 import RLP from "rlp";
 import { getHandler } from "../../handler";
 
@@ -174,7 +174,7 @@ export class EvmHandler implements ChainHandler {
           let decimals = 18
           if (inputToken in assetsInformation) {
             const tokenInfo = assetsInformation[inputToken]
-            inputToken = tokenInfo.name
+            inputToken = symbolWithOrigin(tokenInfo, inputToken)
             decimals = tokenInfo.decimals
           }
           const outputAssetsInformation = chains[dstChainId].Assets
@@ -182,7 +182,7 @@ export class EvmHandler implements ChainHandler {
           let outputDecimals = 18
           if (outputToken in outputAssetsInformation) {
             const outputTokenInfo = outputAssetsInformation[outputToken]
-            outputToken = outputTokenInfo.name
+            outputToken = symbolWithOrigin(outputTokenInfo, outputToken)
             outputDecimals = outputTokenInfo.decimals
           }
           let inputAmount = bigintDivisionToDecimalString(decodedIntentFill[1], decimals)
@@ -223,7 +223,7 @@ export class EvmHandler implements ChainHandler {
                   let decimals = 18
                   if (inputToken in assetsInformation) {
                     const inputTokenInfo = assetsInformation[inputToken]
-                    inputToken = inputTokenInfo.name
+                    inputToken = symbolWithOrigin(inputTokenInfo, inputToken)
                     decimals = inputTokenInfo.decimals
                   }
                   const outputAssetsInformation = chains[dstChainId].Assets
@@ -231,7 +231,7 @@ export class EvmHandler implements ChainHandler {
                   let outputDecimals = 18
                   if (outputToken in outputAssetsInformation) {
                     const outputTokenInfo = outputAssetsInformation[outputToken]
-                    outputToken = outputTokenInfo.name
+                    outputToken = symbolWithOrigin(outputTokenInfo, outputToken)
                     outputDecimals = outputTokenInfo.decimals
                   }
                   const inputAmount = bigintDivisionToDecimalString(result[4], decimals)
@@ -350,14 +350,14 @@ export class EvmHandler implements ChainHandler {
         let decimals = 18;
         if (inputToken in srcChain.Assets) {
           const inputTokenInfo = srcChain.Assets[inputToken];
-          inputToken = inputTokenInfo.name;
+          inputToken = symbolWithOrigin(inputTokenInfo, inputToken);
           decimals = inputTokenInfo.decimals;
         }
         let outputToken = intent[3].toLowerCase();
         let outputDecimals = 18;
         if (outputToken in dstChain.Assets) {
           const outputTokenInfo = dstChain.Assets[outputToken];
-          outputToken = outputTokenInfo.name;
+          outputToken = symbolWithOrigin(outputTokenInfo, outputToken);
           outputDecimals = outputTokenInfo.decimals;
         }
         const filledOutput = BigInt(intentFilledValue);
