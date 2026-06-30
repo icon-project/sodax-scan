@@ -215,8 +215,14 @@ async function handleFilled(
     actionType: 'IntentFilled',
     creator: ctx.creator,
     solver: ctx.solver,
-    srcChainId: ctx.srcChainId,
-    dstChainId: ctx.dstChainId,
+    // IntentFilled is a hub event: it fires on the Sonic contract and its
+    // txHash is a Sonic tx. src_network must therefore be the hub, NOT the
+    // intent's origin chain. ctx.srcChainId is the origin spoke for
+    // spoke-created intents (relayer create row), which would mislabel the
+    // hub fill tx as a spoke tx. The gate above guarantees the output is the
+    // hub too, so the row is intra-hub: sonic -> sonic.
+    srcChainId: sonic,
+    dstChainId: sonic,
     blockNumber: log.blockNumber,
     blockTimestamp: ts,
     txHash: log.transactionHash,
@@ -246,7 +252,11 @@ async function handleCancelled(
     actionType: 'CancelIntent',
     creator: ctx.creator,
     solver: ctx.solver,
-    srcChainId: ctx.srcChainId,
+    // IntentCancelled fires on the hub, so src_network is the hub (its txHash
+    // is a Sonic tx) — same reasoning as handleFilled. dstChainId stays the
+    // intent's output chain: cancels aren't gated to intra-hub and there's no
+    // dest tx, so it's an informational label, not a mislinked hash.
+    srcChainId: sonic,
     dstChainId: ctx.dstChainId,
     blockNumber: log.blockNumber,
     blockTimestamp: ts,
