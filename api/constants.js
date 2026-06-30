@@ -25,7 +25,6 @@ const NETWORK = {
     INJECTIVE: CONFIG_NETWORKS.injective.nid,
     STELLAR: CONFIG_NETWORKS.stellar.nid,
     SOLANA: CONFIG_NETWORKS.solana.nid,
-    ARCHWAY: CONFIG_NETWORKS.archway.nid,
     STACKS: CONFIG_NETWORKS.stacks.nid,
     BASE: CONFIG_NETWORKS.base.nid,
     ARBITRUM: CONFIG_NETWORKS.arbitrum.nid,
@@ -72,7 +71,6 @@ const META_URLS = {
         [NETWORK.ICON]: USE_MAINNET ? 'https://tracker.icon.community/transaction/' : 'https://tracker.lisbon.icon.community/transaction/',
         [NETWORK.ETH2]: USE_MAINNET ? 'https://etherscan.io/tx/' : 'https://sepolia.etherscan.io/tx/',
         [NETWORK.HAVAH]: USE_MAINNET ? 'https://scan.havah.io/txn/' : 'https://scan.vega.havah.io/txn/',
-        [NETWORK.IBC_ARCHWAY]: USE_MAINNET ? 'https://mintscan.io/archway/txs/' : 'https://testnet.mintscan.io/archway-testnet/txs/',
         [NETWORK.IBC_NEUTRON]: USE_MAINNET ? 'https://neutron.celat.one/neutron-1/txs/' : 'https://neutron.celat.one/pion-1/txs/',
         [NETWORK.IBC_INJECTIVE]: USE_MAINNET
             ? 'https://explorer.injective.network/transaction/'
@@ -90,7 +88,6 @@ const META_URLS = {
         [NETWORK.INJECTIVE]: USE_MAINNET
             ? 'https://explorer.injective.network/transaction/'
             : 'https://testnet.explorer.injective.network/transaction/',
-        [NETWORK.ARCHWAY]: USE_MAINNET ? 'https://mintscan.io/archway/txs/' : 'https://www.mintscan.io/archway-testnet/tx/',
         [NETWORK.STACKS]: USE_MAINNET ? 'https://explorer.hiro.so/txid/' : 'https://explorer.hiro.so/txid/',
         [NETWORK.NIBIRU]: USE_MAINNET ? 'https://nibiscan.io/tx/' : 'https://testnet.nibiscan.io/tx/',
         [NETWORK.HYPERLIQUID]: USE_MAINNET ? 'https://liquidscan.io/tx/' : 'https://liquidscan.io/tx/',

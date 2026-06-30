@@ -15,7 +15,6 @@ This documentation describes how to use the `xcallscan` REST APIs
 | Arbitrum            | arbitrum      |
 | Optimism            | optimism      |
 | Polygon             | polygon       |
-| Archway             | ibc_archway   |
 | Neutron             | ibc_neutron   |
 | Injective           | ibc_injective |
 | Sui                 | sui           |
