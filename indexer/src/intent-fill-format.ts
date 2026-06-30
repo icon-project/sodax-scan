@@ -28,6 +28,20 @@ const chainNameToId: Record<string, string> = Object.fromEntries(
 );
 
 /**
+ * Resolve the intent's true OUTPUT chain id from a CreateIntent action_detail.
+ * Both hub-origin creates (sn IS NULL) and relayer creates (sn IS NOT NULL)
+ * render the real destination chain as the trailing "(chainName)" — unlike the
+ * relayer row's dest_network, which is always the hub (the relay hop), not the
+ * intent's output leg. Returns null when the string isn't parseable or the
+ * chain name is unknown. Used to gate intra-hub (dst = sonic) fill recording.
+ */
+export function parseDstChainIdFromCreate(createActionDetail: string): string | null {
+  const m = CREATE_RE.exec(createActionDetail);
+  if (!m) return null;
+  return chainNameToId[m[3]] ?? null;
+}
+
+/**
  * Resolve decimals for an output leg by (symbol, origin) rather than symbol
  * alone. On the hub, one symbol maps to many addresses with different decimals
  * (e.g. USDT: 6 for most origins, 18 for BSC); the origin parsed out of the
