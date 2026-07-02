@@ -36,13 +36,15 @@ export default function Home() {
         <div>
             <div className="py-2 xl:py-6 xl:flex xl:items-end xl:justify-between w-full">
                 <div className="xl:basis-8/12">
-                    <div className="text-2xl xl:text-3xl text-white font-medium tracking-tighter pb-2 shadow-xl">Explore Messages</div>
+                    <h1 className="text-3xl xl:text-4xl text-white tracking-tight pb-3">
+                        <span className="font-display italic text-soda-bright">Explore</span> Messages
+                    </h1>
                     <SearchBar showFull={true} />
                 </div>
                 <div className="mt-4 xl:mt-0 xl:basis-4/12 flex flex-row-reverse items-end">
-                    <div className=" px-4 text-white rounded-md text-right hidden md:block">
-                        <div className="text-sm opacity-75">Total Messages</div>
-                        <div className="text-3xl font-medium fade-in">{totalMsgRes.isLoading ? 0 : totalMsgRes.data?.data.total?.toLocaleString('en-US')}</div>
+                    <div className="px-4 text-right hidden md:block">
+                        <div className="text-xs uppercase tracking-wider text-cherry-brighter mb-1">Total Messages</div>
+                        <div className="text-5xl xl:text-6xl font-normal text-soda-bright leading-none fade-in">{totalMsgRes.isLoading ? 0 : totalMsgRes.data?.data.total?.toLocaleString('en-US')}</div>
                     </div>
                 </div>
             </div>

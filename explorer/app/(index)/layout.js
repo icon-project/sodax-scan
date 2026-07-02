@@ -1,4 +1,5 @@
 import '../globals.css'
+import { inter, shrikhand } from '../fonts'
 import Favicon from '../favicon.ico'
 import Header from '@/components/header'
 import Footer from '@/components/footer'
@@ -46,9 +47,9 @@ export default async function RootLayout({ children }) {
     }
 
     return (
-        <html lang="en">
+        <html lang="en" className={`${inter.variable} ${shrikhand.variable}`}>
             <head></head>
-            <body className="font-mono min-h-screen bg-[#F8F3F3]">
+            <body className="font-sans text-espresso min-h-screen bg-almost-white">
                 <Header showSearchBar={false} assets={assets} />
                 <div className="-z-20 h-72 w-full absolute hero"></div>
                 <main className="px-4 mb-2 xl:px-24 xl:mb-12 2xl:px-48">

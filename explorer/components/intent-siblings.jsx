@@ -50,7 +50,7 @@ export default function IntentSiblings({
                 e.style.backgroundColor = ''
                 e.style.color = ''
                 e.style.borderRadius = ''
-                e.style.padding = ''
+                e.style.boxShadow = ''
             }
             active = []
         }
@@ -63,10 +63,12 @@ export default function IntentSiblings({
             if (matches.length < 2) return // single occurrence — nothing to twin
             clearActive()
             for (const m of matches) {
-                m.style.backgroundColor = 'rgb(254, 240, 138)' // tailwind yellow-200
-                m.style.color = 'rgb(17, 24, 39)'              // tailwind gray-900
+                m.style.backgroundColor = '#F6E799' // brand soda-clicked
+                m.style.color = '#483434'           // brand espresso
                 m.style.borderRadius = '2px'
-                m.style.padding = '0 2px'
+                // Halo via box-shadow (not padding) so the highlight reads as a
+                // padded pill without changing the box size — no layout shift.
+                m.style.boxShadow = '0 0 0 2px #F6E799'
                 active.push(m)
             }
         }
@@ -155,7 +157,7 @@ export default function IntentSiblings({
 
     return (
         <div className="mt-8" ref={containerRef}>
-            <h2 className="px-2 xl:px-6 py-3 text-xl font-medium uppercase bg-gray-50">
+            <h2 className="px-2 xl:px-6 py-3 text-xl font-medium uppercase text-espresso bg-cream-white">
                 Related intent messages{siblings.length > 0 ? ` (${siblings.length})` : ''}
             </h2>
             {siblings.length > 0 ? (

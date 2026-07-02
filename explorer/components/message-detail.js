@@ -16,7 +16,7 @@ export default async function MessageDetail({ msgData, meta }) {
             <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
                 <div className="table border-collapse w-full text-base text-left text-gray-900">
                     <div className="xl:table-header-group hidden">
-                        <div className="table-row font-medium text-xl uppercase text-left bg-gray-50">
+                        <div className="table-row font-medium text-xl uppercase text-left text-espresso bg-cream-white">
                             <div className="table-cell px-2 py-1 xl:px-6 xl:py-3">Message Detail</div>
                             <div className="table-cell px-2 py-1 xl:px-6 xl:py-3"></div>
                         </div>
@@ -31,7 +31,7 @@ export default async function MessageDetail({ msgData, meta }) {
                             <div className="table-cell px-3 py-2 xl:px-6 xl:py-4 ">
                                 {/* Same hub-only badge as the messages list (sn == null). */}
                                 {msgData.sn == null
-                                    ? <span className="uppercase text-xs rounded-2xl px-2 py-0.5 bg-gray-100 text-gray-600 tracking-wide">hub-only</span>
+                                    ? <span className="uppercase text-xs rounded-full px-2 py-0.5 bg-cream-white text-clay-dark tracking-wide">hub-only</span>
                                     : msgData.sn}
                             </div>
                         </div>

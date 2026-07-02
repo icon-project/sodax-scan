@@ -30,7 +30,7 @@ const MessageFilter = (props: MessageFilterProps) => {
     const [destFilter, setDestFilter] = useState<string>('')
 
     const dropdownTheme = {
-        inlineWrapper: 'flex items-center hover:text-gray-300'
+        inlineWrapper: 'flex items-center hover:text-cherry-brighter'
     }
 
     const filterNetworks = (networks: Network[], filterText: string): Network[] => {
@@ -43,13 +43,13 @@ const MessageFilter = (props: MessageFilterProps) => {
 
     return (
         <div className="flex flex-row-reverse gap-4 text-white p-1 rounded-md">
-            <button className="hover:text-gray-300" onClick={() => props.resetClicked()}>
+            <button className="hover:text-cherry-brighter" onClick={() => props.resetClicked()}>
                 Reset
             </button>
 
             <Dropdown label="Action" inline className="rounded-md " theme={dropdownTheme}>
                 <DropdownItem
-                    className={` min-w-48 ${props.actionType == '' ? 'bg-gray-100' : ''}`}
+                    className={` min-w-48 ${props.actionType == '' ? 'bg-almost-white' : ''}`}
                     onClick={() => {
                         props.actionTypeChanged('')
                     }}
@@ -61,7 +61,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                     return (
                         <DropdownItem
                             key={actType}
-                            className={`min-w-48 ${props.actionType.includes(actType) ? 'bg-gray-200' : ''}`}
+                            className={`min-w-48 ${props.actionType.includes(actType) ? 'bg-soda-clicked' : ''}`}
                             onClick={() => {
                                 props.actionTypeChanged(actType)
                             }}
@@ -90,12 +90,12 @@ const MessageFilter = (props: MessageFilterProps) => {
                         onKeyDown={(e) => e.stopPropagation()}
                         onKeyPress={(e) => e.stopPropagation()}
                         onKeyUp={(e) => e.stopPropagation()}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        className="w-full px-3 py-2 text-sm border border-clay-light rounded-md focus:outline-none focus:ring-2 focus:ring-cherry text-espresso"
                         onClick={(e) => e.stopPropagation()}
                     />
                 </div>
                 <DropdownItem
-                    className={`min-w-48 ${props.destNetwork === '' ? 'bg-gray-100' : ''}`}
+                    className={`min-w-48 ${props.destNetwork === '' ? 'bg-almost-white' : ''}`}
                     onClick={() => {
                         props.destNetworkChanged('')
                     }}
@@ -108,7 +108,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                     return (
                         <DropdownItem
                             key={network.id}
-                            className={`min-w-48 ${props.destNetwork?.split(',').map(v => v.trim()).includes(String(networkId)) ? 'bg-gray-200' : ''}`}
+                            className={`min-w-48 ${props.destNetwork?.split(',').map(v => v.trim()).includes(String(networkId)) ? 'bg-soda-clicked' : ''}`}
                             onClick={() => {
                                 props.destNetworkChanged(network.id)
                             }}
@@ -137,12 +137,12 @@ const MessageFilter = (props: MessageFilterProps) => {
                         onKeyDown={(e) => e.stopPropagation()}
                         onKeyPress={(e) => e.stopPropagation()}
                         onKeyUp={(e) => e.stopPropagation()}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        className="w-full px-3 py-2 text-sm border border-clay-light rounded-md focus:outline-none focus:ring-2 focus:ring-cherry text-espresso"
                         onClick={(e) => e.stopPropagation()}
                     />
                 </div>
                 <DropdownItem
-                    className={`min-w-48 ${props.srcNetwork === '' ? 'bg-gray-100' : ''}`}
+                    className={`min-w-48 ${props.srcNetwork === '' ? 'bg-almost-white' : ''}`}
                     onClick={() => {
                         props.srcNetworkChanged('')
                     }}
@@ -154,7 +154,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                     return (
                         <DropdownItem
                             key={network.id}
-                            className={`min-w-48 ${props.srcNetwork?.split(',').map(v => v.trim()).includes(String(networkId)) ? 'bg-gray-200' : ''}`}
+                            className={`min-w-48 ${props.srcNetwork?.split(',').map(v => v.trim()).includes(String(networkId)) ? 'bg-soda-clicked' : ''}`}
                             onClick={() => {
                                 props.srcNetworkChanged(network.id)
                             }}
@@ -175,7 +175,7 @@ const MessageFilter = (props: MessageFilterProps) => {
 
             <Dropdown label="Status" inline className="rounded-md" theme={dropdownTheme}>
                 <DropdownItem
-                    className={`min-w-32 ${props.status == '' ? 'bg-gray-100' : ''}`}
+                    className={`min-w-32 ${props.status == '' ? 'bg-almost-white' : ''}`}
                     onClick={() => {
                         props.statusChanged('')
                     }}
@@ -187,7 +187,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                     return (
                         <DropdownItem
                             key={status}
-                            className={`${props.status == status ? 'bg-gray-100' : ''}`}
+                            className={`${props.status == status ? 'bg-almost-white' : ''}`}
                             onClick={() => {
                                 props.statusChanged(status)
                             }}
