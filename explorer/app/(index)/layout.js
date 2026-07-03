@@ -2,6 +2,7 @@ import '../globals.css'
 import { inter, shrikhand } from '../fonts'
 import Favicon from '../favicon.ico'
 import Header from '@/components/header'
+import AdminBar from '@/components/admin-bar'
 import Footer from '@/components/footer'
 import fetchData from '@/lib/fetch-data'
 
@@ -51,6 +52,7 @@ export default async function RootLayout({ children }) {
             <head></head>
             <body className="font-sans text-espresso min-h-screen bg-almost-white">
                 <Header showSearchBar={false} assets={assets} />
+                <AdminBar />
                 <div className="-z-20 h-72 w-full absolute hero"></div>
                 <main className="px-4 mb-2 xl:px-24 xl:mb-12 2xl:px-48">
                     <div className="min-h-[34rem] 2xl:min-h-[46rem]">{children}</div>

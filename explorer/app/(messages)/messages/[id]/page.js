@@ -6,6 +6,7 @@ import FetchData from '@/lib/fetch-data'
 import MessageDetail from '@/components/message-detail'
 import IntentSiblings from '@/components/intent-siblings'
 import PageTitle from '@/components/page-title'
+import { isAdmin } from '@/lib/admin-server'
 
 export default async function MessageDetailPage({ params, searchParams }) {
     const { id } = params
@@ -36,7 +37,7 @@ export default async function MessageDetailPage({ params, searchParams }) {
             <PageTitle title={'Message Detail'} />
 
             <Suspense fallback={<Loading />}>
-                <MessageDetail msgData={msgData} meta={rs.meta}></MessageDetail>
+                <MessageDetail msgData={msgData} meta={rs.meta} isAdmin={isAdmin()}></MessageDetail>
             </Suspense>
 
             {msgData.intent_tx_hash && (

@@ -4,15 +4,22 @@ import Link from 'next/link'
 import converter from '@/lib/converter'
 import helper from '@/lib/helper'
 import Script from 'next/script'
+import { AdminDetailProvider, ResubmitBanner, DetailStatus } from '@/components/admin-detail'
 
-export default async function MessageDetail({ msgData, meta }) {
+export default async function MessageDetail({ msgData, meta, isAdmin = false }) {
     const round = (str) => {
         return parseFloat(Number(str).toFixed(8))
     }
 
     const msgAction = msgData.action_detail || ""
-    return (
+    // Admin gets the interactive status cell (live re-check feedback) + banner;
+    // everyone else gets the plain server-rendered pill.
+    const canResubmit = isAdmin && msgData.src_network && msgData.src_tx_hash
+    const statusNode = canResubmit ? <DetailStatus /> : Render.renderMessageStatus(msgData.status)
+
+    const content = (
         <div className="py-2 flex flex-col">
+            {canResubmit && <ResubmitBanner />}
             <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
                 <div className="table border-collapse w-full text-base text-left text-gray-900">
                     <div className="xl:table-header-group hidden">
@@ -24,7 +31,7 @@ export default async function MessageDetail({ msgData, meta }) {
                     <div className="table-row-group">
                         <div className="table-row bg-white border-b">
                             <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Status:</div>
-                            <div className="table-cell px-3 py-2 xl:px-6 xl:py-4">{Render.renderMessageStatus(msgData.status)}</div>
+                            <div className="table-cell px-3 py-2 xl:px-6 xl:py-4">{statusNode}</div>
                         </div>
                         <div className="table-row bg-white border-b">
                             <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Serial No:</div>
@@ -107,4 +114,13 @@ export default async function MessageDetail({ msgData, meta }) {
             `}</Script>
         </div>
     )
+
+    if (canResubmit) {
+        return (
+            <AdminDetailProvider initialStatus={msgData.status} messageId={msgData.id} chainId={msgData.src_network} txHash={msgData.src_tx_hash}>
+                {content}
+            </AdminDetailProvider>
+        )
+    }
+    return content
 }
