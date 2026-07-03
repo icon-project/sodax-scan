@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 export default function DebugLogout() {
     const router = useRouter()
     async function logout() {
-        await fetch('/api/admin/logout', { method: 'POST' })
+        await fetch('/admin-api/logout', { method: 'POST' })
         router.refresh()
     }
     return (

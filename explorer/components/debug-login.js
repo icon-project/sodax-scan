@@ -13,7 +13,7 @@ export default function DebugLogin() {
         setLoading(true)
         setError('')
         try {
-            const res = await fetch('/api/admin/login', {
+            const res = await fetch('/admin-api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ password })

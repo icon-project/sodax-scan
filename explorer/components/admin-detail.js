@@ -50,7 +50,7 @@ export function AdminDetailProvider({ initialStatus, messageId, chainId, txHash,
         setError('')
         setPhase('submitting')
         try {
-            const res = await fetch('/api/admin/resubmit', {
+            const res = await fetch('/admin-api/resubmit', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ chain_id: chainId, tx_hash: txHash })
