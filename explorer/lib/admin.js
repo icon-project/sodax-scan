@@ -9,7 +9,8 @@
 import crypto from 'crypto'
 
 export const COOKIE_NAME = 'sodax_debug'
-const TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
+export const TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
+export const COOKIE_MAX_AGE = TTL_MS / 1000 // seconds, for cookie maxAge
 
 function secret() {
     const s = process.env.ADMIN_SECRET

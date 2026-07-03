@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { checkPassword, makeToken, COOKIE_NAME } from '@/lib/admin'
+import { checkPassword, makeToken, COOKIE_NAME, COOKIE_MAX_AGE } from '@/lib/admin'
 import { rateLimit, clientIp } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
@@ -29,7 +29,7 @@ export async function POST(request) {
         sameSite: 'strict',
         secure: process.env.NODE_ENV === 'production',
         path: '/',
-        maxAge: 8 * 60 * 60
+        maxAge: COOKIE_MAX_AGE
     })
     return res
 }
