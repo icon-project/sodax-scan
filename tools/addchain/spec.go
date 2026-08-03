@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -48,6 +51,38 @@ var (
 	keyRe = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
 	nidRe = regexp.MustCompile(`^[0-9]+$`)
 )
+
+// savedSpecRel is where the wizard parks its answers on every exit, so a run
+// that dies on a blocking error doesn't cost you thirteen answers. Gitignored.
+const savedSpecRel = "tools/addchain/.last-spec.json"
+
+func savedSpecPath(root string) string { return filepath.Join(root, savedSpecRel) }
+
+// loadSavedSpec returns the previous run's answers, or nil when there are none
+// (or when the file is unreadable — a stale scratch file must never be fatal).
+func loadSavedSpec(root string) *ChainSpec {
+	raw, err := os.ReadFile(savedSpecPath(root))
+	if err != nil {
+		return nil
+	}
+	var s ChainSpec
+	if err := json.Unmarshal(raw, &s); err != nil || s.Key == "" {
+		return nil
+	}
+	return &s
+}
+
+func saveSpec(root string, s ChainSpec) error {
+	raw, err := json.MarshalIndent(s, "", "  ")
+	if err != nil {
+		return err
+	}
+	path := savedSpecPath(root)
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, append(raw, '\n'), 0o644)
+}
 
 func validateKey(v string) error {
 	if !keyRe.MatchString(v) {

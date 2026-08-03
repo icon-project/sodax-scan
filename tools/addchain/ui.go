@@ -57,6 +57,7 @@ const (
 	stageForm stage = iota
 	stageReview
 	stageDone
+	stageResume
 )
 
 type model struct {
@@ -73,6 +74,8 @@ type model struct {
 	assetField int // 0 address, 1 symbol, 2 decimals
 	assetDraft Asset
 
+	saved *ChainSpec // answers from a previous run, offered on the resume screen
+
 	plan     *plan
 	applying bool // set when the user confirmed; main does the writing
 	aborted  bool
@@ -88,6 +91,13 @@ func newModel(root string, existing map[string]string) *model {
 
 	m := &model{root: root, existing: existing, input: ti, spec: ChainSpec{EVM: true}}
 	m.fields = buildFields()
+	// A previous run's answers are offered, never silently adopted — the tree may
+	// have moved on since, and a stale nid pasted in without asking is worse than
+	// retyping one.
+	if saved := loadSavedSpec(root); saved != nil {
+		m.saved = saved
+		m.stage = stageResume
+	}
 	m.primeInput()
 	return m
 }
@@ -209,7 +219,7 @@ func buildFields() []field {
 			show: func(s *ChainSpec) string { return orNone(s.RPCURL) },
 		},
 		{
-			label: "Payload hashed / fetched from the relay?",
+			label: "Payload hashed / relay-fetched?",
 			help:  "yes for chains that don't carry the payload on-chain (solana, bitcoin) — flips srcHasHashedPayload",
 			kind:  kBool,
 			set: func(m *model, v string) error {
@@ -320,7 +330,10 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.aborted = true
 			return m, tea.Quit
 		}
-		if m.stage == stageReview {
+		switch m.stage {
+		case stageResume:
+			return m.updateResume(msg)
+		case stageReview:
 			return m.updateReview(msg)
 		}
 		return m.updateForm(msg)
@@ -328,6 +341,28 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	m.input, cmd = m.input.Update(msg)
 	return m, cmd
+}
+
+func (m *model) updateResume(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "r", "enter": // walk the wizard with every answer pre-filled
+		m.spec = *m.saved
+		m.stage = stageForm
+		m.idx = 0
+		m.primeInput()
+	case "j": // straight to the review screen
+		m.spec = *m.saved
+		m.plan = buildPlan(m.root, m.spec)
+		m.stage = stageReview
+	case "n": // start over
+		m.stage = stageForm
+		m.idx = 0
+		m.primeInput()
+	case "q", "esc":
+		m.aborted = true
+		return m, tea.Quit
+	}
+	return m, nil
 }
 
 func (m *model) updateReview(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -455,6 +490,8 @@ func (m *model) View() string {
 	b.WriteString("\n\n")
 
 	switch m.stage {
+	case stageResume:
+		b.WriteString(m.resumeView())
 	case stageReview:
 		b.WriteString(m.reviewView())
 	case stageDone:
@@ -462,6 +499,26 @@ func (m *model) View() string {
 	default:
 		b.WriteString(m.formView())
 	}
+	return b.String()
+}
+
+func (m *model) resumeView() string {
+	var b strings.Builder
+	s := m.saved
+
+	b.WriteString(labelStyle.Render("answers from a previous run") + "\n")
+	b.WriteString(helpStyle.Render(savedSpecRel) + "\n\n")
+
+	var sum strings.Builder
+	for _, f := range m.fields {
+		sum.WriteString(fmt.Sprintf("%-34s %s\n", stepStyle.Render(f.label), valStyle.Render(f.show(s))))
+	}
+	b.WriteString(boxStyle.Render(strings.TrimRight(sum.String(), "\n")) + "\n")
+
+	if nid, dup := m.existing[s.Key]; dup {
+		b.WriteString("\n" + errStyle.Render(fmt.Sprintf("note: %q has since been added to this tree (nid %s) — these answers are spent", s.Key, nid)) + "\n")
+	}
+	b.WriteString("\n" + footStyle.Render("r reuse and step through · j jump to the review · n start fresh · q quit") + "\n")
 	return b.String()
 }
 

@@ -38,6 +38,15 @@ func main() {
 			fatal(err)
 		}
 		m = final.(*model)
+		// Park the answers before doing anything else: an abort or a blocking
+		// error must not cost the user the whole questionnaire.
+		if m.spec.Key != "" {
+			if err := saveSpec(root, m.spec); err != nil {
+				fmt.Fprintln(os.Stderr, helpStyle.Render("(could not save answers: "+err.Error()+")"))
+			} else {
+				fmt.Println(footStyle.Render("answers saved to " + savedSpecRel + " — the next run offers to reuse them"))
+			}
+		}
 	}
 	if m.aborted || !m.applying {
 		fmt.Println(errStyle.Render("aborted — nothing written"))

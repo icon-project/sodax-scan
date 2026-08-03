@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"strings"
 	"testing"
 
@@ -167,6 +168,89 @@ func TestWizardBackNavigation(t *testing.T) {
 	send(m, tea.KeyMsg{Type: tea.KeyShiftTab}, typ("y"))
 	if !m.spec.EVM {
 		t.Error("re-answering the EVM question did not stick")
+	}
+}
+
+func TestResumeOffersSavedAnswers(t *testing.T) {
+	root := sandbox(t)
+	want := evmSpec()
+	if err := saveSpec(root, want); err != nil {
+		t.Fatal(err)
+	}
+
+	// j: straight to the review with the saved answers.
+	m := newTestModel(t, root)
+	if m.stage != stageResume {
+		t.Fatalf("saved answers should open the resume screen, stage=%v", m.stage)
+	}
+	if view := m.View(); !strings.Contains(view, "previous run") || !strings.Contains(view, "plasma") {
+		t.Errorf("resume screen does not show the saved answers:\n%s", view)
+	}
+	send(m, typ("j"))
+	if m.stage != stageReview {
+		t.Fatalf("j should jump to the review, stage=%v", m.stage)
+	}
+	if m.spec.Key != want.Key || m.spec.NID != want.NID || len(m.spec.Assets) != len(want.Assets) {
+		t.Errorf("saved answers not restored: %+v", m.spec)
+	}
+	if len(m.plan.Errors) > 0 {
+		t.Errorf("resumed plan has errors: %v", m.plan.Errors)
+	}
+
+	// r: step through the wizard with each answer pre-filled.
+	m = newTestModel(t, root)
+	send(m, typ("r"))
+	if m.stage != stageForm || m.idx != 0 {
+		t.Fatalf("r should re-enter the form at step 1 (stage=%v idx=%d)", m.stage, m.idx)
+	}
+	if got := m.input.Value(); got != want.Key {
+		t.Errorf("first field should be pre-filled with %q, got %q", want.Key, got)
+	}
+	send(m, enter)
+	if m.idx != 1 || m.spec.Key != want.Key {
+		t.Errorf("pre-filled answer not accepted on enter (idx=%d key=%q)", m.idx, m.spec.Key)
+	}
+
+	// n: discard and start clean.
+	m = newTestModel(t, root)
+	send(m, typ("n"))
+	if m.stage != stageForm || m.spec.Key != "" || len(m.spec.Assets) != 0 {
+		t.Errorf("n should start fresh, got stage=%v spec=%+v", m.stage, m.spec)
+	}
+	if !m.spec.EVM {
+		t.Error("a fresh spec should still default to EVM")
+	}
+}
+
+func TestSavedSpecRoundTripAndTolerance(t *testing.T) {
+	root := sandbox(t)
+	if got := loadSavedSpec(root); got != nil {
+		t.Errorf("no saved file should mean no offer, got %+v", got)
+	}
+
+	want := evmSpec()
+	want.HashedPayload = true
+	if err := saveSpec(root, want); err != nil {
+		t.Fatal(err)
+	}
+	got := loadSavedSpec(root)
+	if got == nil {
+		t.Fatal("saved spec not loaded back")
+	}
+	if got.Key != want.Key || !got.HashedPayload || got.Assets[1].Decimals != 6 || got.CoingeckoID != want.CoingeckoID {
+		t.Errorf("round trip lost data: %+v", got)
+	}
+
+	// A truncated or hand-mangled scratch file must be ignored, not fatal.
+	if err := os.WriteFile(savedSpecPath(root), []byte(`{"Key": "plas`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got := loadSavedSpec(root); got != nil {
+		t.Errorf("corrupt saved spec should be ignored, got %+v", got)
+	}
+	m := newTestModel(t, root)
+	if m.stage != stageForm {
+		t.Errorf("corrupt saved spec should go straight to the form, stage=%v", m.stage)
 	}
 }
 
