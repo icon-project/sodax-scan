@@ -296,6 +296,25 @@ func buildPlan(root string, s ChainSpec) *plan {
 	return p
 }
 
+// hexAddrRe mirrors enrichChainsFromApi's normalizeKey in indexer/src/configs.ts.
+var hexAddrRe = regexp.MustCompile(`^(0x|cx)[0-9a-fA-F]+$`)
+
+// normalizeAssetKey lowercases hex/ICON addresses and leaves everything else
+// alone. Every EVM decode path lowercases the token address before looking it up
+// in chains[...].Assets (action.ts, chains/evm, main.ts), while loadChains keys
+// the config verbatim — so a checksummed key is simply never hit, and the amount
+// falls back to 18 decimals. Base58/bech32 keys (solana, stellar, sui, bitcoin)
+// are case-sensitive and must survive untouched: lowercasing those breaks the
+// lookup instead of fixing it. Keyed on address shape, not on ChainSpec.EVM,
+// because ICON's cx addresses need this too and non-EVM chains can still carry
+// hex addresses.
+func normalizeAssetKey(addr string) string {
+	if hexAddrRe.MatchString(addr) {
+		return strings.ToLower(addr)
+	}
+	return addr
+}
+
 func assetsEntry(s ChainSpec) string {
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "    %q: {\n        \"AssetManager\": %q,\n", s.Key, s.AssetManager)
@@ -309,7 +328,7 @@ func assetsEntry(s ChainSpec) string {
 		if i == len(s.Assets)-1 {
 			sep = ""
 		}
-		fmt.Fprintf(&sb, "            %q: {\n                \"name\": %q,\n                \"decimals\": %d\n            }%s\n", a.Address, a.Symbol, a.Decimals, sep)
+		fmt.Fprintf(&sb, "            %q: {\n                \"name\": %q,\n                \"decimals\": %d\n            }%s\n", normalizeAssetKey(a.Address), a.Symbol, a.Decimals, sep)
 	}
 	sb.WriteString("        }\n    }")
 	return sb.String()

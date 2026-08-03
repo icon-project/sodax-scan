@@ -204,6 +204,77 @@ func TestEVMChainEndToEnd(t *testing.T) {
 	}
 }
 
+// Asset keys must land in the same normalised form the indexer looks them up in:
+// every EVM decode path lowercases the token address first, so a checksummed key
+// would silently fall back to 18 decimals.
+func TestAssetKeysAreNormalisedByAddressShape(t *testing.T) {
+	root := sandbox(t)
+	s := evmSpec()
+	s.Assets = []Asset{
+		{Address: "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", Symbol: "USDG", Decimals: 6},
+		{Address: "cxE5cDF3B0F26967B0EFC72d470D57BbF534268F94", Symbol: "ICX", Decimals: 18},
+		{Address: "So11111111111111111111111111111111111111112", Symbol: "SOL", Decimals: 9},
+		{Address: "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA", Symbol: "XLM", Decimals: 7},
+	}
+
+	p := buildPlan(root, s)
+	if len(p.Errors) > 0 {
+		t.Fatalf("plan errors: %v", p.Errors)
+	}
+	if err := apply(root, p); err != nil {
+		t.Fatal(err)
+	}
+
+	var cfg map[string]struct {
+		Assets map[string]struct {
+			Name     string `json:"name"`
+			Decimals int    `json:"decimals"`
+		} `json:"Assets"`
+	}
+	if err := json.Unmarshal([]byte(read(t, root, "indexer/config.json")), &cfg); err != nil {
+		t.Fatal(err)
+	}
+	assets := cfg["plasma"].Assets
+
+	// Hex and ICON addresses: lowercased, so the runtime lookup hits.
+	for _, want := range []struct {
+		key      string
+		symbol   string
+		decimals int
+	}{
+		{"0x5fc5360d0400a0fd4f2af552add042d716f1d168", "USDG", 6},
+		{"cxe5cdf3b0f26967b0efc72d470d57bbf534268f94", "ICX", 18},
+	} {
+		got, ok := assets[want.key]
+		if !ok {
+			t.Errorf("%s key not normalised to lowercase; got keys %v", want.symbol, keysOf(assets))
+			continue
+		}
+		if got.Decimals != want.decimals {
+			t.Errorf("%s decimals: want %d, got %d", want.symbol, want.decimals, got.Decimals)
+		}
+	}
+
+	// Base58/bech32 addresses are case-sensitive — lowercasing them would break
+	// the lookup rather than fix it.
+	for _, key := range []string{
+		"So11111111111111111111111111111111111111112",
+		"CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
+	} {
+		if _, ok := assets[key]; !ok {
+			t.Errorf("case-sensitive key %q was mangled; got keys %v", key, keysOf(assets))
+		}
+	}
+}
+
+func keysOf[V any](m map[string]V) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	return out
+}
+
 func TestNonEVMHashedPayload(t *testing.T) {
 	root := sandbox(t)
 	s := evmSpec()
