@@ -2,7 +2,7 @@ export default function Footer() {
     const year = (new Date()).getFullYear()
     return (
         <footer className="bottom-0">
-            <div className="px-4 py-5 xl:px-24 2xl:px-48 flex justify-between items-center border-t-[1px] ">
+            <div className="px-4 py-5 xl:px-24 2xl:px-48 flex justify-between items-center border-t border-light-grey text-clay-dark">
                 <div className="flex justify-center items-center gap-2">
                     <div className="w-6 h-6">
                         <a href="https://github.com/icon-project/xcallscan-v3" target="_blank" alt="Github">

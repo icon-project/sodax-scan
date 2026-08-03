@@ -5,7 +5,7 @@ export default function SkeletonTable({ count = 10 }) {
             <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
                 <div className="table w-full border-collapse">
                     <div className="table-header-group">
-                        <div className="table-row uppercase bg-gray-50">
+                        <div className="table-row uppercase text-xs tracking-wide text-clay-dark bg-cream-white">
                             <div className="table-cell px-1 py-1 xl:px-3 xl:py-3">Status</div>
                             <div className="table-cell px-1 py-1 xl:px-3 xl:py-3">Serial No</div>
                             <div className="table-cell px-1 py-1 xl:px-3 xl:py-3">Source Tx Hash</div>
@@ -35,7 +35,7 @@ function SkeletonTableCell() {
 
 function Skeleton() {
     return (
-        <div className="table-row bg-white hover:bg-gray-50 border-b h-14">
+        <div className="table-row bg-white hover:bg-almost-white border-b border-light-grey h-14">
             <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">
                 <SkeletonTableCell />
             </div>

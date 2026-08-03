@@ -4,19 +4,26 @@ import Link from 'next/link'
 import converter from '@/lib/converter'
 import helper from '@/lib/helper'
 import Script from 'next/script'
+import { AdminDetailProvider, ResubmitBanner, DetailStatus } from '@/components/admin-detail'
 
-export default async function MessageDetail({ msgData, meta }) {
+export default async function MessageDetail({ msgData, meta, isAdmin = false }) {
     const round = (str) => {
         return parseFloat(Number(str).toFixed(8))
     }
 
     const msgAction = msgData.action_detail || ""
-    return (
+    // Admin gets the interactive status cell (live re-check feedback) + banner;
+    // everyone else gets the plain server-rendered pill.
+    const canResubmit = isAdmin && msgData.src_network && msgData.src_tx_hash
+    const statusNode = canResubmit ? <DetailStatus /> : Render.renderMessageStatus(msgData.status)
+
+    const content = (
         <div className="py-2 flex flex-col">
+            {canResubmit && <ResubmitBanner />}
             <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
                 <div className="table border-collapse w-full text-base text-left text-gray-900">
                     <div className="xl:table-header-group hidden">
-                        <div className="table-row font-medium text-xl uppercase text-left bg-gray-50">
+                        <div className="table-row font-medium text-xl uppercase text-left text-espresso bg-cream-white">
                             <div className="table-cell px-2 py-1 xl:px-6 xl:py-3">Message Detail</div>
                             <div className="table-cell px-2 py-1 xl:px-6 xl:py-3"></div>
                         </div>
@@ -24,14 +31,14 @@ export default async function MessageDetail({ msgData, meta }) {
                     <div className="table-row-group">
                         <div className="table-row bg-white border-b">
                             <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Status:</div>
-                            <div className="table-cell px-3 py-2 xl:px-6 xl:py-4">{Render.renderMessageStatus(msgData.status)}</div>
+                            <div className="table-cell px-3 py-2 xl:px-6 xl:py-4">{statusNode}</div>
                         </div>
                         <div className="table-row bg-white border-b">
                             <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Serial No:</div>
                             <div className="table-cell px-3 py-2 xl:px-6 xl:py-4 ">
                                 {/* Same hub-only badge as the messages list (sn == null). */}
                                 {msgData.sn == null
-                                    ? <span className="uppercase text-xs rounded-2xl px-2 py-0.5 bg-gray-100 text-gray-600 tracking-wide">hub-only</span>
+                                    ? <span className="uppercase text-xs rounded-full px-2 py-0.5 bg-cream-white text-clay-dark tracking-wide">hub-only</span>
                                     : msgData.sn}
                             </div>
                         </div>
@@ -107,4 +114,13 @@ export default async function MessageDetail({ msgData, meta }) {
             `}</Script>
         </div>
     )
+
+    if (canResubmit) {
+        return (
+            <AdminDetailProvider initialStatus={msgData.status} messageId={msgData.id} chainId={msgData.src_network} txHash={msgData.src_tx_hash}>
+                {content}
+            </AdminDetailProvider>
+        )
+    }
+    return content
 }

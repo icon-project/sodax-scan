@@ -61,6 +61,16 @@ a {
 }
 
 .hero {
-    background-color: #CC9E9A;
+    /* Brand cherry-soda impact surface. Deep enough for white body text and
+       the yellow-soda hero stat to read with real contrast. */
+    background-color: #A55C55;
+    background-image: linear-gradient(180deg, #A55C55 0%, #964D48 100%);
+}
+
+/* Body is now Inter (font-sans). Keep hashes/addresses monospace so they stay
+   scannable and character-aligned. */
+.tx-hash,
+[data-hash] {
+    font-family: var(--font-mono);
 }
 

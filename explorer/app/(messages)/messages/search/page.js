@@ -6,6 +6,7 @@ import MessageDetail from '@/components/message-detail'
 import MessageList from '@/components/message-list'
 import IntentSiblings from '@/components/intent-siblings'
 import PageTitle from '@/components/page-title'
+import { isAdmin } from '@/lib/admin-server'
 
 export default async function SearchPage({ params, searchParams }) {
     const { value } = searchParams
@@ -45,7 +46,7 @@ export default async function SearchPage({ params, searchParams }) {
         <div>
             <PageTitle title={`Search`} />
             <Suspense fallback={<Loading />}>
-                {showDetailPage ? <MessageDetail msgData={msgData} meta={rs.meta}></MessageDetail> : <MessageList data={rs.data} meta={rs.meta}></MessageList>}
+                {showDetailPage ? <MessageDetail msgData={msgData} meta={rs.meta} isAdmin={isAdmin()}></MessageDetail> : <MessageList data={rs.data} meta={rs.meta}></MessageList>}
             </Suspense>
 
             {showDetailPage && msgData.intent_tx_hash && (

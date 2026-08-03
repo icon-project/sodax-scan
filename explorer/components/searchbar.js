@@ -13,10 +13,10 @@ export default function SearchBar({ showFull }) {
     }
 
     const inputClass = showFull
-        ? `block w-full p-3 pl-10 xl:pl-12 text-sm xl:text-lg border border-gray-300 rounded-lg focus:outline-none focus:border-cyan-600 focus:ring-1 focus:ring-cyan-600`
-        : `block w-full p-2 pl-10 text-sm xl:text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-cyan-600 focus:ring-[0.5px] focus:ring-cyan-600`
+        ? `block w-full p-3 pl-10 xl:pl-12 text-sm xl:text-lg border border-clay-light rounded-lg focus:outline-none focus:border-cherry focus:ring-1 focus:ring-cherry`
+        : `block w-full p-2 pl-10 text-sm xl:text-sm border border-clay-light rounded-lg focus:outline-none focus:border-cherry focus:ring-[0.5px] focus:ring-cherry`
     const wrappedInputClass = showFull ? `relative overflow-x-auto shadow-md sm:rounded-lg w-full` : ` w-[15rem] hidden xl:inline-block relative xl:w-[28rem]`
-    const iconClass = showFull ? 'w-6 h-6 text-gray-500 dark:text-gray-400' : 'w-5 h-5 text-gray-500 dark:text-gray-400'
+    const iconClass = showFull ? 'w-6 h-6 text-clay dark:text-gray-400' : 'w-5 h-5 text-clay dark:text-gray-400'
 
     return (
         <div>
