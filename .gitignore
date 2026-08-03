@@ -119,6 +119,9 @@ dist
 /explorer/.env.mainnet
 /explorer/.env.testnet
 
+# addchain tool binary (built on demand by `make add-chain`)
+/tools/addchain/bin/
+
 # Misc
 local
 .notes.md

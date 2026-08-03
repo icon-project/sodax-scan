@@ -1,0 +1,26 @@
+{
+  "Key": "celo",
+  "NID": "42220",
+  "DisplayName": "celo",
+  "NativeSymbol": "CELO",
+  "EVM": true,
+  "MainnetTxURL": "https://celoscan.io/tx/",
+  "TestnetTxURL": "https://alfajores.celoscan.io/tx/",
+  "RPCURL": "https://forno.celo.org",
+  "HashedPayload": false,
+  "AssetManager": "0x0df73542cc68bdc01b361d231c60f726b0e0bc05",
+  "Assets": [
+    {
+      "Address": "0x471EcE3750Da237f93B8E339c536989b8978a438",
+      "Symbol": "CELO",
+      "Decimals": 18
+    },
+    {
+      "Address": "0xcebA9300f2b948710d2653dD7B07f33A8B32118C",
+      "Symbol": "USDC",
+      "Decimals": 6
+    }
+  ],
+  "CoingeckoID": "celo",
+  "LogoSource": ""
+}
