@@ -119,6 +119,11 @@ dist
 /explorer/.env.mainnet
 /explorer/.env.testnet
 
+# addchain tool binary (built on demand by `make add-chain`) and its scratch
+# copy of the last wizard answers
+/tools/addchain/bin/
+/tools/addchain/.last-spec.json
+
 # Misc
 local
 .notes.md

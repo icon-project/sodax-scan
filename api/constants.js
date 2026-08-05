@@ -40,6 +40,7 @@ const NETWORK = {
     BITCOIN: CONFIG_NETWORKS.bitcoin.nid,
     ALEO: CONFIG_NETWORKS.aleo.nid,
     HEDERA: CONFIG_NETWORKS.hedera.nid,
+    ROBINHOOD: CONFIG_NETWORKS.robinhood.nid,
 }
 
 const buildProviderUrls = (urls) => {
@@ -98,6 +99,7 @@ const META_URLS = {
         [NETWORK.BITCOIN]: USE_MAINNET ? 'https://ordiscan.com/tx/' : 'https://uniscan.cc/signet/tx/',
         [NETWORK.ALEO]: USE_MAINNET ? 'https://explorer.provable.com/transaction/' : 'https://testnet.explorer.provable.com/transaction/',
         [NETWORK.HEDERA]: USE_MAINNET ? 'https://hashscan.io/mainnet/transaction/' : 'https://hashscan.io/testnet/transaction/',
+        [NETWORK.ROBINHOOD]: USE_MAINNET ? 'https://robinhoodchain.blockscout.com/tx/' : 'https://robinhoodchain.blockscout.com/tx/',
     }
 }
 

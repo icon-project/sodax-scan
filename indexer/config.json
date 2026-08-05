@@ -2180,5 +2180,26 @@
                 "decimals": 6
             }
         }
+    },
+    "robinhood": {
+        "AssetManager": "0x0df73542cC68bDC01b361d231c60F726B0e0bC05",
+        "Assets": {
+            "0x0000000000000000000000000000000000000000": {
+                "name": "ETH",
+                "decimals": 18
+            },
+            "0x3cd95c469be0edfd12bd4f3a4436b132b7908df4": {
+                "name": "bnUSD",
+                "decimals": 18
+            },
+            "0xa256dd181c3f6e5ec68c6869f5d50a712d47212e": {
+                "name": "SODA",
+                "decimals": 18
+            },
+            "0x5fc5360d0400a0fd4f2af552add042d716f1d168": {
+                "name": "USDG",
+                "decimals": 6
+            }
+        }
     }
 }

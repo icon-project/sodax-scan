@@ -28,6 +28,7 @@ const NETWORK = {
     BITCOIN: 'bitcoin',
     ALEO: 'aleo',
     HEDERA: 'hedera',
+    ROBINHOOD: 'robinhood',
 }
 
 const NETWORK_MAPPINGS = {
@@ -54,6 +55,7 @@ const NETWORK_MAPPINGS = {
     [NETWORK.BITCOIN]: CONFIG_NETWORKS.bitcoin.nid,
     [NETWORK.ALEO]: CONFIG_NETWORKS.aleo.nid,
     [NETWORK.HEDERA]: CONFIG_NETWORKS.hedera.nid,
+    [NETWORK.ROBINHOOD]: CONFIG_NETWORKS.robinhood.nid,
 }
 
 const REV_NETWORK_MAPPINGS = {
@@ -80,6 +82,7 @@ const REV_NETWORK_MAPPINGS = {
     [CONFIG_NETWORKS.bitcoin.nid]: [NETWORK.BITCOIN],
     [CONFIG_NETWORKS.aleo.nid]: [NETWORK.ALEO],
     [CONFIG_NETWORKS.hedera.nid]: [NETWORK.HEDERA],
+    [CONFIG_NETWORKS.robinhood.nid]: [NETWORK.ROBINHOOD],
 }
 
 const NETWORK_DETAILS = {
@@ -220,6 +223,12 @@ const NETWORK_DETAILS = {
         name: 'hedera',
         logo: `/images/network-hedera.svg`,
         nativeAsset: 'HBAR',
+    },
+    [NETWORK.ROBINHOOD]: {
+        id: NETWORK.ROBINHOOD,
+        name: 'robinhood',
+        logo: `/images/network-robinhood.png`,
+        nativeAsset: 'ETH',
     },
 }
 
