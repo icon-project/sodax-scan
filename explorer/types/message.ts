@@ -1,5 +1,14 @@
 // Message status types
-export type MessageStatus = 'pending' | 'executed' | 'delivered' | 'failed' | 'rollbacked'
+// Status values a `messages` row can carry. Only `attested` is new for MPC; the
+// completed MPC terminal reuses the legacy `executed`. `routed`/`hub-burned`/
+// `minted`/`swept`/`released` are detail-timeline legs, not status values.
+export type MessageStatus =
+    | 'pending'
+    | 'executed'
+    | 'delivered'
+    | 'failed'
+    | 'rollbacked'
+    | 'attested'
 
 // Message item type
 export interface MessageItem {
@@ -35,6 +44,18 @@ export interface MessageItem {
     updated_at?: number | null
     slippage?: string | null
     intent_tx_hash?: string | null
+    // MPC lifecycle state columns (10 total, all optional/nullable). Populated by
+    // the external writer only for MPC rows; NULL and inert on legacy rows.
+    attested_tx_hash?: string | null
+    attested_network?: string | null
+    hub_burn_tx_hash?: string | null
+    hub_burn_network?: string | null
+    mint_tx_hash?: string | null
+    mint_network?: string | null
+    sweep_tx_hash?: string | null
+    sweep_network?: string | null
+    release_tx_hash?: string | null
+    release_network?: string | null
 }
 
 // Message metadata (API response structure)

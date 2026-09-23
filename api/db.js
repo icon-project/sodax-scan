@@ -28,7 +28,7 @@ const buildWhereSql = (status, src_network, dest_network, src_address, dest_addr
     let values = []
     let conditions = []
     if (status) {
-        conditions.push(`status = $${conditions.length + 1}`)
+        conditions.push(`LOWER(status) = LOWER($${conditions.length + 1})`)
         values.push(status)
     }
     if (src_network) {
@@ -80,7 +80,10 @@ const DETAIL_FIELDS = ` id, sn, status, src_network, src_block_number, src_block
                         dest_network, dest_block_number, dest_block_timestamp, dest_tx_hash, dest_app as dest_address, dest_error,
                         response_block_number, response_block_timestamp, response_tx_hash, response_error,
                         rollback_block_number, rollback_block_timestamp, rollback_tx_hash, rollback_error,
-                        value, fee, action_type, action_detail, action_amount_usd, created_at, updated_at, slippage, intent_tx_hash `
+                        value, fee, action_type, action_detail, action_amount_usd, created_at, updated_at, slippage, intent_tx_hash,
+                        attested_tx_hash, attested_network, hub_burn_tx_hash, hub_burn_network,
+                        mint_tx_hash, mint_network, sweep_tx_hash, sweep_network,
+                        release_tx_hash, release_network `
 
 const SEARCH_FIELDS = ` id, sn, status, src_network, src_block_number, src_block_timestamp, src_tx_hash, src_app as src_address, src_error,
                         dest_network, dest_block_number, dest_block_timestamp, dest_tx_hash, dest_app as dest_address, dest_error,
@@ -240,4 +243,6 @@ module.exports = {
     searchMessages,
     getStatistic,
     getTotalMessages,
+    buildWhereSql,
+    DETAIL_FIELDS,
 }

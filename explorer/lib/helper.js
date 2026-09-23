@@ -29,6 +29,11 @@ const NETWORK = {
     ALEO: 'aleo',
     HEDERA: 'hedera',
     ROBINHOOD: 'robinhood',
+    MONAD: 'monad',
+    XRP: 'xrp',
+    ZCASH: 'zcash',
+    TON: 'ton',
+    TRON: 'tron',
 }
 
 const NETWORK_MAPPINGS = {
@@ -56,6 +61,11 @@ const NETWORK_MAPPINGS = {
     [NETWORK.ALEO]: CONFIG_NETWORKS.aleo.nid,
     [NETWORK.HEDERA]: CONFIG_NETWORKS.hedera.nid,
     [NETWORK.ROBINHOOD]: CONFIG_NETWORKS.robinhood.nid,
+    [NETWORK.MONAD]: CONFIG_NETWORKS.monad.nid,
+    [NETWORK.XRP]: CONFIG_NETWORKS.xrp.nid,
+    [NETWORK.ZCASH]: CONFIG_NETWORKS.zcash.nid,
+    [NETWORK.TON]: CONFIG_NETWORKS.ton.nid,
+    [NETWORK.TRON]: CONFIG_NETWORKS.tron.nid,
 }
 
 const REV_NETWORK_MAPPINGS = {
@@ -83,6 +93,11 @@ const REV_NETWORK_MAPPINGS = {
     [CONFIG_NETWORKS.aleo.nid]: [NETWORK.ALEO],
     [CONFIG_NETWORKS.hedera.nid]: [NETWORK.HEDERA],
     [CONFIG_NETWORKS.robinhood.nid]: [NETWORK.ROBINHOOD],
+    [CONFIG_NETWORKS.monad.nid]: [NETWORK.MONAD],
+    [CONFIG_NETWORKS.xrp.nid]: [NETWORK.XRP],
+    [CONFIG_NETWORKS.zcash.nid]: [NETWORK.ZCASH],
+    [CONFIG_NETWORKS.ton.nid]: [NETWORK.TON],
+    [CONFIG_NETWORKS.tron.nid]: [NETWORK.TRON],
 }
 
 const NETWORK_DETAILS = {
@@ -230,6 +245,36 @@ const NETWORK_DETAILS = {
         logo: `/images/network-robinhood.png`,
         nativeAsset: 'ETH',
     },
+    [NETWORK.MONAD]: {
+        id: NETWORK.MONAD,
+        name: 'monad',
+        logo: `/images/network-monad.png`,
+        nativeAsset: 'MON',
+    },
+    [NETWORK.XRP]: {
+        id: NETWORK.XRP,
+        name: 'xrp',
+        logo: `/images/network-xrp.png`,
+        nativeAsset: 'XRP',
+    },
+    [NETWORK.ZCASH]: {
+        id: NETWORK.ZCASH,
+        name: 'zcash',
+        logo: `/images/network-zcash.png`,
+        nativeAsset: 'ZEC',
+    },
+    [NETWORK.TON]: {
+        id: NETWORK.TON,
+        name: 'ton',
+        logo: `/images/network-ton.png`,
+        nativeAsset: 'TON',
+    },
+    [NETWORK.TRON]: {
+        id: NETWORK.TRON,
+        name: 'tron',
+        logo: `/images/network-tron.png`,
+        nativeAsset: 'TRX',
+    },
 }
 
 const MSG_ACTION_TYPES = {
@@ -244,6 +289,108 @@ const MSG_ACTION_TYPES = {
     IntentFilled: 'IntentFilled',
     Migration: 'Migration',
     Reverted: 'Reverted',
+}
+
+// Static per-chain lifecycle mode (R8). Single source of truth for mode — call
+// sites resolve through getChainMode, no mode literal is hardcoded elsewhere.
+// sweep: mints then sweeps to the user (terminal = swept).
+// memo:  mint is the delivery, no sweep leg (terminal = minted).
+const CHAIN_MODE = {
+    [NETWORK.MONAD]: 'sweep',
+    [NETWORK.ZCASH]: 'sweep',
+    [NETWORK.TON]: 'memo',
+    [NETWORK.TRON]: 'memo',
+    [NETWORK.XRP]: 'memo',
+}
+
+// Resolve a numeric chain id (as stored in *_network) to its lifecycle mode.
+// Returns 'sweep' | 'memo' | undefined (chain not in the map).
+const getChainMode = (networkId) => {
+    const name = REV_NETWORK_MAPPINGS[networkId]
+    return name ? CHAIN_MODE[name] : undefined
+}
+
+// MPC chain set — single source of truth = the CHAIN_MODE keys, resolved to their
+// numeric ids ({48,133,607,728126428,66} as strings). Detection is by CHAIN
+// involvement (ADR-002 revised): a row is MPC iff its src_network OR dest_network
+// is an MPC chain. A completed MPC flow carries the legacy status `executed`, so
+// status can NOT detect it — chain involvement is invariant across the lifecycle.
+const MPC_CHAIN_IDS = new Set(Object.keys(CHAIN_MODE).map((name) => String(NETWORK_MAPPINGS[name])))
+
+// Attestation is always recorded on NEAR — the attested timeline step is fixed to
+// this id (single source), independent of the per-row attested_network column.
+const NEAR_NETWORK_ID = NETWORK_MAPPINGS[NETWORK.NEAR]
+const isMpcChain = (networkId) => networkId != null && MPC_CHAIN_IDS.has(String(networkId))
+const isMpcTransaction = (row) => !!row && (isMpcChain(row.src_network) || isMpcChain(row.dest_network))
+
+// Shared status-filter list — one source feeding the filter dropdown
+// (message-filter.tsx) and the pills (renderMessageStatus) so they never drift
+// (R2b, §2.7). Only `attested` is genuinely new; the other five are existing
+// legacy statuses. `routed`/`hub-burned`/`minted`/`swept`/`released` are NOT
+// status values — they survive only as detail-timeline legs (R5). MPC detection is
+// chain-based (isMpcTransaction), independent of this list.
+const STATUS_FILTERS = ['pending', 'attested', 'delivered', 'executed', 'failed', 'rollbacked']
+
+// Normalise action_type to the MPC kind; fall back to leg inference (ADR-006) when
+// action_type is missing or an unrecognised label: hub_burn present ⇒ withdrawal,
+// else release present ⇒ transfer, else deposit.
+const mpcKindOf = (row) => {
+    const t = (row.action_type || '').toLowerCase()
+    if (t === 'deposit' || t === 'withdrawal' || t === 'transfer') return t
+    if (row.hub_burn_tx_hash != null) return 'withdrawal'
+    if (row.release_tx_hash != null) return 'transfer'
+    return 'deposit'
+}
+
+// Pure, kind-aware step-derivation for the MPC timeline (R5, R6, ADR-006). Returns
+// the post-Source legs in lifecycle order for the row's kind plus the resolved
+// terminal ('Source' = src_* is rendered by the component as step 0). Only the legs
+// a kind uses are emitted. Terminal: deposit → getChainMode(dest_network)
+// (sweep⇒swept shown & emphasised / memo⇒swept omitted, minted emphasised, M4);
+// withdrawal & transfer → released (kind-driven, no mode lookup).
+const deriveMpcSteps = (row) => {
+    const kind = mpcKindOf(row)
+    // Attestation always happens on NEAR — the attested step's chain/icon/explorer
+    // link is fixed to NEAR (single source: NETWORK_MAPPINGS.near), never derived
+    // from the per-row attested_network column.
+    const attested = { key: 'attested', label: 'Attested', network: NEAR_NETWORK_ID, hash: row.attested_tx_hash }
+    const hubBurned = { key: 'hub-burned', label: 'Hub-burned', network: row.hub_burn_network, hash: row.hub_burn_tx_hash }
+    const minted = { key: 'minted', label: 'Minted', network: row.mint_network, hash: row.mint_tx_hash }
+    const swept = { key: 'swept', label: 'Swept', network: row.sweep_network, hash: row.sweep_tx_hash }
+    const released = { key: 'released', label: 'Released', network: row.release_network, hash: row.release_tx_hash }
+
+    let mode
+    let rawSteps
+    let terminalKey
+    if (kind === 'withdrawal') {
+        rawSteps = [attested, hubBurned, released]
+        terminalKey = 'released'
+    } else if (kind === 'transfer') {
+        rawSteps = [attested, released]
+        terminalKey = 'released'
+    } else {
+        mode = getChainMode(row.dest_network)
+        if (mode === 'memo') {
+            rawSteps = [attested, minted]
+            terminalKey = 'minted'
+        } else if (mode === 'sweep') {
+            rawSteps = [attested, minted, swept]
+            terminalKey = 'swept'
+        } else {
+            // deposit on a chain not in the mode map: show swept only if reached
+            const hasSweep = row.sweep_tx_hash != null
+            rawSteps = hasSweep ? [attested, minted, swept] : [attested, minted]
+            terminalKey = hasSweep ? 'swept' : 'minted'
+        }
+    }
+
+    const steps = rawSteps.map((step) => ({
+        ...step,
+        reached: step.hash != null,
+        terminal: step.key === terminalKey,
+    }))
+
+    return { kind, mode, steps, terminalKey }
 }
 
 const getNativeAsset = (network) => {
@@ -263,5 +410,12 @@ export default {
     getNetworks,
     getMsgTypes,
     REV_NETWORK_MAPPINGS,
-    NETWORK_MAPPINGS
+    NETWORK_MAPPINGS,
+    CHAIN_MODE,
+    getChainMode,
+    MPC_CHAIN_IDS,
+    isMpcChain,
+    isMpcTransaction,
+    STATUS_FILTERS,
+    deriveMpcSteps,
 }

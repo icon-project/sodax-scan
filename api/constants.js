@@ -41,6 +41,11 @@ const NETWORK = {
     ALEO: CONFIG_NETWORKS.aleo.nid,
     HEDERA: CONFIG_NETWORKS.hedera.nid,
     ROBINHOOD: CONFIG_NETWORKS.robinhood.nid,
+    MONAD: CONFIG_NETWORKS.monad.nid,
+    XRP: CONFIG_NETWORKS.xrp.nid,
+    ZCASH: CONFIG_NETWORKS.zcash.nid,
+    TON: CONFIG_NETWORKS.ton.nid,
+    TRON: CONFIG_NETWORKS.tron.nid,
 }
 
 const buildProviderUrls = (urls) => {
@@ -100,6 +105,11 @@ const META_URLS = {
         [NETWORK.ALEO]: USE_MAINNET ? 'https://explorer.provable.com/transaction/' : 'https://testnet.explorer.provable.com/transaction/',
         [NETWORK.HEDERA]: USE_MAINNET ? 'https://hashscan.io/mainnet/transaction/' : 'https://hashscan.io/testnet/transaction/',
         [NETWORK.ROBINHOOD]: USE_MAINNET ? 'https://robinhoodchain.blockscout.com/tx/' : 'https://robinhoodchain.blockscout.com/tx/',
+        [NETWORK.MONAD]: USE_MAINNET ? 'https://monadscan.com/tx/' : 'https://monadscan.com/tx/',
+        [NETWORK.XRP]: USE_MAINNET ? 'https://xrpscan.com/tx/' : 'https://xrpscan.com/tx/',
+        [NETWORK.ZCASH]: USE_MAINNET ? 'https://mainnet.zcashexplorer.app/transactions/' : 'https://mainnet.zcashexplorer.app/transactions/',
+        [NETWORK.TON]: USE_MAINNET ? 'https://tonviewer.com/transaction/' : 'https://tonviewer.com/transaction/',
+        [NETWORK.TRON]: USE_MAINNET ? 'https://tronscan.org/#/transaction/' : 'https://tronscan.org/#/transaction/',
     }
 }
 
