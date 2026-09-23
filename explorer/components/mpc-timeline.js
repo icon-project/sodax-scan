@@ -8,8 +8,10 @@ import Script from 'next/script'
 // helper.isMpcTransaction (chain-based, ADR-002) before rendering this component
 // (R7). The step set comes from helper.deriveMpcSteps (kind-aware, ADR-006):
 //   deposit:    Source -> Attested -> Minted -> Swept (memo chains drop Swept)
-//   withdrawal: Source -> Attested -> Hub-burned -> Released
+//   withdrawal: Source -> Attested -> Released
 //   transfer:   Source -> Attested -> Released
+// The Released step is labelled "Destination transaction hash:" (its release-leg
+// chain id, which may arrive suffixed like "66-0", is resolved to the base id).
 //
 // Each present step shows a tx-hash link (renderHashLink with the step's own
 // *_network tx base; the Attested step is fixed to NEAR) + chain icon + state
@@ -57,8 +59,9 @@ export default async function MpcTimeline({ msgData, meta }) {
                             <div key={step.key} className="table-row bg-white border-b">
                                 <div className={labelCell}>
                                     <span>
-                                        {step.label}
-                                        {step.terminal ? ' (destination)' : ''}
+                                        {step.key === 'released'
+                                            ? 'Destination transaction hash:'
+                                            : `${step.label}${step.terminal ? ' (destination)' : ''}`}
                                     </span>
                                 </div>
                                 <div className={valueCell}>

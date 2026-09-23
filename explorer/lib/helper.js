@@ -354,16 +354,18 @@ const deriveMpcSteps = (row) => {
     // link is fixed to NEAR (single source: NETWORK_MAPPINGS.near), never derived
     // from the per-row attested_network column.
     const attested = { key: 'attested', label: 'Attested', network: NEAR_NETWORK_ID, hash: row.attested_tx_hash }
-    const hubBurned = { key: 'hub-burned', label: 'Hub-burned', network: row.hub_burn_network, hash: row.hub_burn_tx_hash }
     const minted = { key: 'minted', label: 'Minted', network: row.mint_network, hash: row.mint_tx_hash }
     const swept = { key: 'swept', label: 'Swept', network: row.sweep_network, hash: row.sweep_tx_hash }
-    const released = { key: 'released', label: 'Released', network: row.release_network, hash: row.release_tx_hash }
+    // The release leg's chain id may arrive suffixed (e.g. "66-0"); use the base id
+    // for icon + explorer-URL resolution.
+    const releaseNetwork = row.release_network != null ? String(row.release_network).split('-')[0] : row.release_network
+    const released = { key: 'released', label: 'Released', network: releaseNetwork, hash: row.release_tx_hash }
 
     let mode
     let rawSteps
     let terminalKey
     if (kind === 'withdrawal') {
-        rawSteps = [attested, hubBurned, released]
+        rawSteps = [attested, released]
         terminalKey = 'released'
     } else if (kind === 'transfer') {
         rawSteps = [attested, released]

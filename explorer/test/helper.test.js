@@ -105,13 +105,14 @@ describe('deriveMpcSteps — kind-aware (R5, R6, ADR-006)', () => {
         expect(steps.find((s) => s.key === 'minted').terminal).toBe(true)
     })
 
-    it('withdrawal: Attested → Hub-burned → Released, terminal released', () => {
+    it('withdrawal: Attested → Released, terminal released (hub-burned not shown)', () => {
         const { kind, steps, terminalKey } = helper.deriveMpcSteps(withdrawalReleased)
         expect(kind).toBe('withdrawal')
         expect(terminalKey).toBe('released')
-        expect(steps.map((s) => s.key)).toEqual(['attested', 'hub-burned', 'released'])
+        expect(steps.map((s) => s.key)).toEqual(['attested', 'released'])
         expect(steps.find((s) => s.key === 'released').terminal).toBe(true)
         expect(steps.every((s) => s.reached)).toBe(true)
+        expect(steps.find((s) => s.key === 'hub-burned')).toBeUndefined()
         expect(steps.find((s) => s.key === 'minted')).toBeUndefined()
         expect(steps.find((s) => s.key === 'swept')).toBeUndefined()
     })
@@ -143,10 +144,17 @@ describe('deriveMpcSteps — kind-aware (R5, R6, ADR-006)', () => {
         expect(steps.find((s) => s.key === 'swept').terminal).toBe(true)
     })
 
-    it('withdrawal in progress (hub-burned): released pending, no error', () => {
+    it('withdrawal in progress (release pending): released not reached, hub-burned not shown', () => {
         const { steps } = helper.deriveMpcSteps(withdrawalHubBurned)
-        expect(steps.find((s) => s.key === 'hub-burned').reached).toBe(true)
+        expect(steps.find((s) => s.key === 'hub-burned')).toBeUndefined()
         expect(steps.find((s) => s.key === 'released').reached).toBe(false)
+    })
+
+    it('release network suffixed like "66-0" resolves to the base chain id', () => {
+        const row = { action_type: 'transfer', src_network: '146', dest_network: '66',
+            attested_tx_hash: '0xa', release_tx_hash: '0xr', release_network: '66-0' }
+        const { steps } = helper.deriveMpcSteps(row)
+        expect(steps.find((s) => s.key === 'released').network).toBe('66')
     })
 
     it('unknown-kind fallback: hub_burn present ⇒ withdrawal', () => {
