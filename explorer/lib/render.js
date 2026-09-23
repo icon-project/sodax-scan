@@ -113,13 +113,15 @@ function renderHashLink(scanUrl, network, hash, isFull = false) {
         const txHash = hash.startsWith('0x') ? hash.slice(2) : hash
         href = `${scanUrl}/${txHash}`
     }
+    // XRP hashes display (and copy) without the 0x prefix, matching the link.
+    const dispHash = network == '66' && typeof hash === 'string' && hash.startsWith('0x') ? hash.slice(2) : hash
     networkImg = <Image alt={network} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
     link = !isFull || isOdHash ? (
-        <div className={linkClass}><span className="tx-hash" data-hash={hash}>{isFull ? hash : truncateHash(hash)}</span></div>
+        <div className={linkClass}><span className="tx-hash" data-hash={dispHash}>{isFull ? dispHash : truncateHash(dispHash)}</span></div>
     ) : (
         <div className="flex">
             <Link className={linkClass} href={href} target="_blank">
-                <span className="tx-hash" data-hash={hash}>{hash}</span>
+                <span className="tx-hash" data-hash={dispHash}>{dispHash}</span>
             </Link>
             {copyButton}
         </div>
