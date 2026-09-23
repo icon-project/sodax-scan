@@ -74,7 +74,8 @@ const LIST_FIELDS = ` id, sn, status, src_network, src_block_number, src_block_t
                       dest_network, dest_block_number, dest_block_timestamp, dest_tx_hash, dest_app as dest_address, dest_error,
                       response_block_number, response_block_timestamp, response_tx_hash, response_error,
                       rollback_block_number, rollback_block_timestamp, rollback_tx_hash, rollback_error,
-                      action_type, created_at, updated_at, intent_tx_hash, slippage `
+                      action_type, created_at, updated_at, intent_tx_hash, slippage,
+                      mint_tx_hash, mint_network, mpc_id `
 
 const DETAIL_FIELDS = ` id, sn, status, src_network, src_block_number, src_block_timestamp, src_tx_hash, src_app as src_address, src_error,
                         dest_network, dest_block_number, dest_block_timestamp, dest_tx_hash, dest_app as dest_address, dest_error,
