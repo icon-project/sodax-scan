@@ -54,4 +54,8 @@ export interface Datum {
   created_at:               string;
   updated_at:               string;
   intent_tx_hash:           string;
+  // MPC legs (written by the external MPC service). Present only on MPC rows.
+  mint_tx_hash?:            string | null;
+  mint_network?:            string | null;
+  mpc_id?:                  string | null;
 }

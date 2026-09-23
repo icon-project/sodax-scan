@@ -2,7 +2,7 @@ import axios from "axios";
 import { getHandler } from './handler'
 import { bitcoin, chains, enrichChainsFromApi, solana, sonic } from "./configs";
 import { getTransactionPackets, getPayloadFromRelayPacket, parsePayloadData } from "./action";
-import { updateTransactionInfo } from "./db";
+import { updateTransactionInfo, updateMpcActionInfo } from "./db";
 import dotenv from 'dotenv';
 import { SendMessage, SodaxScannerResponse, Transfer } from "./types";
 import { bigintDivisionToDecimalString, multiplyDecimalBy10Pow18, srcHasHashedPayload, extractConnSn } from "./utils";
@@ -34,26 +34,84 @@ export async function parseTransactionEvent(response: SodaxScannerResponse) {
     for (const transaction of response.data) {
         const id = transaction.id;
 
+        // An MPC row is identified by mpc_id (set by the external MPC service at
+        // insert). mint_tx_hash lands later, so it can't gate detection.
+        const isMpc = transaction.mpc_id != null && transaction.mpc_id !== '';
+
         // Hub-origin rows (sn = NULL, written by the hub-intents poller) are
         // complete at insert — re-parsing them here would overwrite their
         // action_type/action_detail with garbage and break the poller's
-        // duplicate check. Only relayer rows (sn set) need enrichment.
-        if (transaction.sn == null) {
+        // duplicate check. Only relayer rows (sn set) need enrichment; MPC
+        // rows are the exception, enriched regardless of sn.
+        if (transaction.sn == null && !isMpc) {
             continue;
         }
 
-        // Skip only if we've already seen this message and have nothing left to do for it.
+        // Skip only if we've already seen this message and have nothing left to
+        // do for it. MPC rows bypass this: their action can't be inferred from
+        // action_type (which the external writer sets upfront), so they are
+        // retried every poll until the mint tx lands and decodes.
         const alreadySeen = lastScannedId !== 0 && id <= lastScannedId;
         const hasIntentTxHash = transaction.intent_tx_hash != null && transaction.intent_tx_hash !== '';
         const createIntentDone = transaction.action_type !== 'CreateIntent' || hasIntentTxHash;
         const needsNoMoreWork = transaction.action_type !== 'SendMsg' && createIntentDone;
-        if (alreadySeen && needsNoMoreWork) {
+        if (!isMpc && alreadySeen && needsNoMoreWork) {
+            continue;
+        }
+
+        // MPC rows are done once action_detail is written. It's empty until we
+        // enrich it (action_type is set by the external writer upfront, so it
+        // can't signal completion), making it the reliable done-marker.
+        if (isMpc && transaction.action_detail != null && transaction.action_detail !== '') {
             continue;
         }
 
         if (id in retries && retries[id] > 4) {
             continue
         }
+
+        if (isMpc) {
+            if (transaction.mint_tx_hash == null || transaction.mint_tx_hash === '') {
+                // Mint not recorded yet — leave the row pending and retry on the
+                // next poll without burning a retry attempt.
+                continue;
+            }
+            // The MPC action lives in the mint tx on the hub (Sonic). The source
+            // chain has no indexer handler and dest may be an MPC chain absent
+            // from config, so decode entirely in Sonic's context. This path is
+            // self-contained: none of the spoke-specific branches below apply.
+            try {
+                const mintTxHash = transaction.mint_tx_hash;
+                console.log("Processing MPC mint txn", mintTxHash);
+                const payload = await getHandler(sonic).fetchPayload(mintTxHash, transaction.sn ?? '');
+                let actionType = parsePayloadData(payload.payload, sonic, sonic);
+                console.log("actionType",actionType,payload)
+                // A hub-side create tx carries the swap detail in its
+                // IntentCreated tuple (payload is "0x"), not a transfer payload.
+                if (payload.actionText && payload.intentTxHash) {
+                    actionType = {
+                        action: 'CreateIntent',
+                        actionText: payload.actionText,
+                        intentTxHash: payload.intentTxHash,
+                    };
+                }
+                console.log(`Action: ${actionType.action} \nAction Details: ${actionType.actionText} \nTransaction Fee: ${payload.txnFee}\n`);
+                // Override action_type/detail only once a real action is decoded —
+                // Transfer and SendMsg are non-final and must not clobber the row.
+                if (actionType.action !== SendMessage && actionType.action !== Transfer && actionType.actionText) {
+                    await updateMpcActionInfo(id, actionType.action, actionType.actionText);
+                } else {
+                    if (id in retries) retries[id] = retries[id] + 1; else retries[id] = 1;
+                    console.log("MPC mint decode incomplete for id", id, "- will retry");
+                }
+            } catch (error) {
+                const errMessage = error instanceof Error ? error.message : String(error);
+                console.log("Failed MPC enrichment for id", id, errMessage);
+                if (id in retries) retries[id] = retries[id] + 1; else retries[id] = 1;
+            }
+            continue;
+        }
+
         const srcChainId = transaction.src_network as string;
         const dstChainId = transaction.dest_network as string;
         try {

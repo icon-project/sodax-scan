@@ -56,12 +56,41 @@ export class EvmHandler implements ChainHandler {
       const topics: string[] = log.topics;
       if (topics.includes(INTENT_CREATED_TOPIC)) {
         const abi = ethers.AbiCoder.defaultAbiCoder();
-        const intentTuple = "(bytes32)";
-        const decoded = abi.decode([intentTuple], log.data);
+        // IntentCreated carries the full swap tuple. Decode it so the action
+        // detail (IntentSwap IN(src) -> OUT(dst)) is recoverable from a hub-side
+        // create tx (e.g. the mint tx of an MPC deposit). First field is the
+        // intent hash; a token missing from config resolves to its raw address.
+        const createdTuple = "(uint256,address,address,address,uint256,uint256,uint256,bool,uint256,uint256,bytes,bytes,address,bytes)";
+        const decoded = abi.decode(['bytes32', createdTuple], log.data);
+        const intentHash = decoded[0] as string;
+        const t = decoded[1] as ethers.Result;
+        const inputToken = (t[2] as string).toLowerCase();
+        const outputToken = (t[3] as string).toLowerCase();
+        const srcId = (t[8] as bigint).toString();
+        const dstId = (t[9] as bigint).toString();
+        const inAssets = chains[srcId]?.Assets ?? {};
+        const outAssets = chains[dstId]?.Assets ?? {};
+        let inName = inputToken;
+        let inDecimals = 18;
+        if (inputToken in inAssets) {
+          inName = symbolWithOrigin(inAssets[inputToken], inputToken);
+          inDecimals = inAssets[inputToken].decimals;
+        }
+        let outName = outputToken;
+        let outDecimals = 18;
+        if (outputToken in outAssets) {
+          outName = symbolWithOrigin(outAssets[outputToken], outputToken);
+          outDecimals = outAssets[outputToken].decimals;
+        }
+        const inAmount = bigintDivisionToDecimalString(t[4] as bigint, inDecimals);
+        const outAmount = bigintDivisionToDecimalString(t[5] as bigint, outDecimals);
         return {
-          txnFee: '0',
+          txnFee: `${bigintDivisionToDecimalString(txFee, 18)} ${this.denom}`,
           payload: '0x',
-          intentTxHash: decoded[0][0],
+          intentTxHash: intentHash,
+          swapInputToken: t[2] as string,
+          swapOutputToken: t[3] as string,
+          actionText: `IntentSwap ${inAmount} ${inName}(${idToChainNameMap[srcId] ?? srcId}) -> ${outAmount} ${outName}(${idToChainNameMap[dstId] ?? dstId})`,
           blockNumber: Number.parseInt(tx.result.blockNumber, 16),
           storedCallReverted,
         }
