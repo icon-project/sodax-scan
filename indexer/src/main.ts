@@ -85,7 +85,6 @@ export async function parseTransactionEvent(response: SodaxScannerResponse) {
                 console.log("Processing MPC mint txn", mintTxHash);
                 const payload = await getHandler(sonic).fetchPayload(mintTxHash, transaction.sn ?? '');
                 let actionType = parsePayloadData(payload.payload, sonic, sonic);
-                console.log("actionType",actionType,payload)
                 // A hub-side create tx carries the swap detail in its
                 // IntentCreated tuple (payload is "0x"), not a transfer payload.
                 if (payload.actionText && payload.intentTxHash) {
@@ -95,10 +94,7 @@ export async function parseTransactionEvent(response: SodaxScannerResponse) {
                         intentTxHash: payload.intentTxHash,
                     };
                 }
-                console.log(`Action: ${actionType.action} \nAction Details: ${actionType.actionText} \nTransaction Fee: ${payload.txnFee}\n`);
-                // Override action_type/detail only once a real action is decoded —
-                // Transfer and SendMsg are non-final and must not clobber the row.
-                if (actionType.action !== SendMessage && actionType.action !== Transfer && actionType.actionText) {
+                if (actionType.action !== SendMessage && actionType.actionText) {
                     await updateMpcActionInfo(id, actionType.action, actionType.actionText);
                 } else {
                     if (id in retries) retries[id] = retries[id] + 1; else retries[id] = 1;
