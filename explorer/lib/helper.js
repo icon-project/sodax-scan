@@ -311,17 +311,19 @@ const getChainMode = (networkId) => {
 }
 
 // MPC chain set — single source of truth = the CHAIN_MODE keys, resolved to their
-// numeric ids ({48,133,607,728126428,66} as strings). Detection is by CHAIN
-// involvement (ADR-002 revised): a row is MPC iff its src_network OR dest_network
-// is an MPC chain. A completed MPC flow carries the legacy status `executed`, so
-// status can NOT detect it — chain involvement is invariant across the lifecycle.
+// numeric ids ({48,133,607,728126428,66} as strings). Used for per-chain mode
+// (sweep/memo) resolution, NOT for detecting whether a row is MPC.
 const MPC_CHAIN_IDS = new Set(Object.keys(CHAIN_MODE).map((name) => String(NETWORK_MAPPINGS[name])))
 
 // Attestation is always recorded on NEAR — the attested timeline step is fixed to
 // this id (single source), independent of the per-row attested_network column.
 const NEAR_NETWORK_ID = NETWORK_MAPPINGS[NETWORK.NEAR]
 const isMpcChain = (networkId) => networkId != null && MPC_CHAIN_IDS.has(String(networkId))
-const isMpcTransaction = (row) => !!row && (isMpcChain(row.src_network) || isMpcChain(row.dest_network))
+// A row is MPC iff the writer stamped it with an mpc_id (matches the indexer's
+// detection). Chain involvement alone is NOT sufficient: a plain CreateIntent to
+// an MPC chain (e.g. sonic -> ton) has no mpc_id and no MPC legs, so it must not
+// render the MPC timeline.
+const isMpcTransaction = (row) => !!row && row.mpc_id != null && row.mpc_id !== ''
 
 // Shared status-filter list — one source feeding the filter dropdown
 // (message-filter.tsx) and the pills (renderMessageStatus) so they never drift

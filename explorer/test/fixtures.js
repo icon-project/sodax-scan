@@ -13,6 +13,7 @@
 // 133-ff2865bca206…-swept. Terminal = swept.
 export const depositSweepComplete = {
     id: 1,
+    mpc_id: '133-a1-0',
     sn: null,
     status: 'executed',
     action_type: 'deposit',
@@ -39,6 +40,7 @@ export const depositSweepComplete = {
 // sweep leg). Terminal = minted.
 export const depositMemoComplete = {
     id: 2,
+    mpc_id: '66-a2-0',
     sn: null,
     status: 'executed',
     action_type: 'deposit',
@@ -65,6 +67,7 @@ export const depositMemoComplete = {
 // (a legacy chain — detection MUST come from dest 133). Terminal = released.
 export const withdrawalReleased = {
     id: 3,
+    mpc_id: '133-a3-0',
     sn: null,
     status: 'executed',
     action_type: 'withdrawal',
@@ -92,6 +95,7 @@ export const withdrawalReleased = {
 // released.
 export const transferReleased = {
     id: 4,
+    mpc_id: '48-a4-0',
     sn: null,
     status: 'executed',
     action_type: 'transfer',
@@ -118,6 +122,7 @@ export const transferReleased = {
 // 66-0xf9e933b6…-routed. `routed` is not a status → pre-attested = `pending` pill.
 export const depositRouted = {
     id: 5,
+    mpc_id: '66-a5-0',
     sn: null,
     status: 'pending',
     action_type: 'deposit',
@@ -144,6 +149,7 @@ export const depositRouted = {
 // 133-f8279735…-attested. Pill = attested.
 export const depositAttested = {
     id: 6,
+    mpc_id: '133-a6-0',
     sn: null,
     status: 'attested',
     action_type: 'deposit',
@@ -171,6 +177,7 @@ export const depositAttested = {
 // `delivered` stage → in-progress pill = `attested`.
 export const withdrawalHubBurned = {
     id: 7,
+    mpc_id: '133-a7-0',
     sn: null,
     status: 'attested',
     action_type: 'withdrawal',
@@ -199,6 +206,7 @@ export const withdrawalHubBurned = {
 // pre-sweep = `delivered` pill; timeline shows Swept pending.
 export const depositMintedPending = {
     id: 8,
+    mpc_id: '133-a8-0',
     sn: null,
     status: 'delivered',
     action_type: 'deposit',

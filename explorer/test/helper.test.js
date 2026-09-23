@@ -12,31 +12,33 @@ import {
     legacyNonMpc,
 } from './fixtures'
 
-describe('isMpcTransaction — chain-based detection (R7, ADR-002 revised)', () => {
-    it('detects a deposit whose src+dest are an MPC chain', () => {
+describe('isMpcTransaction — mpc_id-based detection (aligned with indexer)', () => {
+    it('detects a row the writer stamped with an mpc_id', () => {
         expect(helper.isMpcTransaction(depositSweepComplete)).toBe(true)
         expect(helper.isMpcTransaction(depositMemoComplete)).toBe(true)
-    })
-
-    it('detects a withdrawal/transfer via dest even when src is Sonic 146 (legacy)', () => {
-        expect(withdrawalReleased.src_network).toBe('146')
         expect(helper.isMpcTransaction(withdrawalReleased)).toBe(true)
-        expect(transferReleased.src_network).toBe('146')
         expect(helper.isMpcTransaction(transferReleased)).toBe(true)
     })
 
-    it('detects a COMPLETED MPC row (status=executed) — status cannot, chain can', () => {
+    it('detects a COMPLETED MPC row (status=executed) via its mpc_id', () => {
         expect(depositSweepComplete.status).toBe('executed')
         expect(helper.isMpcTransaction(depositSweepComplete)).toBe(true)
     })
 
-    it('is false for a legacy non-MPC row (neither chain in the MPC set)', () => {
+    it('is false for a plain intent to an MPC chain (MPC chain but no mpc_id)', () => {
+        // sonic -> ton CreateIntent: dest is an MPC chain, but no mpc_id/legs, so
+        // it must NOT render as MPC.
+        expect(helper.isMpcTransaction({ src_network: '146', dest_network: '607', mpc_id: null })).toBe(false)
+        expect(helper.isMpcTransaction({ src_network: '146', dest_network: '607', mpc_id: '' })).toBe(false)
+    })
+
+    it('is false for a legacy non-MPC row (no mpc_id)', () => {
         expect(helper.isMpcTransaction(legacyNonMpc)).toBe(false)
     })
 
     it('is null-safe', () => {
         expect(helper.isMpcTransaction(null)).toBe(false)
-        expect(helper.isMpcTransaction({ src_network: null, dest_network: null })).toBe(false)
+        expect(helper.isMpcTransaction({ mpc_id: null })).toBe(false)
         expect(helper.isMpcTransaction({})).toBe(false)
     })
 
