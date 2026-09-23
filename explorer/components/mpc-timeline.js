@@ -42,6 +42,12 @@ export default async function MpcTimeline({ msgData, meta }) {
                             <div className={labelCell}>Status:</div>
                             <div className={valueCell}>{Render.renderMessageStatus(msgData.status)}</div>
                         </div>
+                        {msgData.mpc_id && (
+                            <div className="table-row bg-white border-b">
+                                <div className={labelCell}>MPC ID:</div>
+                                <div className={valueCell}>{msgData.mpc_id}</div>
+                            </div>
+                        )}
                         <div className="table-row bg-white border-b">
                             <div className={labelCell}>Serial No:</div>
                             {/* MPC rows show the shared "MPC" badge (Render.renderSerialNo),
