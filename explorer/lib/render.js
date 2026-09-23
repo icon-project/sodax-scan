@@ -68,12 +68,14 @@ function renderDestHashLink(item, meta) {
         scanUrl = meta.urls.tx[item.dest_network]
         networkImg = <Image alt={item.dest_network} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[item.dest_network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
         link = <div className={linkClass}><span className="tx-hash" data-hash={item.dest_tx_hash}>{truncateHash(item.dest_tx_hash)}</span></div>
-    } else if (item.sn == null) {
+    } else if (item.sn == null && !helper.isMpcTransaction(item)) {
         // Hub-intent event (no serial number): single-tx event on the hub with
         // no separate destination leg. Mirror the source tx + chain into the
         // dest column so the row reads symmetrically instead of as a half-empty
         // relay leg. The intent's actual destination chain still shows in
         // action_detail (e.g. "IntentSwap … -> SOL(solana)").
+        // MPC rows (also sn == null) are excluded: an in-progress MPC tx has no
+        // dest tx yet and must NOT masquerade the source tx as the destination.
         scanUrl = meta.urls.tx[item.src_network]
         networkImg = <Image alt={item.src_network} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[item.src_network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
         link = <div className={linkClass}><span className="tx-hash" data-hash={item.src_tx_hash}>{truncateHash(item.src_tx_hash)}</span></div>
