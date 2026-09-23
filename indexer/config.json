@@ -153,7 +153,44 @@
             "0x50c42deacd8fc9773493ed674b675be577f2634b":{
                 "name": "wETH",
                 "decimals": 18
+            },
+            "0x24312b2cc7a56addd3a849db5e9b81704d6b20af":{
+                "name":"ZEC",
+                "decimals":8
+            },
+            "0x40ccbaf7fee4af5d15e2356c9cc8fe0d93b3d76e":{
+                "name":"TON",
+                "decimals":9
+            },
+            "0xda885fda1cadb42a6ecf6dc4f68263737e7ac0e5":{
+                "name":"USDT",
+                "decimals":6
+            },
+            "0xccfacabc823dc7fbfb60c26b23c120fa1c1a5ca4":{
+                "name":"MON",
+                "decimals":18
+            },
+            "0xc2c1a0d7814194545020cfef6ce6be1eb741ee38":{
+                "name":"Circle USDC",
+                "decimals":6
+            },
+            "0xd4fe528cb89a9228e3167db260a0036942a21277":{
+                "name":"XRP",
+                "decimals":6
+            },
+            "0x68f7a1c04a596641bb810012a262cd68bea195af":{
+                "name":"RLUSD",
+                "decimals":6
+            },
+            "0x61cd7ffcf33e3f5eb8280b94bc5180bc617b1da9":{
+                "name":"TRX",
+                "decimals":6
+            },
+            "0xa71e3e927baf32eb5f1678a3b13c2fffee3973d7":{
+                "name":"USDT",
+                "decimals":6
             }
+
         }
     },
     "avax": {

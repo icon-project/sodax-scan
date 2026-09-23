@@ -43,3 +43,22 @@ export async function updateTransactionInfo(id: number, fee: string, actionType:
     client.release();
   }
 }
+
+// Enrich only the action fields of an MPC row. Everything else on the row
+// (src_block_number, fee, mint_*, mpc_id, timestamps) is owned by the external
+// MPC service, so this deliberately touches nothing but action_type/detail —
+// unlike updateTransactionInfo, which also rewrites fee and src_block_number.
+export async function updateMpcActionInfo(id: number, actionType: string, actionText: string): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query(
+      `UPDATE messages SET action_type = $1, action_detail = $2 WHERE id = $3`,
+      [actionType, actionText, id],
+    );
+  } catch (err) {
+    console.error('Error updating MPC action info:', err);
+    throw err;
+  } finally {
+    client.release();
+  }
+}

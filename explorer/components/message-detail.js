@@ -5,8 +5,19 @@ import converter from '@/lib/converter'
 import helper from '@/lib/helper'
 import Script from 'next/script'
 import { AdminDetailProvider, ResubmitBanner, DetailStatus } from '@/components/admin-detail'
+import MpcTimeline from '@/components/mpc-timeline'
 
 export default async function MessageDetail({ msgData, meta, isAdmin = false }) {
+    // MPC rows are externally written and follow a kind-dependent lifecycle;
+    // render the timeline instead of the flat table (R7). Detection is CHAIN-based
+    // (ADR-002 revised): a completed MPC flow carries status `executed`, so status
+    // cannot detect it — src/dest chain involvement can. The gate sits above the
+    // admin resubmit block intentionally (m1): resubmit re-drives the indexer
+    // source-tx pipeline, which does not own MPC rows.
+    if (helper.isMpcTransaction(msgData)) {
+        return <MpcTimeline msgData={msgData} meta={meta} />
+    }
+
     const round = (str) => {
         return parseFloat(Number(str).toFixed(8))
     }

@@ -183,7 +183,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                     All Status
                 </DropdownItem>
 
-                {['Pending', 'Delivered', 'Executed', 'Rollbacked', 'Failed'].map((status) => {
+                {helper.STATUS_FILTERS.map((status) => {
                     return (
                         <DropdownItem
                             key={status}
