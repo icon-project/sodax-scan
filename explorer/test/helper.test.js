@@ -199,3 +199,11 @@ describe('deriveMpcSteps — kind-aware (R5, R6, ADR-006)', () => {
         expect(b.steps.find((s) => s.key === 'swept')).toBeDefined()
     })
 })
+
+describe('getMsgTypes — Action filter options', () => {
+    it('includes SolverFill (NEAR Intents marketplace fills, issue #151) alongside IntentFilled', () => {
+        const types = helper.getMsgTypes()
+        expect(types).toContain('SolverFill')
+        expect(types).toContain('IntentFilled')
+    })
+})

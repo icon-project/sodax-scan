@@ -229,6 +229,26 @@ export const depositMintedPending = {
     updated_at: null,
 }
 
+// NEAR Intents marketplace fill (near-intents poller, issue #151). sn = NULL
+// like a hub event, but it is NOT one — action_type distinguishes it. No
+// src/dest tx hash, src_app/dest_app: deliberately stripped so the row
+// doesn't fingerprint the solver account or NEAR receipt id (see
+// indexer/src/near-intents/repo.ts).
+export const nearIntentFill = {
+    id: 10,
+    sn: null,
+    status: 'executed',
+    action_type: 'SolverFill',
+    action_detail: 'SolverFill buy $123.45',
+    src_network: '15',
+    src_tx_hash: '',
+    dest_network: '15',
+    dest_tx_hash: null,
+    intent_tx_hash: 'near-intent-hash-abc',
+    created_at: 1786850000,
+    updated_at: 1786850000,
+}
+
 // Pre-existing non-MPC row: neither src (bsc 4) nor dest (avax 6) is an MPC chain.
 export const legacyNonMpc = {
     id: 9,
