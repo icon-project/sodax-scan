@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import Render from '../lib/render'
 import helper from '../lib/helper'
-import { depositSweepComplete, withdrawalReleased, legacyNonMpc } from './fixtures'
+import { depositSweepComplete, withdrawalReleased, legacyNonMpc, nearIntentFill } from './fixtures'
 
 // renderMessageStatus returns a React element (plain object); inspect its props
 // directly without mounting a DOM.
@@ -91,5 +91,11 @@ describe('renderSerialNo — list/detail MPC marker (list-view indicator)', () =
     it('a legacy row with NULL sn keeps the hub-only badge (unchanged)', () => {
         const el = Render.renderSerialNo({ ...legacyNonMpc, sn: null })
         expect(text(el)).toBe('hub-only')
+    })
+
+    it('a NEAR Intents marketplace fill shows its own badge, not "hub-only"', () => {
+        expect(helper.isMpcTransaction(nearIntentFill)).toBe(false)
+        const el = Render.renderSerialNo(nearIntentFill)
+        expect(text(el)).toBe('NEAR INTENT')
     })
 })

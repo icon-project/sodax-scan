@@ -287,6 +287,9 @@ const MSG_ACTION_TYPES = {
     CreateIntent: 'CreateIntent',
     CancelIntent: 'CancelIntent',
     IntentFilled: 'IntentFilled',
+    // NEAR Intents marketplace fill (near-intents poller) — not a SODAX
+    // relay message or hub event, kept distinct from IntentFilled.
+    NearIntentFill: 'NearIntentFill',
     Migration: 'Migration',
     Reverted: 'Reverted',
 }

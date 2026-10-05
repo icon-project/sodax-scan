@@ -199,3 +199,11 @@ describe('deriveMpcSteps — kind-aware (R5, R6, ADR-006)', () => {
         expect(b.steps.find((s) => s.key === 'swept')).toBeDefined()
     })
 })
+
+describe('getMsgTypes — Action filter dropdown entries', () => {
+    it('includes NearIntentFill, distinct from IntentFilled (issue #151)', () => {
+        const types = helper.getMsgTypes()
+        expect(types).toContain('NearIntentFill')
+        expect(types).toContain('IntentFilled')
+    })
+})

@@ -229,6 +229,23 @@ export const depositMintedPending = {
     updated_at: null,
 }
 
+// NEAR Intents marketplace fill (near-intents poller, issue #151). sn = NULL
+// like a hub row, but action_type distinguishes it — no mpc_id either.
+export const nearIntentFill = {
+    id: 10,
+    sn: null,
+    status: 'executed',
+    action_type: 'NearIntentFill',
+    action_detail: 'NearIntentFill 100 usdc.near -> 99.5 wrap.near',
+    src_network: '15',
+    src_tx_hash: 'Aqz1h3c2e1b1e9f1e9f1e9f1e9f1e9f1e9f1e9f1e9f1e9f1e9f1e9f1e9f1e9f',
+    dest_network: '15',
+    dest_tx_hash: null,
+    intent_tx_hash: 'intent-hash-abc123',
+    created_at: 1786850000,
+    updated_at: 1786850100,
+}
+
 // Pre-existing non-MPC row: neither src (bsc 4) nor dest (avax 6) is an MPC chain.
 export const legacyNonMpc = {
     id: 9,

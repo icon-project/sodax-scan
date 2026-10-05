@@ -32,13 +32,16 @@ function renderMessageStatus(status) {
 // Serial-No cell shared by the message list and the MPC detail timeline. An MPC
 // row (chain-based detection) shows an "MPC" badge — completed MPC rows carry
 // status `executed` and are otherwise indistinguishable from legacy rows in the
-// list. Legacy rows are unchanged: a present sn shows the number, a NULL sn keeps
-// the "hub-only" badge.
+// list. A NEAR Intents marketplace fill (near-intents poller) also writes
+// sn = NULL but isn't hub-related, so it gets its own badge instead of falling
+// into the generic "hub-only" one. Legacy rows are unchanged: a present sn
+// shows the number, a NULL sn keeps the "hub-only" badge.
 function renderSerialNo(item) {
     const badge = (label) => (
         <span className="uppercase text-xs rounded-full px-2 py-0.5 bg-cream-white text-clay-dark tracking-wide">{label}</span>
     )
     if (helper.isMpcTransaction(item)) return badge('MPC')
+    if (item.action_type === 'NearIntentFill') return badge('NEAR INTENT')
     if (item.sn == null) return badge('hub-only')
     return item.sn
 }
