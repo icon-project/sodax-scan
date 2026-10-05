@@ -229,6 +229,25 @@ export const depositMintedPending = {
     updated_at: null,
 }
 
+// NEAR Intents marketplace fill (near-intents poller, issue #151). Single-chain
+// on intents.near (15), sn is NULL (hub-origin-style marker) but it is NOT an
+// mpc_id row and NOT a SODAX relay/hub message — action_type is the only
+// discriminator.
+export const nearIntentFill = {
+    id: 10,
+    sn: null,
+    status: 'executed',
+    action_type: 'NearIntentFill',
+    action_detail: 'NearIntentFill received 12.5 usdc.near; paid 4.2 wrap.near',
+    src_network: '15',
+    src_tx_hash: 'Hh1vK3o4m8z9JqYw2X5n7bR6cT1sA4dF3gH2jK9lM8pQ',
+    dest_network: '15',
+    dest_tx_hash: null,
+    intent_tx_hash: 'near-intent-hash-abc123',
+    created_at: 1786850000,
+    updated_at: 1786850000,
+}
+
 // Pre-existing non-MPC row: neither src (bsc 4) nor dest (avax 6) is an MPC chain.
 export const legacyNonMpc = {
     id: 9,

@@ -75,6 +75,12 @@ describe('getChainMode (R8)', () => {
     })
 })
 
+describe('getMsgTypes — action-type filter vocabulary', () => {
+    it('includes NearIntentFill so it is filterable in the Action dropdown (issue #151)', () => {
+        expect(helper.getMsgTypes()).toContain('NearIntentFill')
+    })
+})
+
 describe('STATUS_FILTERS — shared status vocabulary (R2b, §2.7)', () => {
     it('is exactly the six statuses in the contracted order (attested is the one new one)', () => {
         expect(helper.STATUS_FILTERS).toEqual(['pending', 'attested', 'delivered', 'executed', 'failed', 'rollbacked'])

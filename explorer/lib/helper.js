@@ -289,6 +289,7 @@ const MSG_ACTION_TYPES = {
     IntentFilled: 'IntentFilled',
     Migration: 'Migration',
     Reverted: 'Reverted',
+    NearIntentFill: 'NearIntentFill',
 }
 
 // Static per-chain lifecycle mode (R8). Single source of truth for mode — call

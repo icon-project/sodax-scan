@@ -33,12 +33,15 @@ function renderMessageStatus(status) {
 // row (chain-based detection) shows an "MPC" badge — completed MPC rows carry
 // status `executed` and are otherwise indistinguishable from legacy rows in the
 // list. Legacy rows are unchanged: a present sn shows the number, a NULL sn keeps
-// the "hub-only" badge.
+// the "hub-only" badge. A NearIntentFill row (also sn == null, written by the
+// near-intents poller) gets its own badge instead of "hub-only" — it isn't a
+// SODAX relay/hub message at all, just labeled the same way for list display.
 function renderSerialNo(item) {
     const badge = (label) => (
         <span className="uppercase text-xs rounded-full px-2 py-0.5 bg-cream-white text-clay-dark tracking-wide">{label}</span>
     )
     if (helper.isMpcTransaction(item)) return badge('MPC')
+    if (item.action_type === 'NearIntentFill') return badge('NEAR INTENT')
     if (item.sn == null) return badge('hub-only')
     return item.sn
 }
