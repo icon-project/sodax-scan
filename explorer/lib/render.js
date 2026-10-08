@@ -92,6 +92,9 @@ function renderDestHashLink(item, meta) {
     )
 }
 
+// Chains whose native tx hash has no 0x prefix: XRP (66), Cardano (1815).
+const BARE_HASH_NETWORKS = new Set(['66', '1815'])
+
 function renderHashLink(scanUrl, network, hash, isFull = false) {
     if (!hash) return <div>-</div>
 
@@ -110,13 +113,14 @@ function renderHashLink(scanUrl, network, hash, isFull = false) {
         const txHash = hash.startsWith('0x') ? hash : `0x${hash}`
         href = `https://explorer.hiro.so/txid/${txHash}?chain=mainnet`
     }
-    if (network == '66') {
-        // XRP explorer (xrpscan) expects the bare hash; strip a leading 0x if present.
+    const isBareHash = BARE_HASH_NETWORKS.has(String(network))
+    if (isBareHash) {
+        // These explorers (xrpscan, cardanoscan) expect the bare hash; strip a leading 0x if present.
         const txHash = hash.startsWith('0x') ? hash.slice(2) : hash
         href = `${scanUrl}/${txHash}`
     }
-    // XRP hashes display (and copy) without the 0x prefix, matching the link.
-    const dispHash = network == '66' && typeof hash === 'string' && hash.startsWith('0x') ? hash.slice(2) : hash
+    // Bare-hash chains display (and copy) without the 0x prefix, matching the link.
+    const dispHash = isBareHash && typeof hash === 'string' && hash.startsWith('0x') ? hash.slice(2) : hash
     networkImg = <Image alt={network} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
     link = !isFull || isOdHash ? (
         <div className={linkClass}><span className="tx-hash" data-hash={dispHash}>{isFull ? dispHash : truncateHash(dispHash)}</span></div>

@@ -34,6 +34,7 @@ const NETWORK = {
     ZCASH: 'zcash',
     TON: 'ton',
     TRON: 'tron',
+    CARDANO: 'cardano',
 }
 
 const NETWORK_MAPPINGS = {
@@ -66,6 +67,7 @@ const NETWORK_MAPPINGS = {
     [NETWORK.ZCASH]: CONFIG_NETWORKS.zcash.nid,
     [NETWORK.TON]: CONFIG_NETWORKS.ton.nid,
     [NETWORK.TRON]: CONFIG_NETWORKS.tron.nid,
+    [NETWORK.CARDANO]: CONFIG_NETWORKS.cardano.nid,
 }
 
 const REV_NETWORK_MAPPINGS = {
@@ -98,6 +100,7 @@ const REV_NETWORK_MAPPINGS = {
     [CONFIG_NETWORKS.zcash.nid]: [NETWORK.ZCASH],
     [CONFIG_NETWORKS.ton.nid]: [NETWORK.TON],
     [CONFIG_NETWORKS.tron.nid]: [NETWORK.TRON],
+    [CONFIG_NETWORKS.cardano.nid]: [NETWORK.CARDANO],
 }
 
 const NETWORK_DETAILS = {
@@ -275,6 +278,12 @@ const NETWORK_DETAILS = {
         logo: `/images/network-tron.png`,
         nativeAsset: 'TRX',
     },
+    [NETWORK.CARDANO]: {
+        id: NETWORK.CARDANO,
+        name: 'cardano',
+        logo: `/images/network-cardano.png`,
+        nativeAsset: 'ADA',
+    },
 }
 
 const MSG_ACTION_TYPES = {
@@ -301,6 +310,7 @@ const CHAIN_MODE = {
     [NETWORK.TON]: 'memo',
     [NETWORK.TRON]: 'memo',
     [NETWORK.XRP]: 'memo',
+    [NETWORK.CARDANO]: 'memo',
 }
 
 // Resolve a numeric chain id (as stored in *_network) to its lifecycle mode.
@@ -311,7 +321,7 @@ const getChainMode = (networkId) => {
 }
 
 // MPC chain set — single source of truth = the CHAIN_MODE keys, resolved to their
-// numeric ids ({48,133,607,728126428,66} as strings). Used for per-chain mode
+// numeric ids ({48,133,607,728126428,66,1815} as strings). Used for per-chain mode
 // (sweep/memo) resolution, NOT for detecting whether a row is MPC.
 const MPC_CHAIN_IDS = new Set(Object.keys(CHAIN_MODE).map((name) => String(NETWORK_MAPPINGS[name])))
 
