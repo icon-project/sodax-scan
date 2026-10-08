@@ -93,3 +93,26 @@ describe('renderSerialNo — list/detail MPC marker (list-view indicator)', () =
         expect(text(el)).toBe('hub-only')
     })
 })
+
+describe('renderHashLink — bare-hash chains (xrp 66, cardano 1815)', () => {
+    // Full-mode element tree: <div>[networkImg, <div>[<Link href><span data-hash/></Link>, copy]</div>]</div>
+    const linkOf = (el) => el.props.children[1].props.children[0]
+    const hash = '0x2661173783960521631227e416e1c3173375031d84a2558700ba2963f06a981e'
+    const bare = hash.slice(2)
+
+    it('strips 0x from the cardanoscan link and displayed hash', () => {
+        const link = linkOf(Render.renderHashLink('https://cardanoscan.io/transaction/', '1815', hash, true))
+        expect(link.props.href).toBe(`https://cardanoscan.io/transaction/${bare}`)
+        expect(link.props.children.props['data-hash']).toBe(bare)
+    })
+
+    it('keeps the xrpscan bare-hash behaviour', () => {
+        const link = linkOf(Render.renderHashLink('https://xrpscan.com/tx/', '66', hash, true))
+        expect(link.props.href).toBe(`https://xrpscan.com/tx/${bare}`)
+    })
+
+    it('leaves 0x on non-bare-hash chains', () => {
+        const link = linkOf(Render.renderHashLink('https://sonicscan.org/tx/', '146', hash, true))
+        expect(link.props.href).toBe(`https://sonicscan.org/tx/${hash}`)
+    })
+})

@@ -42,8 +42,8 @@ describe('isMpcTransaction — mpc_id-based detection (aligned with indexer)', (
         expect(helper.isMpcTransaction({})).toBe(false)
     })
 
-    it('MPC_CHAIN_IDS is exactly the five MPC chain ids (derived from CHAIN_MODE keys)', () => {
-        expect([...helper.MPC_CHAIN_IDS].sort()).toEqual(['133', '48', '607', '66', '728126428'].sort())
+    it('MPC_CHAIN_IDS is exactly the six MPC chain ids (derived from CHAIN_MODE keys)', () => {
+        expect([...helper.MPC_CHAIN_IDS].sort()).toEqual(['133', '48', '607', '66', '728126428', '1815'].sort())
     })
 })
 
@@ -57,6 +57,7 @@ describe('getChainMode (R8)', () => {
         expect(helper.getChainMode('607')).toBe('memo') // ton
         expect(helper.getChainMode('728126428')).toBe('memo') // tron
         expect(helper.getChainMode('66')).toBe('memo') // xrp
+        expect(helper.getChainMode('1815')).toBe('memo') // cardano
     })
 
     it('returns undefined for an unknown chain', () => {
@@ -64,13 +65,14 @@ describe('getChainMode (R8)', () => {
         expect(helper.getChainMode(undefined)).toBeUndefined()
     })
 
-    it('CHAIN_MODE is the single source and has exactly the five chains', () => {
+    it('CHAIN_MODE is the single source and has exactly the six chains', () => {
         expect(helper.CHAIN_MODE).toEqual({
             monad: 'sweep',
             zcash: 'sweep',
             ton: 'memo',
             tron: 'memo',
             xrp: 'memo',
+            cardano: 'memo',
         })
     })
 })
