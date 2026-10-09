@@ -56,7 +56,6 @@ export function createPoller(deps: PollerDeps): { runOnce(): Promise<void> } {
         continue;
       }
       try {
-        console.log(mapped.row)
         if (await deps.insertFill(mapped.row)) wrote++;
         else skippedExisting++;
       } catch (err) {
