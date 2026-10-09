@@ -1,14 +1,15 @@
 import axios from "axios";
 import { getHandler } from './handler'
-import { bitcoin, chains, enrichChainsFromApi, solana, sonic } from "./configs";
+import { bitcoin, chains, enrichChainsFromApi, idToChainNameMap, RPC_URLS, solana, sonic } from "./configs";
 import { getTransactionPackets, getPayloadFromRelayPacket, parsePayloadData } from "./action";
 import { updateTransactionInfo, updateMpcActionInfo } from "./db";
 import dotenv from 'dotenv';
-import { SendMessage, SodaxScannerResponse, Transfer } from "./types";
+import { SendMessage, SodaxScannerResponse, Transfer, type TxPayload } from "./types";
 import { bigintDivisionToDecimalString, multiplyDecimalBy10Pow18, srcHasHashedPayload, extractConnSn } from "./utils";
 import pool from './db/db';
 import { startHubIntentsPoller } from './hub-intents/poller';
 import { isRawTupleActionText, recoverIntentFilledFormat } from './intent-fill-format';
+import { findBridgeWithdrawal, formatWithdrawText, type ReceiptLog } from './mpc-withdraw';
 
 dotenv.config();
 const SODAXSCAN_CONFIG = {
@@ -71,34 +72,41 @@ export async function parseTransactionEvent(response: SodaxScannerResponse) {
         }
 
         if (isMpc) {
-            if (transaction.mint_tx_hash == null || transaction.mint_tx_hash === '') {
-                // Mint not recorded yet — leave the row pending and retry on the
-                // next poll without burning a retry attempt.
+            // Every MPC leg we decode is a hub (Sonic) tx: the mint for a
+            // deposit; for a withdrawal (no mint leg) the burn, or the source tx
+            // itself when it started on Sonic. With none yet it's a deposit
+            // awaiting its mint — leave it pending without burning a retry.
+            const mintTxHash = transaction.mint_tx_hash || null;
+            const hubTxHash = mintTxHash ?? (transaction.hub_burn_tx_hash || (transaction.src_network === sonic ? transaction.src_tx_hash : null));
+            if (!hubTxHash) {
                 continue;
             }
-            // The MPC action lives in the mint tx on the hub (Sonic). The source
-            // chain has no indexer handler and dest may be an MPC chain absent
-            // from config, so decode entirely in Sonic's context. This path is
-            // self-contained: none of the spoke-specific branches below apply.
+            // Decode entirely in Sonic's context: the spoke chain has no indexer
+            // handler and may be absent from config. The specific hub action
+            // (intent fill/create/cancel, migration) wins over the plain
+            // deposit/withdrawal, which is only the fallback.
             try {
-                const mintTxHash = transaction.mint_tx_hash;
-                console.log("Processing MPC mint txn", mintTxHash);
-                const payload = await getHandler(sonic).fetchPayload(mintTxHash, transaction.sn ?? '');
-                let actionType = parsePayloadData(payload.payload, sonic, sonic);
-                // A hub-side create tx carries the swap detail in its
-                // IntentCreated tuple (payload is "0x"), not a transfer payload.
-                if (payload.actionText && payload.intentTxHash) {
-                    actionType = {
-                        action: 'CreateIntent',
-                        actionText: payload.actionText,
-                        intentTxHash: payload.intentTxHash,
-                    };
+                console.log("Processing MPC hub txn", hubTxHash);
+                const payload = await getHandler(sonic).fetchPayload(hubTxHash, transaction.sn ?? '');
+                let result = await specificHubAction(payload);
+                if (!result && mintTxHash) {
+                    const decoded = parsePayloadData(payload.payload, sonic, sonic);
+                    if (decoded.action !== SendMessage && decoded.actionText) {
+                        result = { action: decoded.action, actionText: decoded.actionText };
+                    }
                 }
-                if (actionType.action !== SendMessage && actionType.actionText) {
-                    await updateMpcActionInfo(id, actionType.action, actionType.actionText);
+                if (!result && !mintTxHash) {
+                    const withdrawal = findBridgeWithdrawal(await fetchSonicReceiptLogs(hubTxHash));
+                    if (withdrawal) {
+                        const chainName = idToChainNameMap[withdrawal.dstChainId] ?? withdrawal.dstChainId;
+                        result = { action: 'Withdraw', actionText: formatWithdrawText(withdrawal, chains[sonic].Assets, chainName) };
+                    }
+                }
+                if (result) {
+                    await updateMpcActionInfo(id, result.action, result.actionText);
                 } else {
                     if (id in retries) retries[id] = retries[id] + 1; else retries[id] = 1;
-                    console.log("MPC mint decode incomplete for id", id, "- will retry");
+                    console.log("MPC hub tx decode incomplete for id", id, "- will retry");
                 }
             } catch (error) {
                 const errMessage = error instanceof Error ? error.message : String(error);
@@ -270,6 +278,39 @@ export async function parseTransactionEvent(response: SodaxScannerResponse) {
 }
 
 
+
+// Hub-specific action carried by a Sonic tx, or null for a plain transfer.
+// Checked most specific first: a fill also carries an intent hash and text.
+async function specificHubAction(payload: TxPayload): Promise<{ action: string; actionText: string } | null> {
+    if (payload.intentFilled) {
+        let actionText = payload.actionText;
+        // Raw event-tuple text means the calldata decode failed — recover the
+        // detail from the sibling CreateIntent row, as the relay path does.
+        if (isRawTupleActionText(actionText) && payload.intentTxHash && payload.filledOutputAmount) {
+            try {
+                const fmt = await recoverIntentFilledFormat(payload.intentTxHash, BigInt(payload.filledOutputAmount));
+                if (fmt) actionText = fmt.actionDetail;
+            } catch (err) {
+                console.log('IntentFilled format recovery failed:', err instanceof Error ? err.message : String(err));
+            }
+        }
+        return actionText ? { action: 'IntentFilled', actionText } : null;
+    }
+    if (payload.intentCancelled && payload.actionText) return { action: 'CancelIntent', actionText: payload.actionText };
+    if (payload.reverseSwap && payload.actionText) return { action: 'Migration', actionText: payload.actionText };
+    if (payload.actionText && payload.intentTxHash) return { action: 'CreateIntent', actionText: payload.actionText };
+    return null;
+}
+
+async function fetchSonicReceiptLogs(txHash: string): Promise<ReceiptLog[]> {
+    const { data } = await axios.post(RPC_URLS[sonic], {
+        jsonrpc: '2.0', id: 1, method: 'eth_getTransactionReceipt', params: [txHash],
+    });
+    if (!data.result) {
+        throw new Error(`no Sonic receipt for ${txHash}${data.error ? `: ${data.error.message}` : ''}`);
+    }
+    return data.result.logs;
+}
 
 const main = async () => {
     await enrichChainsFromApi();
