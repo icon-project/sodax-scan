@@ -39,11 +39,32 @@ function renderSerialNo(item) {
         <span className="uppercase text-xs rounded-full px-2 py-0.5 bg-cream-white text-clay-dark tracking-wide">{label}</span>
     )
     if (helper.isMpcTransaction(item)) return badge('MPC')
+    if (helper.isSolverFill(item)) return badge('SOLVER FILL')
     if (item.sn == null) return badge('hub-only')
     return item.sn
 }
 
+// Chain icon + name with no tx hash, for rows that carry a chain but no tx
+// (solver fills: src = chain of the user's input leg, dest = output leg).
+function renderChain(network) {
+    const name = helper.REV_NETWORK_MAPPINGS[network]
+    if (!name) return <div>-</div>
+    return (
+        <div className="flex items-center gap-2">
+            <Image alt={String(network)} src={`/images/network-${name}.png`} width={24} height={24} className="rounded-full bg-transparent" />
+            <span className="capitalize">{String(name)}</span>
+        </div>
+    )
+}
+
+function renderSrcHashLink(item, meta) {
+    if (helper.isSolverFill(item)) return renderChain(item.src_network)
+    return renderHashLink(meta?.urls.tx[item.src_network], item.src_network, item.src_tx_hash)
+}
+
 function renderDestHashLink(item, meta) {
+    if (helper.isSolverFill(item)) return renderChain(item.dest_network)
+
     let scanUrl
     let networkImg
     let linkClass = 'hover:underline inline-block'
@@ -76,6 +97,7 @@ function renderDestHashLink(item, meta) {
         // action_detail (e.g. "IntentSwap … -> SOL(solana)").
         // MPC rows (also sn == null) are excluded: an in-progress MPC tx has no
         // dest tx yet and must NOT masquerade the source tx as the destination.
+        // Solver fills return early above: they have no tx hash to mirror.
         scanUrl = meta.urls.tx[item.src_network]
         networkImg = <Image alt={item.src_network} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[item.src_network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
         link = <div className={linkClass}><span className="tx-hash" data-hash={item.src_tx_hash}>{truncateHash(item.src_tx_hash)}</span></div>
@@ -140,6 +162,8 @@ function renderHashLink(scanUrl, network, hash, isFull = false) {
 export default {
     renderMessageStatus,
     renderHashLink,
+    renderSrcHashLink,
     renderDestHashLink,
-    renderSerialNo
+    renderSerialNo,
+    renderChain
 }

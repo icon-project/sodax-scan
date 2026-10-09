@@ -243,3 +243,20 @@ export const legacyNonMpc = {
     created_at: 1786840000,
     updated_at: 1786840100,
 }
+
+// Indexer-written solver fill: no sn, no tx hashes. Networks = asset chains.
+export const solverFill = {
+    id: 10,
+    sn: null,
+    status: 'executed',
+    action_type: 'SolverFill',
+    action_detail: 'SolverFill 398.67386 TRX(tron) -> 133.761844 USDT(tron)',
+    action_amount_usd: '133.761844',
+    src_network: '728126428',
+    src_tx_hash: null,
+    dest_network: '728126428',
+    dest_tx_hash: null,
+    intent_tx_hash: 'IntentHashAAAA1111',
+    created_at: 1791099565,
+    updated_at: 1791099570,
+}

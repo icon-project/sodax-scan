@@ -289,6 +289,7 @@ const MSG_ACTION_TYPES = {
     IntentFilled: 'IntentFilled',
     Migration: 'Migration',
     Reverted: 'Reverted',
+    SolverFill: 'SolverFill',
 }
 
 // Static per-chain lifecycle mode (R8). Single source of truth for mode — call
@@ -324,6 +325,10 @@ const isMpcChain = (networkId) => networkId != null && MPC_CHAIN_IDS.has(String(
 // an MPC chain (e.g. sonic -> ton) has no mpc_id and no MPC legs, so it must not
 // render the MPC timeline.
 const isMpcTransaction = (row) => !!row && row.mpc_id != null && row.mpc_id !== ''
+
+// Indexer-written solver fill (sn = NULL, no tx hashes). Detected by action_type
+// so it never falls into the hub-only rendering paths.
+const isSolverFill = (row) => !!row && row.action_type === MSG_ACTION_TYPES.SolverFill
 
 // Shared status-filter list — one source feeding the filter dropdown
 // (message-filter.tsx) and the pills (renderMessageStatus) so they never drift
@@ -420,6 +425,7 @@ export default {
     MPC_CHAIN_IDS,
     isMpcChain,
     isMpcTransaction,
+    isSolverFill,
     STATUS_FILTERS,
     deriveMpcSteps,
 }

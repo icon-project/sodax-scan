@@ -28,7 +28,7 @@ export default function MessageList({ data, meta, showPagination }: MessageListP
                                     {Render.renderSerialNo(item)}
                                 </div>
                                 <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">
-                                    {Render.renderHashLink(meta?.urls.tx[item.src_network], item.src_network, item.src_tx_hash)}
+                                    {Render.renderSrcHashLink(item, meta)}
                                 </div>
                                 <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">{Render.renderDestHashLink(item, meta)}</div>
                                 <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">{item.action_type}</div>

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import Render from '../lib/render'
 import helper from '../lib/helper'
-import { depositSweepComplete, withdrawalReleased, legacyNonMpc } from './fixtures'
+import { depositSweepComplete, withdrawalReleased, legacyNonMpc, solverFill } from './fixtures'
 
 // renderMessageStatus returns a React element (plain object); inspect its props
 // directly without mounting a DOM.
@@ -91,5 +91,41 @@ describe('renderSerialNo — list/detail MPC marker (list-view indicator)', () =
     it('a legacy row with NULL sn keeps the hub-only badge (unchanged)', () => {
         const el = Render.renderSerialNo({ ...legacyNonMpc, sn: null })
         expect(text(el)).toBe('hub-only')
+    })
+})
+
+describe('SolverFill rows', () => {
+    it('shows the SOLVER FILL badge instead of hub-only', () => {
+        expect(text(Render.renderSerialNo(solverFill))).toBe('SOLVER FILL')
+    })
+
+    it('is detected by action_type, not by chain', () => {
+        expect(helper.isSolverFill(solverFill)).toBe(true)
+        expect(helper.isSolverFill({ ...solverFill, action_type: 'IntentFilled' })).toBe(false)
+        expect(helper.isSolverFill(null)).toBe(false)
+    })
+
+    it('is offered in the action-type filter', () => {
+        expect(helper.getMsgTypes()).toContain('SolverFill')
+    })
+
+    it('source and dest columns show the leg chains (icon + name), no tx hash', () => {
+        const fill = { ...solverFill, src_network: '15', dest_network: '728126428' }
+        const meta = { urls: { tx: {} } }
+        const [srcImg, srcName] = Render.renderSrcHashLink(fill, meta).props.children
+        expect(srcImg.props.alt).toBe('15')
+        expect(srcName.props.children).toBe('near')
+        const [destImg, destName] = Render.renderDestHashLink(fill, meta).props.children
+        expect(destImg.props.alt).toBe('728126428')
+        expect(destName.props.children).toBe('tron')
+    })
+
+    it('non-fill rows keep the tx-hash source cell', () => {
+        const el = Render.renderSrcHashLink(legacyNonMpc, { urls: { tx: {} } })
+        expect(el.props.children[1].props.children.props['data-hash']).toBe(legacyNonMpc.src_tx_hash)
+    })
+
+    it('unknown chain renders a dash', () => {
+        expect(Render.renderChain('999999').props.children).toBe('-')
     })
 })

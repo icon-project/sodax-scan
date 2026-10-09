@@ -47,16 +47,20 @@ export default async function MessageDetail({ msgData, meta, isAdmin = false }) 
                         <div className="table-row bg-white border-b">
                             <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Serial No:</div>
                             <div className="table-cell px-3 py-2 xl:px-6 xl:py-4 ">
-                                {/* Same hub-only badge as the messages list (sn == null). */}
-                                {msgData.sn == null
-                                    ? <span className="uppercase text-xs rounded-full px-2 py-0.5 bg-cream-white text-clay-dark tracking-wide">hub-only</span>
-                                    : msgData.sn}
+                                {/* Same badges as the messages list: solver fill, then hub-only (sn == null). */}
+                                {helper.isSolverFill(msgData)
+                                    ? <span className="uppercase text-xs rounded-full px-2 py-0.5 bg-cream-white text-clay-dark tracking-wide">SOLVER FILL</span>
+                                    : msgData.sn == null
+                                        ? <span className="uppercase text-xs rounded-full px-2 py-0.5 bg-cream-white text-clay-dark tracking-wide">hub-only</span>
+                                        : msgData.sn}
                             </div>
                         </div>
                         <div className="table-row bg-white border-b">
                             <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Source transaction hash:</div>
                             <div className="table-cell px-3 py-2 xl:px-6 xl:py-4 ">
-                                {Render.renderHashLink(meta.urls.tx[msgData.src_network], msgData.src_network, msgData.src_tx_hash, true)}
+                                {helper.isSolverFill(msgData)
+                                    ? Render.renderChain(msgData.src_network)
+                                    : Render.renderHashLink(meta.urls.tx[msgData.src_network], msgData.src_network, msgData.src_tx_hash, true)}
                             </div>
                         </div>
                         <div className="table-row bg-white border-b">
@@ -64,10 +68,13 @@ export default async function MessageDetail({ msgData, meta, isAdmin = false }) 
                             <div className="table-cell px-3 py-2 xl:px-6 xl:py-4">
                                 {/* Hub-only events (sn == null) have no dest leg — mirror the
                                     source tx + chain so this row reads symmetrically rather than
-                                    rendering "-". Intent's true dst chain still shows in Action. */}
-                                {msgData.sn == null
-                                    ? Render.renderHashLink(meta.urls.tx[msgData.src_network], msgData.src_network, msgData.src_tx_hash, true)
-                                    : Render.renderHashLink(meta.urls.tx[msgData.dest_network], msgData.dest_network, msgData.dest_tx_hash, true)}
+                                    rendering "-". Intent's true dst chain still shows in Action.
+                                    Solver fills have no tx at all, so they show the output leg's chain. */}
+                                {helper.isSolverFill(msgData)
+                                    ? Render.renderChain(msgData.dest_network)
+                                    : msgData.sn == null
+                                        ? Render.renderHashLink(meta.urls.tx[msgData.src_network], msgData.src_network, msgData.src_tx_hash, true)
+                                        : Render.renderHashLink(meta.urls.tx[msgData.dest_network], msgData.dest_network, msgData.dest_tx_hash, true)}
                             </div>
                         </div>
                         {msgData.fee && (<div className="table-row bg-white border-b">
