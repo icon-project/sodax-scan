@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import Render from '../lib/render'
 import helper from '../lib/helper'
-import { depositSweepComplete, withdrawalReleased, legacyNonMpc } from './fixtures'
+import { depositSweepComplete, withdrawalReleased, legacyNonMpc, nearIntentFill } from './fixtures'
 
 // renderMessageStatus returns a React element (plain object); inspect its props
 // directly without mounting a DOM.
@@ -90,6 +90,17 @@ describe('renderSerialNo — list/detail MPC marker (list-view indicator)', () =
 
     it('a legacy row with NULL sn keeps the hub-only badge (unchanged)', () => {
         const el = Render.renderSerialNo({ ...legacyNonMpc, sn: null })
+        expect(text(el)).toBe('hub-only')
+    })
+
+    it('a NEAR Intents fill (action_type=SolverFill, sn NULL) shows a distinct badge, not hub-only', () => {
+        expect(helper.isMpcTransaction(nearIntentFill)).toBe(false)
+        const el = Render.renderSerialNo(nearIntentFill)
+        expect(text(el)).toBe('solver fill')
+    })
+
+    it('a hub-origin row with a different action_type still keeps the hub-only badge', () => {
+        const el = Render.renderSerialNo({ ...nearIntentFill, action_type: 'CreateIntent' })
         expect(text(el)).toBe('hub-only')
     })
 })

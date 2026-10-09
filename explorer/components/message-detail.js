@@ -47,10 +47,8 @@ export default async function MessageDetail({ msgData, meta, isAdmin = false }) 
                         <div className="table-row bg-white border-b">
                             <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Serial No:</div>
                             <div className="table-cell px-3 py-2 xl:px-6 xl:py-4 ">
-                                {/* Same hub-only badge as the messages list (sn == null). */}
-                                {msgData.sn == null
-                                    ? <span className="uppercase text-xs rounded-full px-2 py-0.5 bg-cream-white text-clay-dark tracking-wide">hub-only</span>
-                                    : msgData.sn}
+                                {/* Same badge logic as the messages list. */}
+                                {Render.renderSerialNo(msgData)}
                             </div>
                         </div>
                         <div className="table-row bg-white border-b">

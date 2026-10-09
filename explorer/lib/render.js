@@ -39,6 +39,10 @@ function renderSerialNo(item) {
         <span className="uppercase text-xs rounded-full px-2 py-0.5 bg-cream-white text-clay-dark tracking-wide">{label}</span>
     )
     if (helper.isMpcTransaction(item)) return badge('MPC')
+    // NEAR Intents marketplace fills (near-intents poller) also write sn =
+    // NULL, but are not hub events — the generic "hub-only" badge would
+    // misleadingly imply a SODAX hub-contract event. Label them distinctly.
+    if (item.action_type === 'SolverFill') return badge('solver fill')
     if (item.sn == null) return badge('hub-only')
     return item.sn
 }

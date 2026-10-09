@@ -296,6 +296,7 @@ const MSG_ACTION_TYPES = {
     CreateIntent: 'CreateIntent',
     CancelIntent: 'CancelIntent',
     IntentFilled: 'IntentFilled',
+    SolverFill: 'SolverFill',
     Migration: 'Migration',
     Reverted: 'Reverted',
 }
