@@ -84,6 +84,7 @@ app.get('/api/messages', async (req, res) => {
     const to_timestamp = req.query.to_timestamp
     const action_type = req.query.action_type
     const intent_tx_hash = req.query.intent_tx_hash
+    const kind = req.query.kind
 
     try {
         const rs = await db.getMessages(
@@ -97,7 +98,8 @@ app.get('/api/messages', async (req, res) => {
             from_timestamp,
             to_timestamp,
             action_type,
-            intent_tx_hash
+            intent_tx_hash,
+            kind
         )
 
         res.status(200).json(rs)

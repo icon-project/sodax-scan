@@ -24,7 +24,17 @@ pool.on('error', function (error, client) {
 // intent was created directly on the hub — or the relay row never
 // enriched and the hub event is the only usable record.
 
-const buildWhereSql = (status, src_network, dest_network, src_address, dest_address, from_timestamp, to_timestamp, action_type, intent_tx_hash) => {
+// Message kinds follow the explorer's Serial-No badge precedence: an mpc_id makes
+// a row MPC, then a SolverFill action_type makes it a solver fill, then a NULL sn
+// makes it hub-only; everything else is a relayed xcall message.
+const KIND_CONDITIONS = {
+    relay: `(COALESCE(mpc_id, '') = '' AND action_type IS DISTINCT FROM 'SolverFill' AND sn IS NOT NULL)`,
+    mpc: `COALESCE(mpc_id, '') <> ''`,
+    hub: `(COALESCE(mpc_id, '') = '' AND action_type IS DISTINCT FROM 'SolverFill' AND sn IS NULL)`,
+    solver: `(COALESCE(mpc_id, '') = '' AND action_type = 'SolverFill')`
+}
+
+const buildWhereSql = (status, src_network, dest_network, src_address, dest_address, from_timestamp, to_timestamp, action_type, intent_tx_hash, kind) => {
     let values = []
     let conditions = []
     if (status) {
@@ -66,6 +76,12 @@ const buildWhereSql = (status, src_network, dest_network, src_address, dest_addr
         conditions.push(`intent_tx_hash = $${conditions.length + 1}`)
         values.push(intent_tx_hash)
     }
+    if (kind) {
+        if (!Object.hasOwn(KIND_CONDITIONS, kind)) {
+            throw new Error(`Unknown kind "${kind}". Use one of: ${Object.keys(KIND_CONDITIONS).join(', ')}`)
+        }
+        conditions.push(KIND_CONDITIONS[kind])
+    }
 
     return { conditions, values }
 }
@@ -92,7 +108,7 @@ const SEARCH_FIELDS = ` id, sn, status, src_network, src_block_number, src_block
                         rollback_block_number, rollback_block_timestamp, rollback_tx_hash, rollback_error,
                         value, fee, created_at, updated_at, action_type, action_detail, intent_tx_hash, slippage `
 
-const getMessages = async (skip, limit, status, src_network, dest_network, src_address, dest_address, from_timestamp, to_timestamp, action_type, intent_tx_hash) => {
+const getMessages = async (skip, limit, status, src_network, dest_network, src_address, dest_address, from_timestamp, to_timestamp, action_type, intent_tx_hash, kind) => {
     let { conditions, values } = buildWhereSql(
         status,
         src_network,
@@ -102,7 +118,8 @@ const getMessages = async (skip, limit, status, src_network, dest_network, src_a
         from_timestamp,
         to_timestamp,
         action_type,
-        intent_tx_hash
+        intent_tx_hash,
+        kind
     )
 
     let sqlTotal = `SELECT count(*) FROM messages`
@@ -116,7 +133,7 @@ const getMessages = async (skip, limit, status, src_network, dest_network, src_a
                        FROM messages
                        WHERE ${conditions.join(' AND ')}
                        ORDER BY created_at DESC, sn DESC NULLS LAST
-                       OFFSET $${conditions.length + 1} LIMIT $${conditions.length + 2}`
+                       OFFSET $${values.length + 1} LIMIT $${values.length + 2}`
     }
 
     const totalRs = await pool.query(sqlTotal, values)

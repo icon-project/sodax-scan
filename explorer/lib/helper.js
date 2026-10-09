@@ -338,6 +338,15 @@ const isSolverFill = (row) => !!row && row.action_type === MSG_ACTION_TYPES.Solv
 // chain-based (isMpcTransaction), independent of this list.
 const STATUS_FILTERS = ['pending', 'attested', 'delivered', 'executed', 'failed', 'rollbacked']
 
+// Values for the API's `kind` filter (api/db.js KIND_CONDITIONS), matching the
+// Serial-No badges: MPC, SOLVER FILL, hub-only, and a plain sn for relay.
+const MESSAGE_KINDS = [
+    { value: 'relay', label: 'Relay' },
+    { value: 'mpc', label: 'MPC' },
+    { value: 'hub', label: 'Hub only' },
+    { value: 'solver', label: 'Solver fill' },
+]
+
 // Normalise action_type to the MPC kind; fall back to leg inference (ADR-006) when
 // action_type is missing or an unrecognised label: hub_burn present ⇒ withdrawal,
 // else release present ⇒ transfer, else deposit.
@@ -427,5 +436,6 @@ export default {
     isMpcTransaction,
     isSolverFill,
     STATUS_FILTERS,
+    MESSAGE_KINDS,
     deriveMpcSteps,
 }
