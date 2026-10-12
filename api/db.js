@@ -25,13 +25,13 @@ pool.on('error', function (error, client) {
 // enriched and the hub event is the only usable record.
 
 // Message kinds follow the explorer's Serial-No badge precedence: an mpc_id makes
-// a row MPC, then a SolverFill action_type makes it a solver fill, then a NULL sn
+// a row MPC, then a SolverMarketPlaceFill action_type makes it a solver fill, then a NULL sn
 // makes it hub-only; everything else is a relayed xcall message.
 const KIND_CONDITIONS = {
-    relay: `(COALESCE(mpc_id, '') = '' AND action_type IS DISTINCT FROM 'SolverFill' AND sn IS NOT NULL)`,
+    relay: `(COALESCE(mpc_id, '') = '' AND action_type IS DISTINCT FROM 'SolverMarketPlaceFill' AND sn IS NOT NULL)`,
     mpc: `COALESCE(mpc_id, '') <> ''`,
-    hub: `(COALESCE(mpc_id, '') = '' AND action_type IS DISTINCT FROM 'SolverFill' AND sn IS NULL)`,
-    solver: `(COALESCE(mpc_id, '') = '' AND action_type = 'SolverFill')`
+    hub: `(COALESCE(mpc_id, '') = '' AND action_type IS DISTINCT FROM 'SolverMarketPlaceFill' AND sn IS NULL)`,
+    solver: `(COALESCE(mpc_id, '') = '' AND action_type = 'SolverMarketPlaceFill')`
 }
 
 const buildWhereSql = (status, src_network, dest_network, src_address, dest_address, from_timestamp, to_timestamp, action_type, intent_tx_hash, kind) => {

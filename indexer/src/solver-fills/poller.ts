@@ -1,10 +1,10 @@
-import { parseIsoMs, type FillsPage, type FillsQuery, type SolverFill } from './client';
-import type { FillMapResult, SolverFillRow } from './format';
+import { parseIsoMs, type FillsPage, type FillsQuery, type SolverMarketPlaceFill } from './client';
+import type { FillMapResult, SolverMarketPlaceFillRow } from './format';
 
 export interface PollerDeps {
   fetchPage(q: FillsQuery): Promise<FillsPage>;
-  toRow(fill: SolverFill): FillMapResult;
-  insertFill(row: SolverFillRow): Promise<boolean>;
+  toRow(fill: SolverMarketPlaceFill): FillMapResult;
+  insertFill(row: SolverMarketPlaceFillRow): Promise<boolean>;
   readCursor(): Promise<string | null>;
   writeCursor(lastTimestamp: string): Promise<void>;
   /** ISO timestamp used when no cursor file exists. */
@@ -20,7 +20,7 @@ export function createPoller(deps: PollerDeps): { runOnce(): Promise<void> } {
   // tick refetches them once and the insert's NOT EXISTS guard drops them.
   let boundary: { timestamp: string; hashes: Set<string> } | null = null;
 
-  function rememberBoundary(cursorTs: string, fills: SolverFill[]) {
+  function rememberBoundary(cursorTs: string, fills: SolverMarketPlaceFill[]) {
     if (boundary?.timestamp !== cursorTs) boundary = { timestamp: cursorTs, hashes: new Set() };
     for (const f of fills) if (f.timestamp === cursorTs) boundary.hashes.add(f.intentHash);
   }

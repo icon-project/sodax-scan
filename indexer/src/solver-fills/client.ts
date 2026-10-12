@@ -12,7 +12,7 @@ export interface FillLeg {
   amount: number;
 }
 
-export interface SolverFill {
+export interface SolverMarketPlaceFill {
   timestamp: string;
   intentHash: string;
   receivedLegs: FillLeg[];
@@ -27,7 +27,7 @@ export interface SkippedFill {
 }
 
 export interface FillsPage {
-  fills: SolverFill[];
+  fills: SolverMarketPlaceFill[];
   skipped: SkippedFill[];
   lastTimestamp: string | null;
   hasMore: boolean;
@@ -97,7 +97,7 @@ function fillTimestamp(v: Obj): string {
   return t;
 }
 
-function parseFill(v: unknown): SolverFill {
+function parseFill(v: unknown): SolverMarketPlaceFill {
   if (!isObj(v)) throw new FillsResponseError('fill must be an object');
   const usdPaid = v.usd_paid;
   if (usdPaid !== null && typeof usdPaid !== 'string') {
@@ -139,7 +139,7 @@ export function parseFillsPage(body: unknown): FillsPage {
   }
   if (!Array.isArray(body.fills)) throw new FillsResponseError('fills must be an array');
 
-  const fills: SolverFill[] = [];
+  const fills: SolverMarketPlaceFill[] = [];
   const skipped: SkippedFill[] = [];
   for (const raw of body.fills) {
     try {

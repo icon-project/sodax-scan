@@ -39,7 +39,7 @@ function renderSerialNo(item) {
         <span className="uppercase text-xs rounded-full px-2 py-0.5 bg-cream-white text-clay-dark tracking-wide">{label}</span>
     )
     if (helper.isMpcTransaction(item)) return badge('MPC')
-    if (helper.isSolverFill(item)) return badge('SOLVER FILL')
+    if (helper.isSolverMarketPlaceFill(item)) return badge('SOLVER MARKETPLACE FILL')
     if (item.sn == null) return badge('hub-only')
     return item.sn
 }
@@ -58,12 +58,12 @@ function renderChain(network) {
 }
 
 function renderSrcHashLink(item, meta) {
-    if (helper.isSolverFill(item)) return renderChain(item.src_network)
+    if (helper.isSolverMarketPlaceFill(item)) return renderChain(item.src_network)
     return renderHashLink(meta?.urls.tx[item.src_network], item.src_network, item.src_tx_hash)
 }
 
 function renderDestHashLink(item, meta) {
-    if (helper.isSolverFill(item)) return renderChain(item.dest_network)
+    if (helper.isSolverMarketPlaceFill(item)) return renderChain(item.dest_network)
 
     let scanUrl
     let networkImg

@@ -56,15 +56,15 @@ describe('buildWhereSql kind filter', () => {
     it('maps each kind to its static predicate without adding a bind value', () => {
         expect(kindWhere('mpc')).toEqual({ conditions: ["COALESCE(mpc_id, '') <> ''"], values: [] })
         expect(kindWhere('solver')).toEqual({
-            conditions: ["(COALESCE(mpc_id, '') = '' AND action_type = 'SolverFill')"],
+            conditions: ["(COALESCE(mpc_id, '') = '' AND action_type = 'SolverMarketPlaceFill')"],
             values: [],
         })
         expect(kindWhere('hub')).toEqual({
-            conditions: ["(COALESCE(mpc_id, '') = '' AND action_type IS DISTINCT FROM 'SolverFill' AND sn IS NULL)"],
+            conditions: ["(COALESCE(mpc_id, '') = '' AND action_type IS DISTINCT FROM 'SolverMarketPlaceFill' AND sn IS NULL)"],
             values: [],
         })
         expect(kindWhere('relay')).toEqual({
-            conditions: ["(COALESCE(mpc_id, '') = '' AND action_type IS DISTINCT FROM 'SolverFill' AND sn IS NOT NULL)"],
+            conditions: ["(COALESCE(mpc_id, '') = '' AND action_type IS DISTINCT FROM 'SolverMarketPlaceFill' AND sn IS NOT NULL)"],
             values: [],
         })
     })
@@ -90,7 +90,7 @@ describe('buildWhereSql kind filter', () => {
             'LOWER(status) = LOWER($1)',
             "src_network = any(string_to_array($2,','))",
             "action_type = any(string_to_array($3,','))",
-            "(COALESCE(mpc_id, '') = '' AND action_type IS DISTINCT FROM 'SolverFill' AND sn IS NOT NULL)",
+            "(COALESCE(mpc_id, '') = '' AND action_type IS DISTINCT FROM 'SolverMarketPlaceFill' AND sn IS NOT NULL)",
         ])
         expect(values).toEqual(['executed', '146', 'Swap'])
     })

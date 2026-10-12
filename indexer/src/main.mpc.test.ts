@@ -36,7 +36,7 @@ mock.module('./action', () => ({
 }));
 mock.module('./db', () => ({ updateTransactionInfo, updateMpcActionInfo }));
 mock.module('./hub-intents/poller', () => ({ startHubIntentsPoller: () => 0 }));
-mock.module('./solver-fills', () => ({ startSolverFillsPoller: () => null }));
+mock.module('./solver-fills', () => ({ startSolverMarketPlaceFillsPoller: () => null }));
 mock.module('./intent-fill-format', () => ({
     isRawTupleActionText: () => false,
     recoverIntentFilledFormat: async () => null,

@@ -8,7 +8,7 @@ import { SendMessage, SodaxScannerResponse, Transfer } from "./types";
 import { bigintDivisionToDecimalString, multiplyDecimalBy10Pow18, srcHasHashedPayload, extractConnSn } from "./utils";
 import pool from './db/db';
 import { startHubIntentsPoller } from './hub-intents/poller';
-import { startSolverFillsPoller } from './solver-fills';
+import { startSolverMarketPlaceFillsPoller } from './solver-fills';
 import { isRawTupleActionText, recoverIntentFilledFormat } from './intent-fill-format';
 
 dotenv.config();
@@ -278,7 +278,7 @@ const main = async () => {
     const args = process.argv.slice(2);
     if (args.length === 0) {
         const hubIntentsTimer = startHubIntentsPoller();
-        const solverFillsTimer = startSolverFillsPoller();
+        const SolverMarketPlaceFillsTimer = startSolverMarketPlaceFillsPoller();
         processSodaxStream().catch(console.error).finally(() => {
             isRunning = false;
         });
@@ -294,7 +294,7 @@ const main = async () => {
                 console.log(`Received ${signal}. Cleaning up...`);
                 clearInterval(intervalId);
                 clearInterval(hubIntentsTimer);
-                if (solverFillsTimer) clearInterval(solverFillsTimer);
+                if (SolverMarketPlaceFillsTimer) clearInterval(SolverMarketPlaceFillsTimer);
                 process.exit(0); // Exit cleanly
             };
         }

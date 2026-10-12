@@ -1,6 +1,6 @@
-import { parseIsoMs, type FillLeg, type SolverFill } from './client';
+import { parseIsoMs, type FillLeg, type SolverMarketPlaceFill } from './client';
 
-export interface SolverFillRow {
+export interface SolverMarketPlaceFillRow {
   intentHash: string;
   srcChainId: string;
   dstChainId: string;
@@ -10,7 +10,7 @@ export interface SolverFillRow {
   amountUsd: string | null;
 }
 
-export type FillMapResult = { ok: true; row: SolverFillRow } | { ok: false; reason: string };
+export type FillMapResult = { ok: true; row: SolverMarketPlaceFillRow } | { ok: false; reason: string };
 
 // Backend display names that differ from our configs.ts chain keys.
 const CHAIN_ALIASES: Record<string, string> = {
@@ -64,7 +64,7 @@ function resolveSide(legs: FillLeg[], chainIdsByName: Record<string, string>): R
  * paid legs the user's output (dst side). Returns a stable reason string when
  * the fill can't be mapped, so callers can warn once per reason.
  */
-export function fillToRow(fill: SolverFill, chainIdsByName: Record<string, string>): FillMapResult {
+export function fillToRow(fill: SolverMarketPlaceFill, chainIdsByName: Record<string, string>): FillMapResult {
   if (fill.receivedLegs.length === 0 || fill.paidLegs.length === 0) {
     return { ok: false, reason: 'fill has an empty leg side' };
   }
@@ -84,7 +84,7 @@ export function fillToRow(fill: SolverFill, chainIdsByName: Record<string, strin
       srcChainId: input[0].chainId,
       dstChainId: output[0].chainId,
       timestamp,
-      actionDetail: `SolverFill ${join(input)} -> ${join(output)}`,
+      actionDetail: `SolverMarketPlaceFill ${join(input)} -> ${join(output)}`,
       amountUsd: fill.unpricedLegs > 0 ? null : fill.usdPaid,
     },
   };

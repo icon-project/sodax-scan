@@ -2,7 +2,7 @@ import { idToChainNameMap } from '../configs';
 import { fetchFillsPage, parseIsoMs, type ClientConfig } from './client';
 import { fillToRow } from './format';
 import { createPoller } from './poller';
-import { insertSolverFill, readFillsCursor, writeFillsCursor } from './repo';
+import { insertSolverMarketPlaceFill, readFillsCursor, writeFillsCursor } from './repo';
 
 /**
  * Solver fills poller. Env:
@@ -19,7 +19,7 @@ function envPositiveInt(name: string, fallback: number): number {
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
 
-export function startSolverFillsPoller(): NodeJS.Timeout | null {
+export function startSolverMarketPlaceFillsPoller(): NodeJS.Timeout | null {
   const baseUrl = process.env.SOLVER_FILLS_URL;
   if (!baseUrl) {
     console.log('solver-fills: SOLVER_FILLS_URL is not set, poller disabled');
@@ -54,7 +54,7 @@ export function startSolverFillsPoller(): NodeJS.Timeout | null {
   const poller = createPoller({
     fetchPage: (q) => fetchFillsPage(clientConfig, q),
     toRow: (fill) => fillToRow(fill, chainIdsByName),
-    insertFill: insertSolverFill,
+    insertFill: insertSolverMarketPlaceFill,
     readCursor: readFillsCursor,
     writeCursor: writeFillsCursor,
     startFrom,

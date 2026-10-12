@@ -1,9 +1,9 @@
 import { describe, it, expect, mock } from 'bun:test';
 import { createPoller, type PollerDeps } from './poller';
-import type { FillsPage, SolverFill } from './client';
-import type { FillMapResult, SolverFillRow } from './format';
+import type { FillsPage, SolverMarketPlaceFill } from './client';
+import type { FillMapResult, SolverMarketPlaceFillRow } from './format';
 
-const fill = (ts: string, hash: string): SolverFill => ({
+const fill = (ts: string, hash: string): SolverMarketPlaceFill => ({
   timestamp: ts,
   intentHash: hash,
   receivedLegs: [{ label: 'TRX (Tron)', amount: 1 }],
@@ -12,7 +12,7 @@ const fill = (ts: string, hash: string): SolverFill => ({
   unpricedLegs: 0,
 });
 
-const rowFor = (f: SolverFill): SolverFillRow => ({
+const rowFor = (f: SolverMarketPlaceFill): SolverMarketPlaceFillRow => ({
   intentHash: f.intentHash, srcChainId: '1', dstChainId: '1', timestamp: 0, actionDetail: 'x', amountUsd: null,
 });
 
@@ -78,7 +78,7 @@ describe('solver-fills poller', () => {
     const poller = createPoller(deps);
     await poller.runOnce();
     await poller.runOnce();
-    const inserted = (deps.insertFill as ReturnType<typeof mock>).mock.calls.map(([r]) => (r as SolverFillRow).intentHash);
+    const inserted = (deps.insertFill as ReturnType<typeof mock>).mock.calls.map(([r]) => (r as SolverMarketPlaceFillRow).intentHash);
     expect(inserted).toEqual(['a', 'late', 'b']);
   });
 
@@ -127,7 +127,7 @@ describe('solver-fills poller', () => {
   it('does not advance the cursor when an insert fails, and throws', async () => {
     const { deps, cursorWrites } = makeDeps(
       [{ fills: [fill('2026-10-01T00:01:00Z', 'a'), fill('2026-10-01T00:02:00Z', 'b')], skipped: [], lastTimestamp: '2026-10-01T00:02:00Z', hasMore: false, nextCursor: null }],
-      { insertFill: mock(async (r: SolverFillRow) => { if (r.intentHash === 'b') throw new Error('db down'); return true; }) },
+      { insertFill: mock(async (r: SolverMarketPlaceFillRow) => { if (r.intentHash === 'b') throw new Error('db down'); return true; }) },
     );
     await expect(createPoller(deps).runOnce()).rejects.toThrow(/1\/2 fill\(s\) failed/);
     expect(cursorWrites).toEqual([]);

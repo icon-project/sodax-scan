@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import Render from '../lib/render'
 import helper from '../lib/helper'
-import { depositSweepComplete, withdrawalReleased, legacyNonMpc, solverFill } from './fixtures'
+import { depositSweepComplete, withdrawalReleased, legacyNonMpc, SolverMarketPlaceFill } from './fixtures'
 
 // renderMessageStatus returns a React element (plain object); inspect its props
 // directly without mounting a DOM.
@@ -94,23 +94,23 @@ describe('renderSerialNo — list/detail MPC marker (list-view indicator)', () =
     })
 })
 
-describe('SolverFill rows', () => {
+describe('SolverMarketPlaceFill rows', () => {
     it('shows the SOLVER FILL badge instead of hub-only', () => {
-        expect(text(Render.renderSerialNo(solverFill))).toBe('SOLVER FILL')
+        expect(text(Render.renderSerialNo(SolverMarketPlaceFill))).toBe('SOLVER FILL')
     })
 
     it('is detected by action_type, not by chain', () => {
-        expect(helper.isSolverFill(solverFill)).toBe(true)
-        expect(helper.isSolverFill({ ...solverFill, action_type: 'IntentFilled' })).toBe(false)
-        expect(helper.isSolverFill(null)).toBe(false)
+        expect(helper.isSolverMarketPlaceFill(SolverMarketPlaceFill)).toBe(true)
+        expect(helper.isSolverMarketPlaceFill({ ...SolverMarketPlaceFill, action_type: 'IntentFilled' })).toBe(false)
+        expect(helper.isSolverMarketPlaceFill(null)).toBe(false)
     })
 
     it('is offered in the action-type filter', () => {
-        expect(helper.getMsgTypes()).toContain('SolverFill')
+        expect(helper.getMsgTypes()).toContain('SolverMarketPlaceFill')
     })
 
     it('source and dest columns show the leg chains (icon + name), no tx hash', () => {
-        const fill = { ...solverFill, src_network: '15', dest_network: '728126428' }
+        const fill = { ...SolverMarketPlaceFill, src_network: '15', dest_network: '728126428' }
         const meta = { urls: { tx: {} } }
         const [srcImg, srcName] = Render.renderSrcHashLink(fill, meta).props.children
         expect(srcImg.props.alt).toBe('15')

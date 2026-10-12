@@ -1,9 +1,9 @@
 import pool from '../db/db';
 import { readCursorFile, writeCursorFile } from '../cursor-file';
-import type { SolverFillRow } from './format';
+import type { SolverMarketPlaceFillRow } from './format';
 
 const CURSOR_NAME = 'solver_fills';
-const ACTION_TYPE = 'SolverFill';
+const ACTION_TYPE = 'SolverMarketPlaceFill';
 
 const nowSec = () => Math.floor(Date.now() / 1000);
 
@@ -12,7 +12,7 @@ const nowSec = () => Math.floor(Date.now() / 1000);
  * src/dest apps stay NULL: each would identify the source marketplace. The
  * NOT EXISTS guard makes cursor replays and the inclusive `from` boundary no-ops.
  */
-export async function insertSolverFill(row: SolverFillRow): Promise<boolean> {
+export async function insertSolverMarketPlaceFill(row: SolverMarketPlaceFillRow): Promise<boolean> {
   const sql = `
     INSERT INTO messages (
       sn, status,
