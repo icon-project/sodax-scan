@@ -3,6 +3,7 @@ const dotenv = require('dotenv')
 dotenv.config()
 const logger = require('./logger')
 const { NETWORK, META_URLS } = require('./constants')
+const { createQueryCache } = require('./query-cache')
 
 const pool = new Pool({
     user: process.env.PGUSER,
@@ -16,6 +17,11 @@ pool.on('error', function (error, client) {
     logger.error(error)
 })
 
+// count(*) over `messages` is a full scan (~120ms at 740k rows) and every
+// explorer tab polls it every 2s, so counts are shared for 10s per filter set.
+const countCache = createQueryCache({ ttlMs: 10_000, maxEntries: 500 })
+const cachedCountQuery = (sql, values) => countCache.get(JSON.stringify([sql, values]), () => pool.query(sql, values))
+
 // Hub-origin rows are written into `messages` with sn = NULL; relayer rows
 // have sn IS NOT NULL. They share the same `intent_tx_hash`. The hub
 // poller skips its CreateIntent row when the relayer already has an
@@ -25,7 +31,7 @@ pool.on('error', function (error, client) {
 // enriched and the hub event is the only usable record.
 
 // Message kinds follow the explorer's Serial-No badge precedence: an mpc_id makes
-// a row MPC, then a SolverMarketPlaceFill action_type makes it a solver fill, then a NULL sn
+// a row MPC, then a SolverMarketPlaceFill action_type makes it a SolverMarketPlaceFill, then a NULL sn
 // makes it hub-only; everything else is a relayed xcall message.
 const KIND_CONDITIONS = {
     relay: `(COALESCE(mpc_id, '') = '' AND action_type IS DISTINCT FROM 'SolverMarketPlaceFill' AND sn IS NOT NULL)`,
@@ -136,7 +142,7 @@ const getMessages = async (skip, limit, status, src_network, dest_network, src_a
                        OFFSET $${values.length + 1} LIMIT $${values.length + 2}`
     }
 
-    const totalRs = await pool.query(sqlTotal, values)
+    const totalRs = await cachedCountQuery(sqlTotal, values)
     const messagesRs = await pool.query(sqlMessages, values.concat([skip, limit]))
 
     return {
@@ -209,7 +215,7 @@ const getTotalMessages = async (status, src_networks, dest_networks, src_address
     let { conditions, values } = buildWhereSql(status, src_networks, dest_networks, src_address, dest_address, from_timestamp, to_timestamp)
     let sql = `SELECT count(*) as total FROM messages`
     if (conditions.length == 0) {
-        const totalRs = await pool.query(sql, values)
+        const totalRs = await cachedCountQuery(sql, values)
         const total = Number(totalRs.rows[0].total)
         data.total = total
     } else {
@@ -217,7 +223,7 @@ const getTotalMessages = async (status, src_networks, dest_networks, src_address
             sql = `SELECT count(*) as total
                     FROM messages
                     WHERE ${conditions.join(' AND ')}`
-            const totalRs = await pool.query(sql, values)
+            const totalRs = await cachedCountQuery(sql, values)
             const total = Number(totalRs.rows[0].total)
             data.total = total
         } else {
@@ -228,7 +234,7 @@ const getTotalMessages = async (status, src_networks, dest_networks, src_address
                     WHERE ${conditions.join(' AND ')}
                     GROUP BY src_network
                     ORDER BY src_network`
-                const srcNetworkTotalRs = await pool.query(sql, values)
+                const srcNetworkTotalRs = await cachedCountQuery(sql, values)
                 data.src_networks = {}
                 srcNetworkTotalRs.rows.forEach((n) => {
                     data.src_networks[n.src_network] = { total: Number(n.total) }
@@ -241,7 +247,7 @@ const getTotalMessages = async (status, src_networks, dest_networks, src_address
                     WHERE ${conditions.join(' AND ')}
                     GROUP BY dest_network
                     ORDER BY dest_network`
-                const destNetworkTotalRs = await pool.query(sql, values)
+                const destNetworkTotalRs = await cachedCountQuery(sql, values)
                 data.dest_networks = {}
                 destNetworkTotalRs.rows.forEach((n) => {
                     data.dest_networks[n.dest_network] = { total: Number(n.total) }
