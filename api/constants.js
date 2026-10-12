@@ -46,6 +46,7 @@ const NETWORK = {
     ZCASH: CONFIG_NETWORKS.zcash.nid,
     TON: CONFIG_NETWORKS.ton.nid,
     TRON: CONFIG_NETWORKS.tron.nid,
+    CARDANO: CONFIG_NETWORKS.cardano.nid,
 }
 
 const buildProviderUrls = (urls) => {
@@ -110,6 +111,7 @@ const META_URLS = {
         [NETWORK.ZCASH]: USE_MAINNET ? 'https://mainnet.zcashexplorer.app/transactions/' : 'https://mainnet.zcashexplorer.app/transactions/',
         [NETWORK.TON]: USE_MAINNET ? 'https://tonviewer.com/transaction/' : 'https://tonviewer.com/transaction/',
         [NETWORK.TRON]: USE_MAINNET ? 'https://tronscan.org/#/transaction/' : 'https://tronscan.org/#/transaction/',
+        [NETWORK.CARDANO]: USE_MAINNET ? 'https://cardanoscan.io/transaction/' : 'https://cardanoscan.io/transaction/',
     }
 }
 

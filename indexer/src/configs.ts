@@ -29,6 +29,7 @@ export const xrp = "66"
 export const zcash = "133"
 export const ton = "607"
 export const tron = "728126428"
+export const cardano = "1815"
 
 export type AssetInfo = {
   name: string;
@@ -94,6 +95,7 @@ const chainNameToIdMap: Record<string, string> = {
   zcash: zcash,
   ton: ton,
   tron: tron,
+  cardano: cardano,
 };
 
 export const idToChainNameMap: Record<string, string> = Object.fromEntries(
