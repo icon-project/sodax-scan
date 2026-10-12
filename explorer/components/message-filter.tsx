@@ -18,10 +18,12 @@ interface MessageFilterProps {
     destNetwork: string
     actionType: string
     status: string
+    kind: string
     srcNetworkChanged: (value: string) => void
     destNetworkChanged: (value: string) => void
     actionTypeChanged: (value: string) => void
     statusChanged: (value: string) => void
+    kindChanged: (value: string) => void
     resetClicked: () => void
 }
 
@@ -193,6 +195,31 @@ const MessageFilter = (props: MessageFilterProps) => {
                             }}
                         >
                             {Render.renderMessageStatus(status)}
+                        </DropdownItem>
+                    )
+                })}
+            </Dropdown>
+
+            <Dropdown label="Route" inline className="rounded-md" theme={dropdownTheme}>
+                <DropdownItem
+                    className={`min-w-32 ${props.kind == '' ? 'bg-almost-white' : ''}`}
+                    onClick={() => {
+                        props.kindChanged('')
+                    }}
+                >
+                    All Routes
+                </DropdownItem>
+
+                {helper.MESSAGE_KINDS.map((kind) => {
+                    return (
+                        <DropdownItem
+                            key={kind.value}
+                            className={`${props.kind == kind.value ? 'bg-almost-white' : ''}`}
+                            onClick={() => {
+                                props.kindChanged(kind.value)
+                            }}
+                        >
+                            {kind.label}
                         </DropdownItem>
                     )
                 })}

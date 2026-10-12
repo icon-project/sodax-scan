@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import Render from '../lib/render'
 import helper from '../lib/helper'
-import { depositSweepComplete, withdrawalReleased, legacyNonMpc } from './fixtures'
+import { depositSweepComplete, withdrawalReleased, legacyNonMpc, SolverMarketPlaceFill } from './fixtures'
 
 // renderMessageStatus returns a React element (plain object); inspect its props
 // directly without mounting a DOM.
@@ -94,25 +94,38 @@ describe('renderSerialNo — list/detail MPC marker (list-view indicator)', () =
     })
 })
 
-describe('renderHashLink — bare-hash chains (xrp 66, cardano 1815)', () => {
-    // Full-mode element tree: <div>[networkImg, <div>[<Link href><span data-hash/></Link>, copy]</div>]</div>
-    const linkOf = (el) => el.props.children[1].props.children[0]
-    const hash = '0x2661173783960521631227e416e1c3173375031d84a2558700ba2963f06a981e'
-    const bare = hash.slice(2)
-
-    it('strips 0x from the cardanoscan link and displayed hash', () => {
-        const link = linkOf(Render.renderHashLink('https://cardanoscan.io/transaction/', '1815', hash, true))
-        expect(link.props.href).toBe(`https://cardanoscan.io/transaction/${bare}`)
-        expect(link.props.children.props['data-hash']).toBe(bare)
+describe('SolverMarketPlaceFill rows', () => {
+    it('shows the SolverMarketPlaceFill badge instead of hub-only', () => {
+        expect(text(Render.renderSerialNo(SolverMarketPlaceFill))).toBe('SolverMarketPlaceFill')
     })
 
-    it('keeps the xrpscan bare-hash behaviour', () => {
-        const link = linkOf(Render.renderHashLink('https://xrpscan.com/tx/', '66', hash, true))
-        expect(link.props.href).toBe(`https://xrpscan.com/tx/${bare}`)
+    it('is detected by action_type, not by chain', () => {
+        expect(helper.isSolverMarketPlaceFill(SolverMarketPlaceFill)).toBe(true)
+        expect(helper.isSolverMarketPlaceFill({ ...SolverMarketPlaceFill, action_type: 'IntentFilled' })).toBe(false)
+        expect(helper.isSolverMarketPlaceFill(null)).toBe(false)
     })
 
-    it('leaves 0x on non-bare-hash chains', () => {
-        const link = linkOf(Render.renderHashLink('https://sonicscan.org/tx/', '146', hash, true))
-        expect(link.props.href).toBe(`https://sonicscan.org/tx/${hash}`)
+    it('is offered in the action-type filter', () => {
+        expect(helper.getMsgTypes()).toContain('SolverMarketPlaceFill')
+    })
+
+    it('source and dest columns show the leg chains (icon + name), no tx hash', () => {
+        const fill = { ...SolverMarketPlaceFill, src_network: '15', dest_network: '728126428' }
+        const meta = { urls: { tx: {} } }
+        const [srcImg, srcName] = Render.renderSrcHashLink(fill, meta).props.children
+        expect(srcImg.props.alt).toBe('15')
+        expect(srcName.props.children).toBe('near')
+        const [destImg, destName] = Render.renderDestHashLink(fill, meta).props.children
+        expect(destImg.props.alt).toBe('728126428')
+        expect(destName.props.children).toBe('tron')
+    })
+
+    it('non-fill rows keep the tx-hash source cell', () => {
+        const el = Render.renderSrcHashLink(legacyNonMpc, { urls: { tx: {} } })
+        expect(el.props.children[1].props.children.props['data-hash']).toBe(legacyNonMpc.src_tx_hash)
+    })
+
+    it('unknown chain renders a dash', () => {
+        expect(Render.renderChain('999999').props.children).toBe('-')
     })
 })

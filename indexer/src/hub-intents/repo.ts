@@ -1,8 +1,7 @@
-import * as fs from 'node:fs';
-import * as path from 'node:path';
 import pool from '../db/db';
 import { sonic } from '../configs';
 import { parseDstChainIdFromCreate } from '../intent-fill-format';
+import { readCursorFile, writeCursorFile } from '../cursor-file';
 
 // Hub events go into the `messages` table with sn = NULL as the hub-origin
 // marker. Every event type skips its insert when the relayer already has
@@ -177,31 +176,14 @@ export async function getCreatedContextsByIntentHashes(
   return out;
 }
 
-const CURSOR_DIR = process.env.HUB_INTENTS_CURSOR_DIR || path.resolve('.cursors');
-
-function cursorPath(name: string): string {
-  return path.join(CURSOR_DIR, `${name}.json`);
-}
-
 export async function getCursor(name: string): Promise<number | null> {
-  try {
-    const raw = await fs.promises.readFile(cursorPath(name), 'utf8');
-    const parsed = JSON.parse(raw) as { lastBlock?: number };
-    if (typeof parsed.lastBlock !== 'number' || !Number.isFinite(parsed.lastBlock)) return null;
-    return parsed.lastBlock;
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null;
-    throw err;
+  const parsed = (await readCursorFile(name)) as { lastBlock?: unknown } | null;
+  if (parsed === null || typeof parsed.lastBlock !== 'number' || !Number.isFinite(parsed.lastBlock)) {
+    return null;
   }
+  return parsed.lastBlock;
 }
 
 export async function setCursor(name: string, lastBlock: number): Promise<void> {
-  // Write to a temp file then rename so a crash mid-write can't leave a
-  // partial / corrupt JSON file behind.
-  await fs.promises.mkdir(CURSOR_DIR, { recursive: true });
-  const finalPath = cursorPath(name);
-  const tmpPath = `${finalPath}.tmp`;
-  const payload = JSON.stringify({ lastBlock, updatedAt: nowSec() });
-  await fs.promises.writeFile(tmpPath, payload, 'utf8');
-  await fs.promises.rename(tmpPath, finalPath);
+  await writeCursorFile(name, { lastBlock, updatedAt: nowSec() });
 }

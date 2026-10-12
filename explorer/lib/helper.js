@@ -298,6 +298,7 @@ const MSG_ACTION_TYPES = {
     IntentFilled: 'IntentFilled',
     Migration: 'Migration',
     Reverted: 'Reverted',
+    SolverMarketPlaceFill: 'SolverMarketPlaceFill',
 }
 
 // Static per-chain lifecycle mode (R8). Single source of truth for mode — call
@@ -335,6 +336,10 @@ const isMpcChain = (networkId) => networkId != null && MPC_CHAIN_IDS.has(String(
 // render the MPC timeline.
 const isMpcTransaction = (row) => !!row && row.mpc_id != null && row.mpc_id !== ''
 
+// Indexer-written SolverMarketPlaceFill (sn = NULL, no tx hashes). Detected by action_type
+// so it never falls into the hub-only rendering paths.
+const isSolverMarketPlaceFill = (row) => !!row && row.action_type === MSG_ACTION_TYPES.SolverMarketPlaceFill
+
 // Shared status-filter list — one source feeding the filter dropdown
 // (message-filter.tsx) and the pills (renderMessageStatus) so they never drift
 // (R2b, §2.7). Only `attested` is genuinely new; the other five are existing
@@ -342,6 +347,15 @@ const isMpcTransaction = (row) => !!row && row.mpc_id != null && row.mpc_id !== 
 // status values — they survive only as detail-timeline legs (R5). MPC detection is
 // chain-based (isMpcTransaction), independent of this list.
 const STATUS_FILTERS = ['pending', 'attested', 'delivered', 'executed', 'failed', 'rollbacked']
+
+// Values for the API's `kind` filter (api/db.js KIND_CONDITIONS), matching the
+// Serial-No badges: MPC, SolverMarketPlaceFill, hub-only, and a plain sn for relay.
+const MESSAGE_KINDS = [
+    { value: 'relay', label: 'Relay' },
+    { value: 'mpc', label: 'MPC' },
+    { value: 'hub', label: 'Hub only' },
+    { value: 'solver', label: 'SolverMarketPlaceFill' },
+]
 
 // Normalise action_type to the MPC kind; fall back to leg inference (ADR-006) when
 // action_type is missing or an unrecognised label: hub_burn present ⇒ withdrawal,
@@ -430,6 +444,8 @@ export default {
     MPC_CHAIN_IDS,
     isMpcChain,
     isMpcTransaction,
+    isSolverMarketPlaceFill,
     STATUS_FILTERS,
+    MESSAGE_KINDS,
     deriveMpcSteps,
 }

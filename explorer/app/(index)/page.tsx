@@ -17,14 +17,15 @@ export default function Home() {
     const [destNetwork, setDestNetwork] = useState('')
     const [actionType, setActionType] = useState('')
     const [status, setStatus] = useState('')
+    const [kind, setKind] = useState('')
 
     // pagination
     const [pageSize, setPageSize] = useState(20)
     const [pageNumber, setPageNumber] = useState(1)
 
     let messagesRes = useSWR(
-        ['messages', pageSize, pageNumber, status, srcNetwork, destNetwork, actionType],
-        () => FetchData.getMessages(pageSize, pageNumber, status, srcNetwork, destNetwork, actionType),
+        ['messages', pageSize, pageNumber, status, srcNetwork, destNetwork, actionType, kind],
+        () => FetchData.getMessages(pageSize, pageNumber, status, srcNetwork, destNetwork, actionType, kind),
         { refreshInterval: 2000 }
     )
     const totalMsgRes = useSWR('statistics/total_messages', () => FetchData.getTotalMessages(), {
@@ -55,6 +56,7 @@ export default function Home() {
                 destNetwork={destNetwork}
                 actionType={actionType}
                 status={status}
+                kind={kind}
                 srcNetworkChanged={(value) => {
                     const networkId = helper.NETWORK_MAPPINGS[value]
                     setSrcNetwork((prev) => {
@@ -93,11 +95,15 @@ export default function Home() {
                 statusChanged={(value) => {
                     setStatus(value)
                 }}
+                kindChanged={(value) => {
+                    setKind(value)
+                }}
                 resetClicked={() => {
                     setSrcNetwork('')
                     setDestNetwork('')
                     setActionType('')
                     setStatus('')
+                    setKind('')
                 }}
             />
 
