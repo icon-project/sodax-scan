@@ -5,7 +5,7 @@ import { createPoller } from './poller';
 import { insertSolverMarketPlaceFill, readFillsCursor, writeFillsCursor } from './repo';
 
 /**
- * Solver fills poller. Env:
+ * SolverMarketPlaceFills poller. Env:
  *   SOLVER_FILLS_URL               sodax-data-backend base URL; unset = disabled
  *   SOLVER_FILLS_ACCOUNTS          comma list of solver accounts (required when enabled; missing = disabled with error log)
  *   SOLVER_FILLS_START             optional; default = current time at startup; only used when no cursor exists; invalid = disabled with error log

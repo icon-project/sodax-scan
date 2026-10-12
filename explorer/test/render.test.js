@@ -95,8 +95,8 @@ describe('renderSerialNo — list/detail MPC marker (list-view indicator)', () =
 })
 
 describe('SolverMarketPlaceFill rows', () => {
-    it('shows the SOLVER FILL badge instead of hub-only', () => {
-        expect(text(Render.renderSerialNo(SolverMarketPlaceFill))).toBe('SOLVER FILL')
+    it('shows the SolverMarketPlaceFill badge instead of hub-only', () => {
+        expect(text(Render.renderSerialNo(SolverMarketPlaceFill))).toBe('SolverMarketPlaceFill')
     })
 
     it('is detected by action_type, not by chain', () => {

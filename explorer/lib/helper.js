@@ -326,7 +326,7 @@ const isMpcChain = (networkId) => networkId != null && MPC_CHAIN_IDS.has(String(
 // render the MPC timeline.
 const isMpcTransaction = (row) => !!row && row.mpc_id != null && row.mpc_id !== ''
 
-// Indexer-written solver fill (sn = NULL, no tx hashes). Detected by action_type
+// Indexer-written SolverMarketPlaceFill (sn = NULL, no tx hashes). Detected by action_type
 // so it never falls into the hub-only rendering paths.
 const isSolverMarketPlaceFill = (row) => !!row && row.action_type === MSG_ACTION_TYPES.SolverMarketPlaceFill
 
@@ -339,12 +339,12 @@ const isSolverMarketPlaceFill = (row) => !!row && row.action_type === MSG_ACTION
 const STATUS_FILTERS = ['pending', 'attested', 'delivered', 'executed', 'failed', 'rollbacked']
 
 // Values for the API's `kind` filter (api/db.js KIND_CONDITIONS), matching the
-// Serial-No badges: MPC, SOLVER FILL, hub-only, and a plain sn for relay.
+// Serial-No badges: MPC, SolverMarketPlaceFill, hub-only, and a plain sn for relay.
 const MESSAGE_KINDS = [
     { value: 'relay', label: 'Relay' },
     { value: 'mpc', label: 'MPC' },
     { value: 'hub', label: 'Hub only' },
-    { value: 'solver', label: 'Solver fill' },
+    { value: 'solver', label: 'SolverMarketPlaceFill' },
 ]
 
 // Normalise action_type to the MPC kind; fall back to leg inference (ADR-006) when

@@ -45,7 +45,7 @@ function renderSerialNo(item) {
 }
 
 // Chain icon + name with no tx hash, for rows that carry a chain but no tx
-// (solver fills: src = chain of the user's input leg, dest = output leg).
+// (SolverMarketPlaceFills: src = chain of the user's input leg, dest = output leg).
 function renderChain(network) {
     const name = helper.REV_NETWORK_MAPPINGS[network]
     if (!name) return <div>-</div>
@@ -97,7 +97,7 @@ function renderDestHashLink(item, meta) {
         // action_detail (e.g. "IntentSwap … -> SOL(solana)").
         // MPC rows (also sn == null) are excluded: an in-progress MPC tx has no
         // dest tx yet and must NOT masquerade the source tx as the destination.
-        // Solver fills return early above: they have no tx hash to mirror.
+        // SolverMarketPlaceFills return early above: they have no tx hash to mirror.
         scanUrl = meta.urls.tx[item.src_network]
         networkImg = <Image alt={item.src_network} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[item.src_network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
         link = <div className={linkClass}><span className="tx-hash" data-hash={item.src_tx_hash}>{truncateHash(item.src_tx_hash)}</span></div>

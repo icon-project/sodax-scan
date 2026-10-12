@@ -47,9 +47,9 @@ export default async function MessageDetail({ msgData, meta, isAdmin = false }) 
                         <div className="table-row bg-white border-b">
                             <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Serial No:</div>
                             <div className="table-cell px-3 py-2 xl:px-6 xl:py-4 ">
-                                {/* Same badges as the messages list: solver fill, then hub-only (sn == null). */}
+                                {/* Same badges as the messages list: SolverMarketPlaceFill, then hub-only (sn == null). */}
                                 {helper.isSolverMarketPlaceFill(msgData)
-                                    ? <span className="uppercase text-xs rounded-full px-2 py-0.5 bg-cream-white text-clay-dark tracking-wide">SOLVER FILL</span>
+                                    ? <span className="uppercase text-xs rounded-full px-2 py-0.5 bg-cream-white text-clay-dark tracking-wide">SOLVER MARKETPLACE FILL</span>
                                     : msgData.sn == null
                                         ? <span className="uppercase text-xs rounded-full px-2 py-0.5 bg-cream-white text-clay-dark tracking-wide">hub-only</span>
                                         : msgData.sn}
@@ -69,7 +69,7 @@ export default async function MessageDetail({ msgData, meta, isAdmin = false }) 
                                 {/* Hub-only events (sn == null) have no dest leg — mirror the
                                     source tx + chain so this row reads symmetrically rather than
                                     rendering "-". Intent's true dst chain still shows in Action.
-                                    Solver fills have no tx at all, so they show the output leg's chain. */}
+                                    SolverMarketPlaceFills have no tx at all, so they show the output leg's chain. */}
                                 {helper.isSolverMarketPlaceFill(msgData)
                                     ? Render.renderChain(msgData.dest_network)
                                     : msgData.sn == null

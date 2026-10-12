@@ -48,7 +48,7 @@ describe('buildWhereSql (R2, ADR-005)', () => {
     })
 })
 
-// kind mirrors the list's Serial-No badge precedence: MPC, then solver fill,
+// kind mirrors the list's Serial-No badge precedence: MPC, then SolverMarketPlaceFill,
 // then hub-only (sn NULL), else relay.
 describe('buildWhereSql kind filter', () => {
     const kindWhere = (kind) => db.buildWhereSql(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, kind)

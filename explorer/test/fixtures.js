@@ -244,7 +244,7 @@ export const legacyNonMpc = {
     updated_at: 1786840100,
 }
 
-// Indexer-written solver fill: no sn, no tx hashes. Networks = asset chains.
+// Indexer-written SolverMarketPlaceFill: no sn, no tx hashes. Networks = asset chains.
 export const SolverMarketPlaceFill = {
     id: 10,
     sn: null,

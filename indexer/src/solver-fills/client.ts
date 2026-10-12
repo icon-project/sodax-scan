@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 /**
- * Client for sodax-data-backend's solver fills feed. parseFillsPage keeps only
+ * Client for sodax-data-backend's SolverMarketPlaceFills feed. parseFillsPage keeps only
  * the fields the scanner needs: account ids, receipt ids, token diffs, fees and
  * referrals identify the source marketplace and are dropped here, so they never
  * reach the database or logs.
