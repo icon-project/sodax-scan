@@ -1,58 +1,85 @@
-import { parseIsoMs, type FillsPage, type FillsQuery, type SolverMarketPlaceFill } from './client';
+import type { MarketTrade, SkippedTrade, TradesPage, TradesQuery } from './client';
 import type { FillMapResult, SolverMarketPlaceFillRow } from './format';
 
 export interface PollerDeps {
-  fetchPage(q: FillsQuery): Promise<FillsPage>;
-  toRow(fill: SolverMarketPlaceFill): FillMapResult;
+  fetchPage(q: TradesQuery): Promise<TradesPage>;
+  toRow(trade: MarketTrade): FillMapResult;
   insertFill(row: SolverMarketPlaceFillRow): Promise<boolean>;
-  readCursor(): Promise<string | null>;
-  writeCursor(lastTimestamp: string): Promise<void>;
-  /** ISO timestamp used when no cursor file exists. */
-  startFrom: string;
+  readCursor(): Promise<number | null>;
+  writeCursor(lastId: number): Promise<void>;
   log: Pick<Console, 'log' | 'warn' | 'error'>;
 }
 
 export function createPoller(deps: PollerDeps): { runOnce(): Promise<void> } {
   const warnedReasons = new Set<string>();
-  // Fills already processed at the cursor's exact timestamp. `from` is
-  // inclusive, so the backend returns them again on every tick; skipping them
-  // here keeps repeat ticks quiet. In memory only: after a restart the first
-  // tick refetches them once and the insert's NOT EXISTS guard drops them.
-  let boundary: { timestamp: string; hashes: Set<string> } | null = null;
 
-  function rememberBoundary(cursorTs: string, fills: SolverMarketPlaceFill[]) {
-    if (boundary?.timestamp !== cursorTs) boundary = { timestamp: cursorTs, hashes: new Set() };
-    for (const f of fills) if (f.timestamp === cursorTs) boundary.hashes.add(f.intentHash);
-  }
-
-  function warnOnce(reason: string, intentHash: string | null) {
+  function warnOnce(reason: string, message: string) {
     if (warnedReasons.has(reason)) return;
     warnedReasons.add(reason);
-    deps.log.warn(`solver-fills: skipping fill ${intentHash ?? '<no intent_hash>'}: ${reason}`);
+    deps.log.warn(`solver-fills: ${message}`);
   }
 
-  async function processPage(page: FillsPage): Promise<void> {
+  // The backend pages newest-first by id (before_id) and ignores `from`, so
+  // finding everything newer than the cursor means walking back until a page
+  // reaches it.
+  async function collectSince(
+    lastId: number,
+    first: TradesPage,
+  ): Promise<{ trades: MarketTrade[]; skipped: SkippedTrade[] }> {
+    const trades: MarketTrade[] = [];
+    const skipped: SkippedTrade[] = [];
+    let page = first;
+    let beforeId: number | null = null;
+    for (;;) {
+      trades.push(...page.trades.filter(t => t.id > lastId));
+      skipped.push(...page.skipped.filter(s => s.id > lastId));
+      if (page.oldestId === null || page.oldestId <= lastId || !page.hasMore) return { trades, skipped };
+      if (page.nextCursor === null) throw new Error('solver-fills: has_more is true but next_cursor is null');
+      if (beforeId !== null && page.nextCursor >= beforeId) {
+        throw new Error(`solver-fills: next_cursor ${page.nextCursor} did not move back from before_id ${beforeId}`);
+      }
+      beforeId = page.nextCursor;
+      page = await deps.fetchPage({ beforeId });
+    }
+  }
+
+  async function runOnce(): Promise<void> {
+    const lastId = await deps.readCursor();
+    const first = await deps.fetchPage({});
+    if (first.newestId === null) return;
+
+    // First run: start after the newest trade; nothing older is imported.
+    if (lastId === null) {
+      await deps.writeCursor(first.newestId);
+      deps.log.log(`solver-fills: no cursor, starting after trade ${first.newestId}`);
+      return;
+    }
+    if (first.newestId < lastId) {
+      warnOnce(
+        'cursor-ahead',
+        `saved cursor ${lastId} is ahead of the newest trade ${first.newestId}, waiting for the backend to pass it`,
+      );
+      return;
+    }
+    if (first.newestId === lastId) return;
+
+    const { trades, skipped } = await collectSince(lastId, first);
     let wrote = 0;
     let skippedExisting = 0;
-    let unmapped = 0;
+    let unmapped = skipped.length;
     let failures = 0;
-    for (const skipped of page.skipped) {
+    for (const s of skipped) {
       // Skipped, not retried: the backend will send the same malformed shape
       // again, and retrying would pin the cursor forever.
-      unmapped++;
-      warnOnce(skipped.reason, skipped.intentHash);
+      warnOnce(s.reason, `skipping trade ${s.id}: ${s.reason}`);
     }
-    for (const fill of page.fills) {
-      if (boundary && fill.timestamp === boundary.timestamp && boundary.hashes.has(fill.intentHash)) {
-        skippedExisting++;
-        continue;
-      }
-      const mapped = deps.toRow(fill);
+    for (const trade of trades.sort((a, b) => a.id - b.id)) {
+      const mapped = deps.toRow(trade);
       if (!mapped.ok) {
         // Skipped, not retried: an unknown chain stays unknown until
         // configs.ts changes, and retrying would pin the cursor forever.
         unmapped++;
-        warnOnce(mapped.reason, fill.intentHash);
+        warnOnce(mapped.reason, `skipping trade ${trade.id}: ${mapped.reason}`);
         continue;
       }
       try {
@@ -60,59 +87,19 @@ export function createPoller(deps: PollerDeps): { runOnce(): Promise<void> } {
         else skippedExisting++;
       } catch (err) {
         failures++;
-        deps.log.error(`solver-fills: insert failed for fill ${fill.intentHash}:`, err);
+        deps.log.error(`solver-fills: insert failed for trade ${trade.id} (${trade.txHash}):`, err);
       }
     }
     if (wrote > 0 || unmapped > 0) {
       deps.log.log(`solver-fills: wrote=${wrote} skipped_existing=${skippedExisting} unmapped=${unmapped}`);
     }
-    // Inserts are idempotent, so the whole page replays safely next tick.
+    // Inserts are idempotent, so the whole range replays safely next tick.
     if (failures > 0) {
-      throw new Error(`solver-fills: ${failures}/${page.fills.length} fill(s) failed, not advancing cursor`);
+      throw new Error(
+        `solver-fills: ${failures}/${trades.length} trade(s) failed, not advancing cursor past ${lastId}`,
+      );
     }
-  }
-
-  async function runOnce(): Promise<void> {
-    const savedCursor = await deps.readCursor();
-    // `from` is inclusive: fills at the saved cursor's timestamp come back
-    // each tick and are dropped via `boundary`.
-    let from: string;
-    let cursorTs = savedCursor;
-    // Tracks the newest cursor written so far, so a page that ends at or
-    // before it never rewrites the cursor or moves it backwards. Starts at
-    // the saved cursor's time, or unbounded (null) on a first run.
-    let highWaterMs: number | null = null;
-    if (savedCursor === null) {
-      from = deps.startFrom;
-    } else {
-      const ms = parseIsoMs(savedCursor);
-      if (Number.isNaN(ms)) {
-        throw new Error(`solver-fills: saved cursor "${savedCursor}" is not a valid timestamp`);
-      }
-      from = savedCursor;
-      highWaterMs = ms;
-    }
-    let cursor: string | undefined;
-    for (;;) {
-      const page = await deps.fetchPage({ from, cursor });
-      await processPage(page);
-      // Pages are validated as order=asc, so lastTimestamp (from the raw
-      // page) is the newest, even when the last fill itself was skipped.
-      if (page.lastTimestamp !== null) {
-        const tsMs = parseIsoMs(page.lastTimestamp);
-        if (!Number.isNaN(tsMs) && (highWaterMs === null || tsMs > highWaterMs)) {
-          await deps.writeCursor(page.lastTimestamp);
-          highWaterMs = tsMs;
-          cursorTs = page.lastTimestamp;
-        }
-      }
-      if (cursorTs !== null) rememberBoundary(cursorTs, page.fills);
-      if (!page.hasMore || !page.nextCursor) return;
-      if (page.nextCursor === cursor) {
-        throw new Error('solver-fills: backend returned the same next_cursor twice, stopping pagination');
-      }
-      cursor = page.nextCursor;
-    }
+    await deps.writeCursor(first.newestId);
   }
 
   return { runOnce };

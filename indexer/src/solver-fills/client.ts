@@ -1,47 +1,49 @@
 import axios from 'axios';
 
 /**
- * Client for sodax-data-backend's SolverMarketPlaceFills feed. parseFillsPage keeps only
- * the fields the scanner needs: account ids, receipt ids, token diffs, fees and
- * referrals identify the source marketplace and are dropped here, so they never
- * reach the database or logs.
+ * Client for sodax-data-backend's market-maker trades feed. parseTradesPage
+ * keeps only NEAR and LI.FI trades and only the fields the scanner needs:
+ * venues, order ids and realised PnL identify the source marketplace and are
+ * dropped here, so they never reach the database or logs.
  */
 
-export interface FillLeg {
-  label: string;
-  amount: number;
-}
-
-export interface SolverMarketPlaceFill {
+export interface MarketTrade {
+  id: number;
   timestamp: string;
-  intentHash: string;
-  receivedLegs: FillLeg[];
-  paidLegs: FillLeg[];
-  usdPaid: string | null;
-  unpricedLegs: number;
+  /** Chain-specific tx or intent hash; for NEAR trades it equals the NEAR intent hash. */
+  txHash: string;
+  assetIn: string;
+  assetOut: string;
+  amountIn: number;
+  amountOut: number;
+  /** Chain suffix of the venue, e.g. "arb" from "lifi:arb". */
+  chainIn: string;
+  chainOut: string;
+  notionalUsd: number | null;
 }
 
-export interface SkippedFill {
-  intentHash: string | null;
+export interface SkippedTrade {
+  id: number;
   reason: string;
 }
 
-export interface FillsPage {
-  fills: SolverMarketPlaceFill[];
-  skipped: SkippedFill[];
-  lastTimestamp: string | null;
+export interface TradesPage {
+  trades: MarketTrade[];
+  skipped: SkippedTrade[];
+  /** Highest and lowest id on the raw page, including trades from venues that are dropped. Null on an empty page. */
+  newestId: number | null;
+  oldestId: number | null;
   hasMore: boolean;
-  nextCursor: string | null;
+  /** Pass as before_id to get the next (older) page. */
+  nextCursor: number | null;
 }
 
-export interface FillsQuery {
-  from: string;
-  cursor?: string;
+export interface TradesQuery {
+  beforeId?: number;
 }
 
 export interface ClientConfig {
   baseUrl: string;
-  accounts: string[];
   pageSize: number;
   timeoutMs: number;
 }
@@ -53,14 +55,18 @@ export class FillsResponseError extends Error {
   }
 }
 
-const FILLS_PATH = '/v1/intents/near/fills';
+const TRADES_PATH = '/v1/mm/quoter/trades';
+
+// Venue families that are solver marketplace fills. Others (sodax hub,
+// Kraken spot) are not cross-chain fills and have no place in `messages`.
+const FILL_VENUE_FAMILIES = new Set(['near', 'lifi']);
 
 // YYYY-MM-DDTHH:MM[:SS[.fraction]] followed by Z or a UTC offset.
 export const ISO_TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/;
 
 /** Unix ms from the backend's ISO timestamp; fractional seconds beyond milliseconds are cut so every engine parses it. NaN when unparseable. */
 export function parseIsoMs(iso: string): number {
-  if (!ISO_TIMESTAMP_RE.test(iso)) return NaN;
+  if (!ISO_TIMESTAMP_RE.test(iso)) return Number.NaN;
   return Date.parse(iso.replace(/(\.\d{3})\d+/, '$1'));
 }
 
@@ -70,112 +76,110 @@ function isObj(v: unknown): v is Obj {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
-function str(o: Obj, key: string, where?: string): string {
+function isId(v: unknown): v is number {
+  return typeof v === 'number' && Number.isSafeInteger(v) && v > 0;
+}
+
+function str(o: Obj, key: string): string {
   const v = o[key];
-  const path = where ? `${where}.${key}` : key;
-  if (typeof v !== 'string' || v === '') throw new FillsResponseError(`${path} must be a non-empty string`);
+  if (typeof v !== 'string' || v === '') throw new FillsResponseError(`${key} must be a non-empty string`);
   return v;
 }
 
-function parseLegs(v: unknown, where: string): FillLeg[] {
-  if (!Array.isArray(v)) throw new FillsResponseError(`${where} must be an array`);
-  return v.map((leg, i) => {
-    const at = `${where}[${i}]`;
-    if (!isObj(leg)) throw new FillsResponseError(`${at} must be an object`);
-    if (typeof leg.amount !== 'number' || !Number.isFinite(leg.amount)) {
-      throw new FillsResponseError(`${at}.amount must be a finite number`);
-    }
-    return { label: str(leg, 'label', at), amount: leg.amount };
-  });
+function finite(o: Obj, key: string): number {
+  const v = o[key];
+  if (typeof v !== 'number' || !Number.isFinite(v)) throw new FillsResponseError(`${key} must be a finite number`);
+  return v;
 }
 
-function fillTimestamp(v: Obj): string {
-  const t = v.timestamp;
-  if (typeof t !== 'string' || t === '' || Number.isNaN(parseIsoMs(t))) {
-    throw new FillsResponseError('timestamp must be an ISO timestamp');
-  }
-  return t;
+// "lifi:arb" → family "lifi", chain "arb".
+function splitVenue(o: Obj, key: string): { family: string; chain: string } {
+  const venue = str(o, key);
+  const i = venue.indexOf(':');
+  if (i <= 0 || i === venue.length - 1) throw new FillsResponseError(`${key} "${venue}" is not "<family>:<chain>"`);
+  return { family: venue.slice(0, i).toLowerCase(), chain: venue.slice(i + 1).toLowerCase() };
 }
 
-function parseFill(v: unknown): SolverMarketPlaceFill {
-  if (!isObj(v)) throw new FillsResponseError('fill must be an object');
-  const usdPaid = v.usd_paid;
-  if (usdPaid !== null && typeof usdPaid !== 'string') {
-    throw new FillsResponseError('usd_paid must be a string or null');
+function parseTrade(raw: Obj, id: number): MarketTrade {
+  const timestamp = str(raw, 'ts');
+  if (Number.isNaN(parseIsoMs(timestamp))) throw new FillsResponseError('ts must be an ISO timestamp');
+  const notional = raw.notional_usd;
+  if (notional !== null && (typeof notional !== 'number' || !Number.isFinite(notional))) {
+    throw new FillsResponseError('notional_usd must be a finite number or null');
   }
-  if (typeof v.unpriced_legs !== 'number') throw new FillsResponseError('unpriced_legs must be a number');
   return {
-    timestamp: fillTimestamp(v),
-    intentHash: str(v, 'intent_hash'),
-    receivedLegs: parseLegs(v.received_legs, 'received_legs'),
-    paidLegs: parseLegs(v.paid_legs, 'paid_legs'),
-    usdPaid,
-    unpricedLegs: v.unpriced_legs,
+    id,
+    timestamp,
+    txHash: str(raw, 'tx_hash'),
+    assetIn: str(raw, 'asset_in'),
+    assetOut: str(raw, 'asset_out'),
+    amountIn: finite(raw, 'amount_in'),
+    amountOut: finite(raw, 'amount_out'),
+    chainIn: splitVenue(raw, 'in_venue').chain,
+    chainOut: splitVenue(raw, 'out_venue').chain,
+    notionalUsd: notional,
   };
-}
-
-function rawIntentHash(raw: unknown): string | null {
-  return isObj(raw) && typeof raw.intent_hash === 'string' && raw.intent_hash !== '' ? raw.intent_hash : null;
-}
-
-function rawTimestamp(raw: unknown): string | null {
-  if (!isObj(raw) || typeof raw.timestamp !== 'string' || raw.timestamp === '') return null;
-  return Number.isNaN(parseIsoMs(raw.timestamp)) ? null : raw.timestamp;
 }
 
 /**
- * Validates one response page. Envelope errors (shape of the page itself) throw
- * FillsResponseError. A per-fill shape error is caught and the fill is moved to
- * `skipped` instead, so one bad fill doesn't stall the whole page's cursor.
+ * Validates one response page. Envelope errors, and any trade whose id is
+ * missing or out of order, throw FillsResponseError: the poller's cursor is
+ * the trade id, so a page it can't order is unusable. Any other per-trade
+ * shape error moves that trade to `skipped`, so one bad trade doesn't stall
+ * the cursor.
  */
-export function parseFillsPage(body: unknown): FillsPage {
+export function parseTradesPage(body: unknown): TradesPage {
   if (!isObj(body)) throw new FillsResponseError('response body is not a JSON object');
-  // The cursor only moves forward if pages arrive oldest-first.
-  if (body.order !== 'asc') throw new FillsResponseError('expected order "asc"');
   if (typeof body.has_more !== 'boolean') throw new FillsResponseError('has_more must be a boolean');
   const nextCursor = body.next_cursor;
-  if (nextCursor !== null && typeof nextCursor !== 'string') {
-    throw new FillsResponseError('next_cursor must be a string or null');
-  }
-  if (!Array.isArray(body.fills)) throw new FillsResponseError('fills must be an array');
+  if (nextCursor !== null && !isId(nextCursor))
+    throw new FillsResponseError('next_cursor must be a positive integer or null');
+  if (!Array.isArray(body.trades)) throw new FillsResponseError('trades must be an array');
 
-  const fills: SolverMarketPlaceFill[] = [];
-  const skipped: SkippedFill[] = [];
-  for (const raw of body.fills) {
+  const trades: MarketTrade[] = [];
+  const skipped: SkippedTrade[] = [];
+  let newestId: number | null = null;
+  let previousId: number | null = null;
+  for (const [i, raw] of body.trades.entries()) {
+    if (!isObj(raw) || !isId(raw.id)) throw new FillsResponseError(`trades[${i}].id must be a positive integer`);
+    const id = raw.id;
+    if (previousId !== null && id >= previousId) {
+      throw new FillsResponseError(`trades must be newest-first by id, got ${id} after ${previousId}`);
+    }
+    newestId ??= id;
+    previousId = id;
     try {
-      fills.push(parseFill(raw));
+      if (!FILL_VENUE_FAMILIES.has(splitVenue(raw, 'in_venue').family)) continue;
+      trades.push(parseTrade(raw, id));
     } catch (err) {
       if (!(err instanceof FillsResponseError)) throw err;
-      skipped.push({ intentHash: rawIntentHash(raw), reason: err.message.replace(/^solver-fills: /, '') });
+      skipped.push({ id, reason: err.message.replace(/^solver-fills: /, '') });
     }
   }
 
-  let lastTimestamp: string | null = null;
-  if (body.fills.length > 0) {
-    lastTimestamp = rawTimestamp(body.fills[body.fills.length - 1]) ?? (fills.length > 0 ? fills[fills.length - 1].timestamp : null);
-  }
-
-  return { fills, skipped, lastTimestamp, hasMore: body.has_more, nextCursor };
+  return {
+    trades,
+    skipped,
+    newestId,
+    oldestId: previousId,
+    hasMore: body.has_more,
+    nextCursor,
+  };
 }
 
-export async function fetchFillsPage(cfg: ClientConfig, q: FillsQuery): Promise<FillsPage> {
-  const params: Record<string, string | number> = {
-    order: 'asc',
-    from: q.from,
-    accounts: cfg.accounts.join(','),
-    limit: cfg.pageSize,
-  };
-  if (q.cursor) params.cursor = q.cursor;
+export async function fetchTradesPage(cfg: ClientConfig, q: TradesQuery): Promise<TradesPage> {
+  const params: Record<string, number> = { limit: cfg.pageSize };
+  if (q.beforeId !== undefined) params.before_id = q.beforeId;
   try {
-    const res = await axios.get(`${cfg.baseUrl.replace(/\/+$/, '')}${FILLS_PATH}`, {
+    const res = await axios.get(`${cfg.baseUrl.replace(/\/+$/, '')}${TRADES_PATH}`, {
       params,
       timeout: cfg.timeoutMs,
     });
-    return parseFillsPage(res.data);
+    return parseTradesPage(res.data);
   } catch (err) {
     if (axios.isAxiosError(err)) {
       const status = err.response ? String(err.response.status) : `no response${err.code ? `, ${err.code}` : ''}`;
-      throw new FillsResponseError(`GET ${FILLS_PATH} from=${q.from} failed (${status})`);
+      throw new FillsResponseError(`GET ${TRADES_PATH} before_id=${q.beforeId ?? 'none'} failed (${status})`);
     }
     throw err;
   }

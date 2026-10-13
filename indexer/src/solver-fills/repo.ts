@@ -2,7 +2,9 @@ import pool from '../db/db';
 import { readCursorFile, writeCursorFile } from '../cursor-file';
 import type { SolverMarketPlaceFillRow } from './format';
 
-const CURSOR_NAME = 'solver_fills';
+// Not 'solver_fills': that file holds the old timestamp cursor, and a fresh
+// name makes the first run start from the newest trade instead of misreading it.
+const CURSOR_NAME = 'solver_trades';
 const ACTION_TYPE = 'SolverMarketPlaceFill';
 
 const nowSec = () => Math.floor(Date.now() / 1000);
@@ -45,11 +47,16 @@ export async function insertSolverMarketPlaceFill(row: SolverMarketPlaceFillRow)
   return result.rowCount === 1;
 }
 
-export async function readFillsCursor(): Promise<string | null> {
-  const parsed = (await readCursorFile(CURSOR_NAME)) as { lastTimestamp?: unknown } | null;
-  return typeof parsed?.lastTimestamp === 'string' ? parsed.lastTimestamp : null;
+/** Id of the newest trade already processed, or null when no cursor exists. A file without a valid lastId throws rather than silently restarting from the newest trade. */
+export async function readFillsCursor(): Promise<number | null> {
+  const parsed = (await readCursorFile(CURSOR_NAME)) as { lastId?: unknown } | null;
+  if (parsed === null) return null;
+  if (typeof parsed.lastId !== 'number' || !Number.isSafeInteger(parsed.lastId) || parsed.lastId <= 0) {
+    throw new Error(`solver-fills: cursor file ${CURSOR_NAME}.json has invalid lastId ${JSON.stringify(parsed.lastId)}`);
+  }
+  return parsed.lastId;
 }
 
-export async function writeFillsCursor(lastTimestamp: string): Promise<void> {
-  await writeCursorFile(CURSOR_NAME, { lastTimestamp, updatedAt: nowSec() });
+export async function writeFillsCursor(lastId: number): Promise<void> {
+  await writeCursorFile(CURSOR_NAME, { lastId, updatedAt: nowSec() });
 }

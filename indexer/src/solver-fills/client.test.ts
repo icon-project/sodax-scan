@@ -1,211 +1,189 @@
-import { describe, it, expect, afterEach, spyOn } from 'bun:test';
-import axios, { AxiosError } from 'axios';
-import { parseFillsPage, fetchFillsPage, FillsResponseError, type ClientConfig, type FillsQuery } from './client';
+import { afterEach, describe, expect, it, spyOn } from 'bun:test';
+import axios, { AxiosError, type AxiosResponse } from 'axios';
+import { type ClientConfig, FillsResponseError, fetchTradesPage, parseTradesPage } from './client';
 
 // Shaped like a backend response. Fields the parser must drop are kept so the
-// test proves they never reach the returned object.
-const samplePage = {
-  accounts: ['solver-a.near'],
-  hours: 24,
-  from: '2026-10-04T07:39:35.629776+00:00',
-  to: null,
-  order: 'asc',
-  count: 1,
-  has_more: true,
-  next_cursor: 'cursor-page-2',
-  indexed_through: { block_height: 1000, block_timestamp: '2026-10-05T07:39:29.350614+00:00', cursor_updated_at: '2026-10-05T07:39:35.200652+00:00', lag_seconds: 0.4 },
-  fills: [
-    {
-      timestamp: '2026-10-05T07:39:25.177740+00:00',
-      intent_hash: 'IntentHashAAAA1111',
-      account_id: 'solver-a.near',
-      block_height: 1001,
-      receipt_id: 'receipt-0001',
-      diff: { 'nep141:token-a': '398673860' },
-      direction: 'TRX (Tron) → USDT (Tron)',
-      received_legs: [{ token_id: 'nep141:token-a', label: 'TRX (Tron)', amount: 398.67386 }],
-      paid_legs: [{ token_id: 'nep141:token-b', label: 'USDT (Tron)', amount: 133.761844 }],
-      fees_collected: { 'nep141:token-b': '134' },
-      referral: null,
-      usd_received: '133.582589438747559315036',
-      usd_paid: '133.761844',
-      unpriced_legs: 0,
-    },
-  ],
+// tests prove they never reach the returned object.
+const nearTrade = {
+  id: 1162517,
+  ts: '2026-10-13T01:42:16.910000+00:00',
+  book: 'majors',
+  asset_in: 'USDT',
+  asset_out: 'TRX',
+  amount_in: 251.102248,
+  amount_out: 762.435184,
+  price_in_usd: 1.0,
+  price_out_usd: 0.3293424980120743,
+  notional_usd: 251.102248,
+  realised_usd: -0.00006,
+  in_venue: 'near:tron',
+  out_venue: 'near:tron',
+  tx_hash: 'ChvfP2pUJtw33sS7ib8wzu3VxYHFtDYK5ax9MJnCJGj8',
+  order_id: 0,
 };
+const lifiTrade = {
+  ...nearTrade,
+  id: 1162511,
+  ts: '2026-10-13T01:39:47+00:00',
+  asset_in: 'USDC',
+  asset_out: 'USDC',
+  amount_in: 3999,
+  amount_out: 3998.921586,
+  notional_usd: 4003.2560497145096,
+  in_venue: 'lifi:eth',
+  out_venue: 'lifi:arb',
+  tx_hash: '0xa47465900a857f99a8a955dcc928b3e201b1cabb00d12c40e81b50ff1a2be8e6',
+};
+const krakenTrade = {
+  ...nearTrade,
+  id: 1162505,
+  book: 'soda',
+  in_venue: 'kraken:spot',
+  out_venue: 'kraken:spot',
+  tx_hash: 'TPNP4A-SJ4QR-C5COD7',
+};
+const hubTrade = { ...nearTrade, id: 1162500, in_venue: 'sodax:sonic', out_venue: 'sodax:sonic' };
 
-describe('parseFillsPage', () => {
-  it('keeps only the fields the poller needs', () => {
-    const page = parseFillsPage(samplePage);
-    expect(page).toEqual({
-      hasMore: true,
-      nextCursor: samplePage.next_cursor,
-      skipped: [],
-      lastTimestamp: '2026-10-05T07:39:25.177740+00:00',
-      fills: [
+const page = (trades: unknown[], extra: Record<string, unknown> = {}) => ({
+  trades,
+  next_cursor: 1162500,
+  has_more: true,
+  ...extra,
+});
+
+describe('parseTradesPage', () => {
+  it('keeps NEAR and LI.FI trades with only the fields the poller needs', () => {
+    expect(parseTradesPage(page([nearTrade, lifiTrade]))).toEqual({
+      trades: [
         {
-          timestamp: '2026-10-05T07:39:25.177740+00:00',
-          intentHash: 'IntentHashAAAA1111',
-          receivedLegs: [{ label: 'TRX (Tron)', amount: 398.67386 }],
-          paidLegs: [{ label: 'USDT (Tron)', amount: 133.761844 }],
-          usdPaid: '133.761844',
-          unpricedLegs: 0,
+          id: 1162517,
+          timestamp: '2026-10-13T01:42:16.910000+00:00',
+          txHash: 'ChvfP2pUJtw33sS7ib8wzu3VxYHFtDYK5ax9MJnCJGj8',
+          assetIn: 'USDT',
+          assetOut: 'TRX',
+          amountIn: 251.102248,
+          amountOut: 762.435184,
+          chainIn: 'tron',
+          chainOut: 'tron',
+          notionalUsd: 251.102248,
+        },
+        {
+          id: 1162511,
+          timestamp: '2026-10-13T01:39:47+00:00',
+          txHash: '0xa47465900a857f99a8a955dcc928b3e201b1cabb00d12c40e81b50ff1a2be8e6',
+          assetIn: 'USDC',
+          assetOut: 'USDC',
+          amountIn: 3999,
+          amountOut: 3998.921586,
+          chainIn: 'eth',
+          chainOut: 'arb',
+          notionalUsd: 4003.2560497145096,
         },
       ],
+      skipped: [],
+      newestId: 1162517,
+      oldestId: 1162511,
+      hasMore: true,
+      nextCursor: 1162500,
     });
-    expect(JSON.stringify(page)).not.toContain('solver-a');
-    expect(JSON.stringify(page)).not.toContain('receipt');
   });
 
-  it('accepts a null next_cursor on the last page', () => {
-    const page = parseFillsPage({ ...samplePage, has_more: false, next_cursor: null, fills: [] });
-    expect(page).toEqual({ hasMore: false, nextCursor: null, fills: [], skipped: [], lastTimestamp: null });
+  it('drops Kraken and hub trades but still counts them in the page id range', () => {
+    const p = parseTradesPage(page([nearTrade, krakenTrade, hubTrade]));
+    expect(p.trades.map(t => t.id)).toEqual([1162517]);
+    expect(p.skipped).toEqual([]);
+    expect(p.newestId).toBe(1162517);
+    expect(p.oldestId).toBe(1162500);
   });
 
-  it('rejects a page not ordered ascending, which would move the cursor backwards', () => {
-    expect(() => parseFillsPage({ ...samplePage, order: 'desc' })).toThrow(FillsResponseError);
+  it('returns null ids for an empty page', () => {
+    const p = parseTradesPage(page([], { has_more: false, next_cursor: null }));
+    expect(p).toEqual({ trades: [], skipped: [], newestId: null, oldestId: null, hasMore: false, nextCursor: null });
   });
 
-  it('rejects a non-object body', () => {
-    expect(() => parseFillsPage('<html>')).toThrow(FillsResponseError);
+  it('skips a trade with a bad field, names the field, and keeps parsing others', () => {
+    const p = parseTradesPage(page([{ ...nearTrade, amount_out: 'x' }, lifiTrade]));
+    expect(p.skipped).toEqual([{ id: 1162517, reason: 'amount_out must be a finite number' }]);
+    expect(p.trades.map(t => t.id)).toEqual([1162511]);
+    expect(p.newestId).toBe(1162517);
   });
 
-  it('skips a fill with a missing intent_hash, names the field, and keeps parsing other fills', () => {
-    const bad = { ...samplePage, fills: [{ ...samplePage.fills[0], intent_hash: '' }, samplePage.fills[0]] };
-    const page = parseFillsPage(bad);
-    expect(page.skipped).toEqual([{ intentHash: null, reason: 'intent_hash must be a non-empty string' }]);
-    expect(page.fills).toHaveLength(1);
+  it('skips a trade with an unparseable ts or malformed venue', () => {
+    const p = parseTradesPage(
+      page([
+        { ...nearTrade, ts: 'yesterday' },
+        { ...lifiTrade, out_venue: 'lifi' },
+      ]),
+    );
+    expect(p.skipped).toEqual([
+      { id: 1162517, reason: 'ts must be an ISO timestamp' },
+      { id: 1162511, reason: 'out_venue "lifi" is not "<family>:<chain>"' },
+    ]);
   });
 
-  it('skips a fill with a non-numeric leg amount, names the field, and keeps parsing other fills', () => {
-    const bad = {
-      ...samplePage,
-      fills: [{ ...samplePage.fills[0], paid_legs: [{ label: 'USDT (Tron)', amount: '1' }] }, samplePage.fills[0]],
-    };
-    const page = parseFillsPage(bad);
-    expect(page.skipped).toEqual([{ intentHash: 'IntentHashAAAA1111', reason: 'paid_legs[0].amount must be a finite number' }]);
-    expect(page.fills).toHaveLength(1);
+  it('accepts a null notional_usd and rejects a non-numeric one', () => {
+    expect(parseTradesPage(page([{ ...nearTrade, notional_usd: null }])).trades[0].notionalUsd).toBeNull();
+    expect(parseTradesPage(page([{ ...nearTrade, notional_usd: '1' }])).skipped[0].reason).toBe(
+      'notional_usd must be a finite number or null',
+    );
   });
 
-  it('derives lastTimestamp from the raw last fill even when that fill is skipped', () => {
-    const badLast = {
-      ...samplePage.fills[0],
-      timestamp: '2026-10-06T00:00:00.000Z',
-      paid_legs: [{ label: 'USDT (Tron)', amount: 'x' }],
-    };
-    const page = parseFillsPage({ ...samplePage, fills: [samplePage.fills[0], badLast] });
-    expect(page.lastTimestamp).toBe('2026-10-06T00:00:00.000Z');
-    expect(page.skipped).toHaveLength(1);
-    expect(page.fills).toHaveLength(1);
+  it('rejects the page when a trade id is missing, since the cursor depends on it', () => {
+    expect(() => parseTradesPage(page([{ ...nearTrade, id: undefined }]))).toThrow(
+      'trades[0].id must be a positive integer',
+    );
   });
 
-  it('skips a fill with an unparseable timestamp, and lastTimestamp falls back to the last successfully parsed fill', () => {
-    const badLast = { ...samplePage.fills[0], timestamp: 'garbage' };
-    const page = parseFillsPage({ ...samplePage, fills: [samplePage.fills[0], badLast] });
-    expect(page.skipped).toEqual([{ intentHash: 'IntentHashAAAA1111', reason: 'timestamp must be an ISO timestamp' }]);
-    expect(page.fills).toHaveLength(1);
-    expect(page.lastTimestamp).toBe(samplePage.fills[0].timestamp);
+  it('rejects a page that is not newest-first by id', () => {
+    expect(() => parseTradesPage(page([lifiTrade, nearTrade]))).toThrow(
+      'trades must be newest-first by id, got 1162517 after 1162511',
+    );
   });
 
-  it('skips every fill and returns a null lastTimestamp when all raw fills have a bad timestamp', () => {
-    const bad = {
-      ...samplePage,
-      fills: [
-        { ...samplePage.fills[0], timestamp: 'garbage' },
-        { ...samplePage.fills[0], intent_hash: 'IntentHashBBBB2222', timestamp: '2026' },
-      ],
-    };
-    const page = parseFillsPage(bad);
-    expect(page.fills).toHaveLength(0);
-    expect(page.skipped).toHaveLength(2);
-    expect(page.lastTimestamp).toBeNull();
-  });
-
-  it('falls back to the last successfully parsed fill when the raw last fill has no timestamp', () => {
-    const badLast = { ...samplePage.fills[0], timestamp: undefined };
-    const page = parseFillsPage({ ...samplePage, fills: [samplePage.fills[0], badLast] });
-    expect(page.skipped).toEqual([{ intentHash: 'IntentHashAAAA1111', reason: 'timestamp must be an ISO timestamp' }]);
-    expect(page.lastTimestamp).toBe(samplePage.fills[0].timestamp);
+  it('rejects bad envelopes', () => {
+    expect(() => parseTradesPage(null)).toThrow(FillsResponseError);
+    expect(() => parseTradesPage(page([], { has_more: 'yes' }))).toThrow('has_more must be a boolean');
+    expect(() => parseTradesPage(page([], { next_cursor: 'abc' }))).toThrow(
+      'next_cursor must be a positive integer or null',
+    );
+    expect(() => parseTradesPage({ has_more: false, next_cursor: null })).toThrow('trades must be an array');
   });
 });
 
-describe('fetchFillsPage', () => {
-  const cfg: ClientConfig = {
-    baseUrl: 'https://x.test',
-    accounts: ['acct-1.near', 'acct-2.near'],
-    pageSize: 50,
-    timeoutMs: 5000,
-  };
-  const q: FillsQuery = { from: '2026-10-04T07:39:35.629776+00:00' };
+describe('fetchTradesPage', () => {
+  const cfg: ClientConfig = { baseUrl: 'https://backend.example/v1/a/', pageSize: 100, timeoutMs: 15_000 };
+  let getSpy: ReturnType<typeof spyOn> | undefined;
+  afterEach(() => getSpy?.mockRestore());
 
-  afterEach(() => {
-    (axios.get as any).mockRestore?.();
+  it('requests the trades endpoint with limit, and before_id only when given', async () => {
+    getSpy = spyOn(axios, 'get').mockResolvedValue({ data: page([nearTrade]) });
+    await fetchTradesPage(cfg, {});
+    await fetchTradesPage(cfg, { beforeId: 1162500 });
+    expect(getSpy.mock.calls).toEqual([
+      ['https://backend.example/v1/a/v1/mm/quoter/trades', { params: { limit: 100 }, timeout: 15_000 }],
+      [
+        'https://backend.example/v1/a/v1/mm/quoter/trades',
+        { params: { limit: 100, before_id: 1162500 }, timeout: 15_000 },
+      ],
+    ]);
   });
 
-  it('requests the fills endpoint with order, from, comma-joined accounts, limit and timeout', async () => {
-    const getSpy = spyOn(axios, 'get').mockResolvedValue({ data: samplePage });
-
-    const page = await fetchFillsPage(cfg, q);
-
-    expect(getSpy).toHaveBeenCalledWith('https://x.test/v1/intents/near/fills', {
-      params: {
-        order: 'asc',
-        from: q.from,
-        accounts: 'acct-1.near,acct-2.near',
-        limit: cfg.pageSize,
-      },
-      timeout: cfg.timeoutMs,
-    });
-    expect(page).toEqual(parseFillsPage(samplePage));
-  });
-
-  it('includes cursor only when q.cursor is set', async () => {
-    const getSpy = spyOn(axios, 'get').mockResolvedValue({ data: samplePage });
-
-    await fetchFillsPage(cfg, q);
-    expect(getSpy.mock.calls[0][1].params).not.toHaveProperty('cursor');
-
-    await fetchFillsPage(cfg, { ...q, cursor: 'abc123' });
-    expect(getSpy.mock.calls[1][1].params).toMatchObject({ cursor: 'abc123' });
-  });
-
-  it('strips trailing slashes from baseUrl', async () => {
-    const getSpy = spyOn(axios, 'get').mockResolvedValue({ data: samplePage });
-
-    await fetchFillsPage({ ...cfg, baseUrl: 'https://x.test//' }, q);
-
-    expect(getSpy.mock.calls[0][0]).toBe('https://x.test/v1/intents/near/fills');
-  });
-
-  it('wraps an axios error with a response into FillsResponseError naming the status and from, without the response body', async () => {
-    const axiosErr = new AxiosError(
-      'Request failed with status code 502',
-      'ERR_BAD_RESPONSE',
-      undefined,
-      undefined,
-      { status: 502, statusText: 'Bad Gateway', data: { error: 'solver-a.near upstream down' }, headers: {}, config: {} as any },
+  it('wraps an axios error into FillsResponseError naming the status and before_id', async () => {
+    const err = new AxiosError('boom', 'ERR_BAD_RESPONSE', undefined, undefined, { status: 503 } as AxiosResponse);
+    getSpy = spyOn(axios, 'get').mockRejectedValue(err);
+    await expect(fetchTradesPage(cfg, { beforeId: 7 })).rejects.toThrow(
+      'GET /v1/mm/quoter/trades before_id=7 failed (503)',
     );
-    spyOn(axios, 'get').mockRejectedValue(axiosErr);
-
-    const err = await fetchFillsPage(cfg, q).catch((e) => e);
-    expect(err).toBeInstanceOf(FillsResponseError);
-    expect(err.message).toContain('502');
-    expect(err.message).toContain(`from=${q.from}`);
-    expect(err.message).not.toContain('solver-a');
   });
 
-  it('wraps an axios error with no response into FillsResponseError containing "no response"', async () => {
-    const axiosErr = new AxiosError('timeout of 5000ms exceeded', 'ECONNABORTED');
-    spyOn(axios, 'get').mockRejectedValue(axiosErr);
-
-    await expect(fetchFillsPage(cfg, q)).rejects.toThrow(FillsResponseError);
-    await expect(fetchFillsPage(cfg, q)).rejects.toThrow(/failed \(no response, ECONNABORTED\)/);
+  it('reports "no response" when the request never got one', async () => {
+    getSpy = spyOn(axios, 'get').mockRejectedValue(new AxiosError('timeout', 'ECONNABORTED'));
+    await expect(fetchTradesPage(cfg, {})).rejects.toThrow('before_id=none failed (no response, ECONNABORTED)');
   });
 
   it('rethrows a non-axios error unchanged', async () => {
-    const plainErr = new Error('boom');
-    spyOn(axios, 'get').mockRejectedValue(plainErr);
-
-    await expect(fetchFillsPage(cfg, q)).rejects.toBe(plainErr);
+    const boom = new TypeError('bad');
+    getSpy = spyOn(axios, 'get').mockRejectedValue(boom);
+    await expect(fetchTradesPage(cfg, {})).rejects.toBe(boom);
   });
 });
