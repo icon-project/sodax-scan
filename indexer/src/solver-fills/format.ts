@@ -1,4 +1,4 @@
-import { parseIsoMs, type FillLeg, type SolverMarketPlaceFill } from './client';
+import { type FillVenue, type MarketTrade, parseIsoMs } from './client';
 
 export interface SolverMarketPlaceFillRow {
   intentHash: string;
@@ -12,16 +12,20 @@ export interface SolverMarketPlaceFillRow {
 
 export type FillMapResult = { ok: true; row: SolverMarketPlaceFillRow } | { ok: false; reason: string };
 
-// Backend display names that differ from our configs.ts chain keys.
+// Venue chain suffixes that differ from our configs.ts chain keys.
 const CHAIN_ALIASES: Record<string, string> = {
-  avalanche: 'avax',
-  'bnb chain': 'bsc',
-  'bnb smart chain': 'bsc',
-  'xrp ledger': 'xrp',
+  eth: 'ethereum',
+  arb: 'arbitrum',
+  op: 'optimism',
+  pol: 'polygon',
+  sol: 'solana',
+  zec: 'zcash',
 };
 
-// "USDT (Arbitrum)" → symbol "USDT", chain "Arbitrum". Symbols may contain spaces.
-const LABEL_RE = /^(.+?)\s*\(([^()]+)\)\s*$/;
+const VENUE_LABELS: Record<FillVenue, string> = {
+  near: 'near.intents',
+  lifi: 'lifi.intents',
+};
 
 /** Unix seconds from an ISO timestamp. */
 export function isoToUnixSeconds(iso: string): number {
@@ -33,59 +37,34 @@ function formatAmount(n: number): string {
   return n.toLocaleString('en-US', { useGrouping: false, maximumFractionDigits: 18 });
 }
 
-interface ResolvedLeg {
-  text: string;
-  chainId: string;
-}
-
-function resolveLeg(leg: FillLeg, chainIdsByName: Record<string, string>): ResolvedLeg | string {
-  const m = LABEL_RE.exec(leg.label);
-  if (!m) return `unparseable leg label "${leg.label}"`;
-  const [, symbol, chainLabel] = m;
-  const lower = chainLabel.trim().toLowerCase();
-  const chainName = CHAIN_ALIASES[lower] ?? lower;
-  const chainId = chainIdsByName[chainName];
-  if (!chainId) return `unknown chain "${chainLabel.trim()}"`;
-  return { text: `${formatAmount(leg.amount)} ${symbol.trim()}(${chainName})`, chainId };
-}
-
-function resolveSide(legs: FillLeg[], chainIdsByName: Record<string, string>): ResolvedLeg[] | string {
-  const out: ResolvedLeg[] = [];
-  for (const leg of legs) {
-    const r = resolveLeg(leg, chainIdsByName);
-    if (typeof r === 'string') return r;
-    out.push(r);
-  }
-  return out;
+function resolveChain(suffix: string, chainIdsByName: Record<string, string>): { name: string; id: string } | string {
+  const name = CHAIN_ALIASES[suffix] ?? suffix;
+  const id = chainIdsByName[name];
+  return id ? { name, id } : `unknown chain "${suffix}"`;
 }
 
 /**
- * Maps a fill to a messages row. received legs are the user's input (src side),
- * paid legs the user's output (dst side). Returns a stable reason string when
- * the fill can't be mapped, so callers can warn once per reason.
+ * Maps a trade to a messages row. asset_in is what the solver received (the
+ * user's input, src side), asset_out what it paid (the user's output, dst
+ * side). Returns a stable reason string when the trade can't be mapped, so
+ * callers can warn once per reason.
  */
-export function fillToRow(fill: SolverMarketPlaceFill, chainIdsByName: Record<string, string>): FillMapResult {
-  if (fill.receivedLegs.length === 0 || fill.paidLegs.length === 0) {
-    return { ok: false, reason: 'fill has an empty leg side' };
-  }
-  const timestamp = isoToUnixSeconds(fill.timestamp);
-  if (Number.isNaN(timestamp)) return { ok: false, reason: `unparseable timestamp "${fill.timestamp}"` };
+export function tradeToRow(trade: MarketTrade, chainIdsByName: Record<string, string>): FillMapResult {
+  const src = resolveChain(trade.chainIn, chainIdsByName);
+  if (typeof src === 'string') return { ok: false, reason: src };
+  const dst = resolveChain(trade.chainOut, chainIdsByName);
+  if (typeof dst === 'string') return { ok: false, reason: dst };
 
-  const input = resolveSide(fill.receivedLegs, chainIdsByName);
-  if (typeof input === 'string') return { ok: false, reason: input };
-  const output = resolveSide(fill.paidLegs, chainIdsByName);
-  if (typeof output === 'string') return { ok: false, reason: output };
-
-  const join = (legs: ResolvedLeg[]) => legs.map((l) => l.text).join(' + ');
   return {
     ok: true,
     row: {
-      intentHash: fill.intentHash,
-      srcChainId: input[0].chainId,
-      dstChainId: output[0].chainId,
-      timestamp,
-      actionDetail: `SolverMarketPlaceFill ${join(input)} -> ${join(output)}`,
-      amountUsd: fill.unpricedLegs > 0 ? null : fill.usdPaid,
+      intentHash: trade.txHash,
+      srcChainId: src.id,
+      dstChainId: dst.id,
+      // parseTradesPage already rejected unparseable timestamps.
+      timestamp: isoToUnixSeconds(trade.timestamp),
+      actionDetail: `SolverMarketPlaceFill ${formatAmount(trade.amountIn)} ${trade.assetIn}(${src.name}) -> ${formatAmount(trade.amountOut)} ${trade.assetOut}(${dst.name}) via ${VENUE_LABELS[trade.venue]}`,
+      amountUsd: trade.notionalUsd === null ? null : formatAmount(trade.notionalUsd),
     },
   };
 }

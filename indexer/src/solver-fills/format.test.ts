@@ -1,18 +1,35 @@
-import { describe, it, expect } from 'bun:test';
-import { fillToRow, isoToUnixSeconds } from './format';
-import type { SolverMarketPlaceFill } from './client';
+import { describe, expect, it } from 'bun:test';
+import type { MarketTrade } from './client';
+import { isoToUnixSeconds, tradeToRow } from './format';
 
 // A subset of configs.ts chain ids. Passed in so this test never imports
 // configs.ts, which requires RPC env vars and is mocked by main.mpc.test.ts.
-const CHAINS = { tron: '728126428', near: '15', arbitrum: '23', avax: '6', bsc: '4' };
+const CHAINS = {
+  tron: '728126428',
+  near: '15',
+  arbitrum: '23',
+  avax: '6',
+  bsc: '4',
+  ethereum: '1',
+  optimism: '10',
+  polygon: '137',
+  solana: '1399811149',
+  zcash: '133',
+  robinhood: '46630',
+};
 
-const trxToUsdt: SolverMarketPlaceFill = {
-  timestamp: '2026-10-05T07:39:25.177740+00:00',
-  intentHash: 'IntentHashAAAA1111',
-  receivedLegs: [{ label: 'TRX (Tron)', amount: 398.67386 }],
-  paidLegs: [{ label: 'USDT (Tron)', amount: 133.761844 }],
-  usdPaid: '133.761844',
-  unpricedLegs: 0,
+const usdtToTrx: MarketTrade = {
+  id: 1162517,
+  venue: 'near',
+  timestamp: '2026-10-13T01:42:16.910000+00:00',
+  txHash: 'ChvfP2pUJtw33sS7ib8wzu3VxYHFtDYK5ax9MJnCJGj8',
+  assetIn: 'USDT',
+  assetOut: 'TRX',
+  amountIn: 251.102248,
+  amountOut: 762.435184,
+  chainIn: 'tron',
+  chainOut: 'tron',
+  notionalUsd: 251.102248,
 };
 
 describe('isoToUnixSeconds', () => {
@@ -34,75 +51,76 @@ describe('isoToUnixSeconds', () => {
   });
 });
 
-describe('fillToRow', () => {
-  it('maps a same-chain fill', () => {
-    expect(fillToRow(trxToUsdt, CHAINS)).toEqual({
+describe('tradeToRow', () => {
+  it('maps a same-chain NEAR trade, keyed by its intent hash', () => {
+    expect(tradeToRow(usdtToTrx, CHAINS)).toEqual({
       ok: true,
       row: {
-        intentHash: 'IntentHashAAAA1111',
+        intentHash: 'ChvfP2pUJtw33sS7ib8wzu3VxYHFtDYK5ax9MJnCJGj8',
         srcChainId: '728126428',
         dstChainId: '728126428',
-        timestamp: Date.UTC(2026, 9, 5, 7, 39, 25) / 1000,
-        actionDetail: 'SolverMarketPlaceFill 398.67386 TRX(tron) -> 133.761844 USDT(tron)',
-        amountUsd: '133.761844',
+        timestamp: Date.UTC(2026, 9, 13, 1, 42, 16) / 1000,
+        actionDetail: 'SolverMarketPlaceFill 251.102248 USDT(tron) -> 762.435184 TRX(tron) via near.intents',
+        amountUsd: '251.102248',
       },
     });
   });
 
-  it('maps a cross-chain fill with a NEAR-native leg', () => {
-    const r = fillToRow(
-      { ...trxToUsdt, receivedLegs: [{ label: 'USDT (NEAR)', amount: 20.18196 }], paidLegs: [{ label: 'USDT (Arbitrum)', amount: 20.180152 }] },
+  it('maps a cross-chain LI.FI trade through the venue aliases', () => {
+    const r = tradeToRow(
+      {
+        ...usdtToTrx,
+        venue: 'lifi',
+        assetIn: 'USDC',
+        assetOut: 'USDC',
+        amountIn: 3999,
+        amountOut: 3998.921586,
+        chainIn: 'eth',
+        chainOut: 'arb',
+      },
       CHAINS,
     );
-    expect(r.ok && r.row.srcChainId).toBe('15');
+    expect(r.ok && r.row.srcChainId).toBe('1');
     expect(r.ok && r.row.dstChainId).toBe('23');
-    expect(r.ok && r.row.actionDetail).toBe('SolverMarketPlaceFill 20.18196 USDT(near) -> 20.180152 USDT(arbitrum)');
-  });
-
-  it('resolves display-name aliases', () => {
-    const r = fillToRow(
-      { ...trxToUsdt, receivedLegs: [{ label: 'AVAX (Avalanche)', amount: 1 }], paidLegs: [{ label: 'BNB (BNB Chain)', amount: 2 }] },
-      CHAINS,
+    expect(r.ok && r.row.actionDetail).toBe(
+      'SolverMarketPlaceFill 3999 USDC(ethereum) -> 3998.921586 USDC(arbitrum) via lifi.intents',
     );
-    expect(r.ok && r.row.actionDetail).toBe('SolverMarketPlaceFill 1 AVAX(avax) -> 2 BNB(bsc)');
   });
 
-  it('joins multi-leg sides with +, networks from the first leg', () => {
-    const r = fillToRow(
-      { ...trxToUsdt, paidLegs: [{ label: 'USDT (Tron)', amount: 100 }, { label: 'USDT (Arbitrum)', amount: 33.5 }] },
-      CHAINS,
-    );
-    expect(r.ok && r.row.actionDetail).toBe('SolverMarketPlaceFill 398.67386 TRX(tron) -> 100 USDT(tron) + 33.5 USDT(arbitrum)');
-    expect(r.ok && r.row.dstChainId).toBe('728126428');
+  it('resolves every aliased and direct venue suffix seen on the feed', () => {
+    for (const [suffix, name] of [
+      ['eth', 'ethereum'],
+      ['arb', 'arbitrum'],
+      ['op', 'optimism'],
+      ['pol', 'polygon'],
+      ['sol', 'solana'],
+      ['zec', 'zcash'],
+      ['near', 'near'],
+      ['tron', 'tron'],
+      ['avax', 'avax'],
+      ['bsc', 'bsc'],
+      ['robinhood', 'robinhood'],
+    ]) {
+      const r = tradeToRow({ ...usdtToTrx, chainIn: suffix }, CHAINS);
+      expect(r.ok && r.row.actionDetail).toContain(`USDT(${name})`);
+    }
   });
 
-  it('nulls the USD amount when any leg is unpriced', () => {
-    const r = fillToRow({ ...trxToUsdt, unpricedLegs: 1 }, CHAINS);
-    expect(r.ok && r.row.amountUsd).toBeNull();
+  it('writes amounts in plain decimal, never exponent notation', () => {
+    const r = tradeToRow({ ...usdtToTrx, amountIn: 1e-7, notionalUsd: 1e21 }, CHAINS);
+    expect(r.ok && r.row.actionDetail).toContain('0.0000001 USDT');
+    expect(r.ok && r.row.amountUsd).toBe('1000000000000000000000');
   });
 
-  it('nulls the USD amount when usd_paid is null', () => {
-    const r = fillToRow({ ...trxToUsdt, usdPaid: null }, CHAINS);
+  it('nulls the USD amount when notional_usd is null', () => {
+    const r = tradeToRow({ ...usdtToTrx, notionalUsd: null }, CHAINS);
     expect(r.ok && r.row.amountUsd).toBeNull();
   });
 
   it('rejects an unknown chain with a stable reason', () => {
-    const r = fillToRow({ ...trxToUsdt, paidLegs: [{ label: 'DOGE (Dogecoin)', amount: 5 }] }, CHAINS);
-    expect(r).toEqual({ ok: false, reason: 'unknown chain "Dogecoin"' });
-  });
-
-  it('rejects a label without a (Chain) suffix', () => {
-    const r = fillToRow({ ...trxToUsdt, paidLegs: [{ label: 'USDT', amount: 5 }] }, CHAINS);
-    expect(r).toEqual({ ok: false, reason: 'unparseable leg label "USDT"' });
-  });
-
-  it('rejects a side with no legs', () => {
-    const r = fillToRow({ ...trxToUsdt, receivedLegs: [] }, CHAINS);
-    expect(r).toEqual({ ok: false, reason: 'fill has an empty leg side' });
-  });
-
-  it('rejects an unparseable timestamp', () => {
-    const r = fillToRow({ ...trxToUsdt, timestamp: 'yesterday' }, CHAINS);
-    expect(r).toEqual({ ok: false, reason: 'unparseable timestamp "yesterday"' });
+    expect(tradeToRow({ ...usdtToTrx, chainOut: 'doge' }, CHAINS)).toEqual({
+      ok: false,
+      reason: 'unknown chain "doge"',
+    });
   });
 });

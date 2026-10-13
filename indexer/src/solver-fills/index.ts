@@ -1,16 +1,15 @@
 import { idToChainNameMap } from '../configs';
-import { fetchFillsPage, parseIsoMs, type ClientConfig } from './client';
-import { fillToRow } from './format';
+import { fetchTradesPage, type ClientConfig } from './client';
+import { tradeToRow } from './format';
 import { createPoller } from './poller';
 import { insertSolverMarketPlaceFill, readFillsCursor, writeFillsCursor } from './repo';
 
 /**
- * SolverMarketPlaceFills poller. Env:
+ * SolverMarketPlaceFills poller over the market-maker trades feed (NEAR and
+ * LI.FI trades). With no cursor it starts after the newest trade. Env:
  *   SOLVER_FILLS_URL               sodax-data-backend base URL; unset = disabled
- *   SOLVER_FILLS_ACCOUNTS          comma list of solver accounts (required when enabled; missing = disabled with error log)
- *   SOLVER_FILLS_START             optional; default = current time at startup; only used when no cursor exists; invalid = disabled with error log
  *   SOLVER_FILLS_POLL_INTERVAL_MS  default 5000
- *   SOLVER_FILLS_PAGE_SIZE         default 100
+ *   SOLVER_FILLS_PAGE_SIZE         default 100, backend max 500
  *   SOLVER_FILLS_TIMEOUT_MS        default 15000
  */
 
@@ -25,26 +24,9 @@ export function startSolverMarketPlaceFillsPoller(): NodeJS.Timeout | null {
     console.log('solver-fills: SOLVER_FILLS_URL is not set, poller disabled');
     return null;
   }
-  const accounts = (process.env.SOLVER_FILLS_ACCOUNTS ?? '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (accounts.length === 0) {
-    console.error('solver-fills: SOLVER_FILLS_ACCOUNTS must list at least one account when SOLVER_FILLS_URL is set, poller disabled');
-    return null;
-  }
-  let startFrom = (process.env.SOLVER_FILLS_START ?? '').trim();
-  if (!startFrom) {
-    startFrom = new Date().toISOString();
-    console.log(`solver-fills: SOLVER_FILLS_START not set, starting from now (${startFrom}) when no cursor exists`);
-  } else if (Number.isNaN(parseIsoMs(startFrom))) {
-    console.error('solver-fills: SOLVER_FILLS_START must be an ISO timestamp, e.g. 2026-10-01T00:00:00Z, poller disabled');
-    return null;
-  }
 
   const clientConfig: ClientConfig = {
     baseUrl,
-    accounts,
     pageSize: envPositiveInt('SOLVER_FILLS_PAGE_SIZE', 100),
     timeoutMs: envPositiveInt('SOLVER_FILLS_TIMEOUT_MS', 15_000),
   };
@@ -52,12 +34,11 @@ export function startSolverMarketPlaceFillsPoller(): NodeJS.Timeout | null {
     Object.entries(idToChainNameMap).map(([id, name]) => [name, id]),
   );
   const poller = createPoller({
-    fetchPage: (q) => fetchFillsPage(clientConfig, q),
-    toRow: (fill) => fillToRow(fill, chainIdsByName),
+    fetchPage: (q) => fetchTradesPage(clientConfig, q),
+    toRow: (trade) => tradeToRow(trade, chainIdsByName),
     insertFill: insertSolverMarketPlaceFill,
     readCursor: readFillsCursor,
     writeCursor: writeFillsCursor,
-    startFrom,
     log: console,
   });
 
