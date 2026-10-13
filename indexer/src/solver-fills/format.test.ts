@@ -16,6 +16,7 @@ const CHAINS = {
   solana: '1399811149',
   zcash: '133',
   robinhood: '46630',
+  bitcoin: '627463',
 };
 
 const usdtToTrx: MarketTrade = {
@@ -115,6 +116,22 @@ describe('tradeToRow', () => {
   it('nulls the USD amount when notional_usd is null', () => {
     const r = tradeToRow({ ...usdtToTrx, notionalUsd: null }, CHAINS);
     expect(r.ok && r.row.amountUsd).toBeNull();
+  });
+
+  it('labels BTC held on NEAR with its origin chain, bitcoin, on either side', () => {
+    const toUsdt = tradeToRow(
+      { ...usdtToTrx, assetIn: 'BTC', chainIn: 'near', chainOut: 'eth', assetOut: 'USDT' },
+      CHAINS,
+    );
+    expect(toUsdt.ok && toUsdt.row.srcChainId).toBe('627463');
+    expect(toUsdt.ok && toUsdt.row.actionDetail).toContain('BTC(bitcoin) ->');
+    const toBtc = tradeToRow({ ...usdtToTrx, assetOut: 'BTC', chainOut: 'near' }, CHAINS);
+    expect(toBtc.ok && toBtc.row.dstChainId).toBe('627463');
+  });
+
+  it('keeps other NEAR-held assets on near', () => {
+    const r = tradeToRow({ ...usdtToTrx, assetIn: 'USDC', chainIn: 'near' }, CHAINS);
+    expect(r.ok && r.row.srcChainId).toBe('15');
   });
 
   it('rejects an unknown chain with a stable reason', () => {

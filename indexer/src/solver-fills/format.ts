@@ -37,8 +37,18 @@ function formatAmount(n: number): string {
   return n.toLocaleString('en-US', { useGrouping: false, maximumFractionDigits: 18 });
 }
 
-function resolveChain(suffix: string, chainIdsByName: Record<string, string>): { name: string; id: string } | string {
-  const name = CHAIN_ALIASES[suffix] ?? suffix;
+// The feed reports the chain a token sits on; the scanner shows its origin
+// chain. BTC on NEAR (nBTC) is the only NEAR-held asset whose origin differs.
+const ORIGIN_CHAIN_OVERRIDES: Record<string, string> = {
+  'near:BTC': 'bitcoin',
+};
+
+function resolveChain(
+  suffix: string,
+  asset: string,
+  chainIdsByName: Record<string, string>,
+): { name: string; id: string } | string {
+  const name = ORIGIN_CHAIN_OVERRIDES[`${suffix}:${asset}`] ?? CHAIN_ALIASES[suffix] ?? suffix;
   const id = chainIdsByName[name];
   return id ? { name, id } : `unknown chain "${suffix}"`;
 }
@@ -50,9 +60,9 @@ function resolveChain(suffix: string, chainIdsByName: Record<string, string>): {
  * callers can warn once per reason.
  */
 export function tradeToRow(trade: MarketTrade, chainIdsByName: Record<string, string>): FillMapResult {
-  const src = resolveChain(trade.chainIn, chainIdsByName);
+  const src = resolveChain(trade.chainIn, trade.assetIn, chainIdsByName);
   if (typeof src === 'string') return { ok: false, reason: src };
-  const dst = resolveChain(trade.chainOut, chainIdsByName);
+  const dst = resolveChain(trade.chainOut, trade.assetOut, chainIdsByName);
   if (typeof dst === 'string') return { ok: false, reason: dst };
 
   return {
