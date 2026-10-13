@@ -2,13 +2,17 @@ import axios from 'axios';
 
 /**
  * Client for sodax-data-backend's market-maker trades feed. parseTradesPage
- * keeps only NEAR and LI.FI trades and only the fields the scanner needs:
- * venues, order ids and realised PnL identify the source marketplace and are
- * dropped here, so they never reach the database or logs.
+ * keeps only NEAR and LI.FI trades and only the fields the scanner needs;
+ * order ids, prices and realised PnL are dropped here, so they never reach
+ * the database or logs.
  */
+
+export type FillVenue = 'near' | 'lifi';
 
 export interface MarketTrade {
   id: number;
+  /** Marketplace the fill came through, from the venue family. */
+  venue: FillVenue;
   timestamp: string;
   /** Chain-specific tx or intent hash; for NEAR trades it equals the NEAR intent hash. */
   txHash: string;
@@ -59,7 +63,7 @@ const TRADES_PATH = '/v1/mm/quoter/trades';
 
 // Venue families that are solver marketplace fills. Others (sodax hub,
 // Kraken spot) are not cross-chain fills and have no place in `messages`.
-const FILL_VENUE_FAMILIES = new Set(['near', 'lifi']);
+const FILL_VENUE_FAMILIES: ReadonlySet<string> = new Set<FillVenue>(['near', 'lifi']);
 
 // YYYY-MM-DDTHH:MM[:SS[.fraction]] followed by Z or a UTC offset.
 export const ISO_TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/;
@@ -100,7 +104,7 @@ function splitVenue(o: Obj, key: string): { family: string; chain: string } {
   return { family: venue.slice(0, i).toLowerCase(), chain: venue.slice(i + 1).toLowerCase() };
 }
 
-function parseTrade(raw: Obj, id: number): MarketTrade {
+function parseTrade(raw: Obj, id: number, venue: FillVenue): MarketTrade {
   const timestamp = str(raw, 'ts');
   if (Number.isNaN(parseIsoMs(timestamp))) throw new FillsResponseError('ts must be an ISO timestamp');
   const notional = raw.notional_usd;
@@ -109,6 +113,7 @@ function parseTrade(raw: Obj, id: number): MarketTrade {
   }
   return {
     id,
+    venue,
     timestamp,
     txHash: str(raw, 'tx_hash'),
     assetIn: str(raw, 'asset_in'),
@@ -149,8 +154,9 @@ export function parseTradesPage(body: unknown): TradesPage {
     newestId ??= id;
     previousId = id;
     try {
-      if (!FILL_VENUE_FAMILIES.has(splitVenue(raw, 'in_venue').family)) continue;
-      trades.push(parseTrade(raw, id));
+      const { family } = splitVenue(raw, 'in_venue');
+      if (!FILL_VENUE_FAMILIES.has(family)) continue;
+      trades.push(parseTrade(raw, id, family as FillVenue));
     } catch (err) {
       if (!(err instanceof FillsResponseError)) throw err;
       skipped.push({ id, reason: err.message.replace(/^solver-fills: /, '') });

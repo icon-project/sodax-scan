@@ -1,4 +1,4 @@
-import { type MarketTrade, parseIsoMs } from './client';
+import { type FillVenue, type MarketTrade, parseIsoMs } from './client';
 
 export interface SolverMarketPlaceFillRow {
   intentHash: string;
@@ -20,6 +20,11 @@ const CHAIN_ALIASES: Record<string, string> = {
   pol: 'polygon',
   sol: 'solana',
   zec: 'zcash',
+};
+
+const VENUE_LABELS: Record<FillVenue, string> = {
+  near: 'near.intents',
+  lifi: 'lifi.intents',
 };
 
 /** Unix seconds from an ISO timestamp. */
@@ -58,7 +63,7 @@ export function tradeToRow(trade: MarketTrade, chainIdsByName: Record<string, st
       dstChainId: dst.id,
       // parseTradesPage already rejected unparseable timestamps.
       timestamp: isoToUnixSeconds(trade.timestamp),
-      actionDetail: `SolverMarketPlaceFill ${formatAmount(trade.amountIn)} ${trade.assetIn}(${src.name}) -> ${formatAmount(trade.amountOut)} ${trade.assetOut}(${dst.name})`,
+      actionDetail: `SolverMarketPlaceFill ${formatAmount(trade.amountIn)} ${trade.assetIn}(${src.name}) -> ${formatAmount(trade.amountOut)} ${trade.assetOut}(${dst.name}) via ${VENUE_LABELS[trade.venue]}`,
       amountUsd: trade.notionalUsd === null ? null : formatAmount(trade.notionalUsd),
     },
   };

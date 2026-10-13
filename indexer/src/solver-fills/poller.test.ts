@@ -5,6 +5,7 @@ import { createPoller, type PollerDeps } from './poller';
 
 const trade = (id: number): MarketTrade => ({
   id,
+  venue: 'near',
   timestamp: '2026-10-13T01:00:00Z',
   txHash: `h${id}`,
   assetIn: 'USDT',

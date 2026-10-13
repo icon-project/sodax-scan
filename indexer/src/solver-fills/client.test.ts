@@ -57,6 +57,7 @@ describe('parseTradesPage', () => {
       trades: [
         {
           id: 1162517,
+          venue: 'near',
           timestamp: '2026-10-13T01:42:16.910000+00:00',
           txHash: 'ChvfP2pUJtw33sS7ib8wzu3VxYHFtDYK5ax9MJnCJGj8',
           assetIn: 'USDT',
@@ -69,6 +70,7 @@ describe('parseTradesPage', () => {
         },
         {
           id: 1162511,
+          venue: 'lifi',
           timestamp: '2026-10-13T01:39:47+00:00',
           txHash: '0xa47465900a857f99a8a955dcc928b3e201b1cabb00d12c40e81b50ff1a2be8e6',
           assetIn: 'USDC',

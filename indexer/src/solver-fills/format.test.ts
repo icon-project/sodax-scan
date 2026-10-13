@@ -20,6 +20,7 @@ const CHAINS = {
 
 const usdtToTrx: MarketTrade = {
   id: 1162517,
+  venue: 'near',
   timestamp: '2026-10-13T01:42:16.910000+00:00',
   txHash: 'ChvfP2pUJtw33sS7ib8wzu3VxYHFtDYK5ax9MJnCJGj8',
   assetIn: 'USDT',
@@ -59,7 +60,7 @@ describe('tradeToRow', () => {
         srcChainId: '728126428',
         dstChainId: '728126428',
         timestamp: Date.UTC(2026, 9, 13, 1, 42, 16) / 1000,
-        actionDetail: 'SolverMarketPlaceFill 251.102248 USDT(tron) -> 762.435184 TRX(tron)',
+        actionDetail: 'SolverMarketPlaceFill 251.102248 USDT(tron) -> 762.435184 TRX(tron) via near.intents',
         amountUsd: '251.102248',
       },
     });
@@ -69,6 +70,7 @@ describe('tradeToRow', () => {
     const r = tradeToRow(
       {
         ...usdtToTrx,
+        venue: 'lifi',
         assetIn: 'USDC',
         assetOut: 'USDC',
         amountIn: 3999,
@@ -80,7 +82,9 @@ describe('tradeToRow', () => {
     );
     expect(r.ok && r.row.srcChainId).toBe('1');
     expect(r.ok && r.row.dstChainId).toBe('23');
-    expect(r.ok && r.row.actionDetail).toBe('SolverMarketPlaceFill 3999 USDC(ethereum) -> 3998.921586 USDC(arbitrum)');
+    expect(r.ok && r.row.actionDetail).toBe(
+      'SolverMarketPlaceFill 3999 USDC(ethereum) -> 3998.921586 USDC(arbitrum) via lifi.intents',
+    );
   });
 
   it('resolves every aliased and direct venue suffix seen on the feed', () => {
