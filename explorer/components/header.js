@@ -27,13 +27,13 @@ export default function Header({ showSearchBar, assets }) {
                     >
                         <ul x-ref="logos" className="flex items-center justify-center md:justify-start [&_li]:mx-4 animate-infinite-scroll">
                             {Array.isArray(assets)
-                                ? assets.map((asset) => (
+                                ? assets.filter((asset) => asset.current_price != null).map((asset) => (
                                       <li key={asset.name}>
                                           <div key={asset.name} className="flex gap-1">
                                               <Image src={asset.image} width={20} height={20} className="rounded-full h-[20px] w-[20px]" />
                                               <span>${asset.current_price.toFixed(2)}</span>
                                               <span className={asset.price_change_percentage_24h > 0 ? 'text-green-500' : 'text-red-500'}>
-                                                  ({asset.price_change_percentage_24h.toFixed(2)}%)
+                                                  ({(asset.price_change_percentage_24h ?? 0).toFixed(2)}%)
                                               </span>
                                           </div>
                                       </li>
