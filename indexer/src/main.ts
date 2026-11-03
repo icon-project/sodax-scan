@@ -10,6 +10,7 @@ import pool from './db/db';
 import { startHubIntentsPoller } from './hub-intents/poller';
 import { isRawTupleActionText, recoverIntentFilledFormat } from './intent-fill-format';
 import { findBridgeWithdrawal, formatWithdrawText, type ReceiptLog } from './mpc-withdraw';
+import { decodeMintPayload, formatMintText } from './mpc-mint';
 
 dotenv.config();
 const SODAXSCAN_CONFIG = {
@@ -95,6 +96,9 @@ export async function parseTransactionEvent(response: SodaxScannerResponse) {
                         result = { action: decoded.action, actionText: decoded.actionText };
                     }
                 }
+                if (!result && mintTxHash) {
+                    result = await mintAction(mintTxHash, transaction.src_network as string);
+                }
                 if (!result && !mintTxHash) {
                     const withdrawal = findBridgeWithdrawal(await fetchSonicReceiptLogs(hubTxHash));
                     if (withdrawal) {
@@ -109,8 +113,7 @@ export async function parseTransactionEvent(response: SodaxScannerResponse) {
                     console.log("MPC hub tx decode incomplete for id", id, "- will retry");
                 }
             } catch (error) {
-                const errMessage = error instanceof Error ? error.message : String(error);
-                console.log("Failed MPC enrichment for id", id, errMessage);
+                console.log("Failed MPC enrichment for id", id, error);
                 if (id in retries) retries[id] = retries[id] + 1; else retries[id] = 1;
             }
             continue;
@@ -300,6 +303,26 @@ async function specificHubAction(payload: TxPayload): Promise<{ action: string; 
     if (payload.reverseSwap && payload.actionText) return { action: 'Migration', actionText: payload.actionText };
     if (payload.actionText && payload.intentTxHash) return { action: 'CreateIntent', actionText: payload.actionText };
     return null;
+}
+
+// Action of a mint carrying its payload in calldata: the money-market or swap
+// call it runs, else a plain deposit of the minted tokens.
+async function mintAction(mintTxHash: string, srcChainId: string): Promise<{ action: string; actionText: string } | null> {
+    const { data } = await axios.post(RPC_URLS[sonic], {
+        jsonrpc: '2.0', id: 1, method: 'eth_getTransactionByHash', params: [mintTxHash],
+    });
+    if (!data.result) {
+        throw new Error(`no Sonic tx for ${mintTxHash}${data.error ? `: ${data.error.message}` : ''}`);
+    }
+    const mintPayload = decodeMintPayload(data.result.input);
+    if (!mintPayload) return null;
+    const decoded = parsePayloadData(mintPayload, sonic, sonic);
+    if (decoded.action !== SendMessage && decoded.action !== Transfer && decoded.actionText) {
+        return { action: decoded.action, actionText: decoded.actionText };
+    }
+    const chainName = idToChainNameMap[srcChainId] ?? srcChainId;
+    const actionText = formatMintText(mintPayload, await fetchSonicReceiptLogs(mintTxHash), chains[sonic].Assets, chainName);
+    return actionText ? { action: 'Deposit', actionText } : null;
 }
 
 async function fetchSonicReceiptLogs(txHash: string): Promise<ReceiptLog[]> {
