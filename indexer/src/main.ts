@@ -92,7 +92,7 @@ export async function parseTransactionEvent(response: SodaxScannerResponse) {
                 let result = await specificHubAction(payload);
                 if (!result && mintTxHash) {
                     const decoded = parsePayloadData(payload.payload, sonic, sonic);
-                    if (decoded.action !== SendMessage && decoded.actionText) {
+                    if (decoded.action !== SendMessage && decoded.action !== Transfer && decoded.actionText) {
                         result = { action: decoded.action, actionText: decoded.actionText };
                     }
                 }
