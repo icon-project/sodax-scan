@@ -57,5 +57,6 @@ export interface Datum {
   // MPC legs (written by the external MPC service). Present only on MPC rows.
   mint_tx_hash?:            string | null;
   mint_network?:            string | null;
+  hub_burn_tx_hash?:        string | null;
   mpc_id?:                  string | null;
 }
