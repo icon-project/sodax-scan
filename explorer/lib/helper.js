@@ -418,7 +418,19 @@ const deriveMpcSteps = (row) => {
         terminal: step.key === terminalKey,
     }))
 
-    return { kind, mode, steps, terminalKey }
+    // Some flows complete without a NEAR attestation; on a finished row a missing hash is not "pending".
+    const finished = row.status === 'executed' && steps.some((step) => step.terminal && step.reached)
+    const visibleSteps = finished ? steps.filter((step) => step.reached || step.key !== 'attested') : steps
+
+    return { kind, mode, steps: visibleSteps, terminalKey }
+}
+
+// MPC CreateIntent rows carry no intent hash; the hub row for the same mint tx does.
+const resolveIntentTxHash = async (row, search) => {
+    if (row.intent_tx_hash) return row.intent_tx_hash
+    if (row.action_type !== 'CreateIntent' || !row.mint_tx_hash) return null
+    const { data } = await search(row.mint_tx_hash)
+    return data.find((m) => m.action_type === 'CreateIntent' && m.intent_tx_hash)?.intent_tx_hash ?? null
 }
 
 const getNativeAsset = (network) => {
@@ -448,4 +460,5 @@ export default {
     STATUS_FILTERS,
     MESSAGE_KINDS,
     deriveMpcSteps,
+    resolveIntentTxHash,
 }
