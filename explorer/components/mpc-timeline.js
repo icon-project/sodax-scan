@@ -2,6 +2,7 @@ import timeAgo from '@/lib/time-ago'
 import Render from '@/lib/render'
 import helper from '@/lib/helper'
 import Script from 'next/script'
+import Link from 'next/link'
 
 // MpcTimeline renders the kind-dependent MPC lifecycle stepper for a message row
 // on an MPC chain. Non-MPC rows never reach here — message-detail.js gates on
@@ -16,7 +17,8 @@ import Script from 'next/script'
 // Each present step shows a tx-hash link (renderHashLink with the step's own
 // *_network tx base; the Attested step is fixed to NEAR) + chain icon + state
 // label; there is NO per-step timestamp (that data does not exist — R5). A step
-// whose *_tx_hash is NULL renders as not-yet-reached rather than as an error. The
+// whose *_tx_hash is NULL renders as not-yet-reached rather than as an error, except
+// Attested, which deriveMpcSteps omits once an executed row has its terminal hash. The
 // terminal step per kind and mode (R6: deposit sweep⇒swept / memo⇒minted;
 // withdrawal & transfer⇒released) carries NO visual emphasis — it is marked only
 // by a plain " (destination)" text suffix on its label; all steps render alike.
@@ -77,6 +79,17 @@ export default async function MpcTimeline({ msgData, meta }) {
                                 </div>
                             </div>
                         ))}
+
+                        {msgData.intent_tx_hash && (
+                            <div className="table-row bg-white border-b">
+                                <div className={labelCell}>Intent Hash:</div>
+                                <div className={valueCell}>
+                                    <Link className="hover:underline underline-offset-2 inline-block" href={`/messages/search?value=${msgData.intent_tx_hash}`}>
+                                        {msgData.intent_tx_hash}
+                                    </Link>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="table-row bg-white border-b">
                             <div className={labelCell}>Action:</div>

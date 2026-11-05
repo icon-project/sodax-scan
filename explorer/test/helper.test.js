@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import helper from '../lib/helper'
 import {
     depositSweepComplete,
@@ -190,6 +190,25 @@ describe('deriveMpcSteps — kind-aware (R5, R6, ADR-006)', () => {
         expect(step.hash).toBe(withdrawalReleased.attested_tx_hash)
     })
 
+    it('executed row with destination hash and no attestation: attested step omitted', () => {
+        const row = { action_type: 'IntentFilled', status: 'executed', dest_network: '728126428',
+            attested_tx_hash: null, release_tx_hash: '0xr', release_network: '728126428-0' }
+        const { steps } = helper.deriveMpcSteps(row)
+        expect(steps.map((s) => s.key)).toEqual(['released'])
+        expect(steps[0].reached).toBe(true)
+    })
+
+    it('attested step stays pending until the row is executed with a destination hash', () => {
+        const noDestination = { action_type: 'Withdraw', status: 'executed', dest_network: '66',
+            attested_tx_hash: null, release_tx_hash: null }
+        const notExecuted = { action_type: 'Withdraw', status: 'pending', dest_network: '66',
+            attested_tx_hash: null, release_tx_hash: '0xr', release_network: '66-0' }
+        for (const row of [noDestination, notExecuted]) {
+            const attested = helper.deriveMpcSteps(row).steps.find((s) => s.key === 'attested')
+            expect(attested.reached).toBe(false)
+        }
+    })
+
     it('unknown deposit chain fallback: swept shown only if sweep reached', () => {
         const noSweep = { action_type: 'deposit', dest_network: '999999', mint_tx_hash: '0xm' }
         const a = helper.deriveMpcSteps(noSweep)
@@ -199,5 +218,41 @@ describe('deriveMpcSteps — kind-aware (R5, R6, ADR-006)', () => {
         const b = helper.deriveMpcSteps(withSweep)
         expect(b.terminalKey).toBe('swept')
         expect(b.steps.find((s) => s.key === 'swept')).toBeDefined()
+    })
+})
+
+describe('resolveIntentTxHash', () => {
+    const hash = '0x1165'
+    const mint = '0xa90d'
+    const search = (rows) => vi.fn(async () => ({ data: rows }))
+
+    it('returns the row hash without searching', async () => {
+        const lookup = search([])
+        const row = { action_type: 'IntentFilled', intent_tx_hash: hash, mint_tx_hash: mint }
+        expect(await helper.resolveIntentTxHash(row, lookup)).toBe(hash)
+        expect(lookup).not.toHaveBeenCalled()
+    })
+
+    it('takes the hash from the hub CreateIntent row sharing the mint tx', async () => {
+        const lookup = search([
+            { action_type: 'CreateIntent', intent_tx_hash: null },
+            { action_type: 'Transfer', intent_tx_hash: '0xother' },
+            { action_type: 'CreateIntent', intent_tx_hash: hash },
+        ])
+        const row = { action_type: 'CreateIntent', intent_tx_hash: null, mint_tx_hash: mint }
+        expect(await helper.resolveIntentTxHash(row, lookup)).toBe(hash)
+        expect(lookup).toHaveBeenCalledWith(mint)
+    })
+
+    it('returns null when the hub row is not indexed yet', async () => {
+        const row = { action_type: 'CreateIntent', intent_tx_hash: null, mint_tx_hash: mint }
+        expect(await helper.resolveIntentTxHash(row, search([{ action_type: 'CreateIntent', intent_tx_hash: null }]))).toBeNull()
+    })
+
+    it('does not search for other actions or before the mint lands', async () => {
+        const lookup = search([])
+        expect(await helper.resolveIntentTxHash({ action_type: 'Deposit', mint_tx_hash: mint }, lookup)).toBeNull()
+        expect(await helper.resolveIntentTxHash({ action_type: 'CreateIntent', mint_tx_hash: null }, lookup)).toBeNull()
+        expect(lookup).not.toHaveBeenCalled()
     })
 })

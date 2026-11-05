@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Loading from './loading'
 import FetchData from '@/lib/fetch-data'
+import helper from '@/lib/helper'
 import MessageDetail from '@/components/message-detail'
 import IntentSiblings from '@/components/intent-siblings'
 import PageTitle from '@/components/page-title'
@@ -17,14 +18,21 @@ export default async function MessageDetailPage({ params, searchParams }) {
         notFound()
     }
 
+    let intentTxHash = msgData.intent_tx_hash
+    try {
+        intentTxHash = await helper.resolveIntentTxHash(msgData, FetchData.search)
+    } catch (err) {
+        console.error(`Intent hash lookup failed for message ${id}, mint tx ${msgData.mint_tx_hash}:`, err)
+    }
+
     // If this message belongs to an intent, fetch siblings server-side for the
     // initial render. The client component takes over polling for new siblings
     // while the parent message is still young.
     let initialSiblings = []
     let siblingsMeta = rs.meta
-    if (msgData.intent_tx_hash) {
+    if (intentTxHash) {
         try {
-            const related = await FetchData.search(msgData.intent_tx_hash)
+            const related = await FetchData.search(intentTxHash)
             initialSiblings = (related.data || []).filter((m) => m.id !== msgData.id)
             siblingsMeta = related.meta || rs.meta
         } catch {
@@ -37,14 +45,14 @@ export default async function MessageDetailPage({ params, searchParams }) {
             <PageTitle title={'Message Detail'} />
 
             <Suspense fallback={<Loading />}>
-                <MessageDetail msgData={msgData} meta={rs.meta} isAdmin={isAdmin()}></MessageDetail>
+                <MessageDetail msgData={{ ...msgData, intent_tx_hash: intentTxHash }} meta={rs.meta} isAdmin={isAdmin()}></MessageDetail>
             </Suspense>
 
-            {msgData.intent_tx_hash && (
+            {intentTxHash && (
                 <IntentSiblings
                     initialSiblings={initialSiblings}
                     meta={siblingsMeta}
-                    intentTxHash={msgData.intent_tx_hash}
+                    intentTxHash={intentTxHash}
                     currentMessageId={msgData.id}
                     parentCreatedAtSec={Number(msgData.created_at) || 0}
                 />
