@@ -90,6 +90,12 @@ describe('parseTradesPage', () => {
     });
   });
 
+  it('reads the near.far venue family as NEAR', () => {
+    const p = parseTradesPage(page([{ ...nearTrade, in_venue: 'near.far:eth', out_venue: 'near.far:sol' }]));
+    expect(p.skipped).toEqual([]);
+    expect(p.trades.map(t => [t.venue, t.chainIn, t.chainOut])).toEqual([['near', 'eth', 'sol']]);
+  });
+
   it('drops Kraken and hub trades but still counts them in the page id range', () => {
     const p = parseTradesPage(page([nearTrade, krakenTrade, hubTrade]));
     expect(p.trades.map(t => t.id)).toEqual([1162517]);
