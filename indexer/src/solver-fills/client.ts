@@ -63,7 +63,12 @@ const TRADES_PATH = '/v1/mm/quoter/trades';
 
 // Venue families that are solver marketplace fills. Others (sodax hub,
 // Kraken spot) are not cross-chain fills and have no place in `messages`.
-const FILL_VENUE_FAMILIES: ReadonlySet<string> = new Set<FillVenue>(['near', 'lifi']);
+// The backend renamed NEAR's family from "near" to "near.far"; both are kept.
+const FILL_VENUE_FAMILIES: ReadonlyMap<string, FillVenue> = new Map([
+  ['near', 'near'],
+  ['near.far', 'near'],
+  ['lifi', 'lifi'],
+]);
 
 // YYYY-MM-DDTHH:MM[:SS[.fraction]] followed by Z or a UTC offset.
 export const ISO_TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/;
@@ -155,8 +160,9 @@ export function parseTradesPage(body: unknown): TradesPage {
     previousId = id;
     try {
       const { family } = splitVenue(raw, 'in_venue');
-      if (!FILL_VENUE_FAMILIES.has(family)) continue;
-      trades.push(parseTrade(raw, id, family as FillVenue));
+      const venue = FILL_VENUE_FAMILIES.get(family);
+      if (!venue) continue;
+      trades.push(parseTrade(raw, id, venue));
     } catch (err) {
       if (!(err instanceof FillsResponseError)) throw err;
       skipped.push({ id, reason: err.message.replace(/^solver-fills: /, '') });
