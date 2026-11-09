@@ -6,7 +6,7 @@ This is the entry point for anyone changing this repository. It covers how a cha
 
 These are checked automatically on every merged PR.
 
-1. **Every PR links an issue.** Put `Closes #N` in the PR body, or `Refs owner/repo#N` for part of a larger piece of work. No issue yet? Open one first from the issue templates (Task, Bug, New chain, New token, New venue).
+1. **Every PR links an issue.** Put `Closes #N` in the PR body, or `Refs owner/repo#N` for part of a larger piece of work. No issue yet? Open one first from the issue templates (Task, Bug, New chain).
 2. **The PR title is a [Conventional Commit](https://www.conventionalcommits.org/):** `type(scope): subject`, for example `fix(api): handle a null partner fee`. Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `build`, `ci`, `perf`, `revert`.
 3. **Changes reach `master` only through a merged PR** with at least one approving review. No direct pushes.
 4. **Checks are green** when the PR merges.
@@ -18,19 +18,35 @@ Branch from `master`, name the branch `<type>/<short-description>`, and open the
 
 ## Setup
 
-<!-- TODO(owner): The toolchain and versions (Node, pnpm, Rust, Go, Foundry...), how to install, and any local services or env vars needed (point at the example env file, never real values). -->
+The repo has three parts, each with its own package, plus a Go tool:
+
+- `explorer/`: Next.js, installed with yarn.
+- `indexer/`: TypeScript run with Bun (the Docker image uses Bun 1.1). It needs Postgres and an RPC URL per chain.
+- `api/`: Express on Node 20 (the Docker image's version), installed with npm. It reads the same Postgres.
+- `tools/addchain/`: Go 1.24, built on demand by `make add-chain`.
+
+Each part reads its settings from `.env`. Copy `api/.env.example`, `explorer/.env.example` and `indexer/.env.example` to `.env` and fill them in. Never commit a `.env` file.
+
+To run the whole stack in Docker, use `make run-docker-testnet` (or `run-docker-mainnet`).
 
 ## Before you open a PR
 
-<!-- TODO(owner): The exact commands to run, in order, for example:
+No CI runs in this repo, so run the checks for each part you changed:
+
 ```bash
-pnpm lint && pnpm build && pnpm test
+(cd explorer && yarn lint && yarn test && yarn build)
+(cd indexer && bun run lint && bun test)
+(cd tools/addchain && go test ./...)
 ```
--->
+
+`api/` has no tests. Start it with `npm start` and call the endpoints you changed.
 
 ## Conventions
 
-<!-- TODO(owner): The rules a reviewer will hold you to in this repo: code style, patterns to follow, things never to do. Link to longer docs instead of repeating them. -->
+- Format with the repo's settings: Prettier for `explorer/` (`explorer/.prettierrc.json`) and the root, Biome for `indexer/` (`indexer/biome.json`).
+- Add a chain with `make add-chain`, or follow [docs/add-new-network.md](docs/add-new-network.md). Never add a chain to only one of indexer, api and explorer.
+- Document API changes in [docs/apis.md](docs/apis.md) and websocket changes in [docs/websocket.md](docs/websocket.md).
+- This repo is public. Never add private code, internal hostnames or contract addresses that haven't been announced.
 
 ## Review and merge
 
