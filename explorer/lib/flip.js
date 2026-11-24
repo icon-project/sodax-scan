@@ -1,9 +1,7 @@
 // FLIP helpers for the live list (pure; the DOM work lives in components/flip-container.js).
 
-// Glide timing per motion variant (see components/motion-variant.js).
-export function flipTiming(variant) {
-    return variant === 'b' ? { duration: 420, easing: 'cubic-bezier(.16,1,.3,1)' } : { duration: 320, easing: 'cubic-bezier(.23,1,.32,1)' }
-}
+// Glide timing for rows displaced by a new row.
+export const FLIP_TIMING = { duration: 320, easing: 'cubic-bezier(.23,1,.32,1)' }
 
 // prev / next: Map(id -> top offset in px) before and after the DOM update.
 // fresh: Set of ids flagged as just arrived.

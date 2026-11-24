@@ -1,6 +1,6 @@
 'use client'
 import { useLayoutEffect, useEffect, useRef } from 'react'
-import { flipDeltas, flipTiming } from '@/lib/flip'
+import { flipDeltas, FLIP_TIMING } from '@/lib/flip'
 
 const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
 
@@ -42,7 +42,7 @@ export default function FlipContainer({ ids, freshIds, className, children }) {
         if (deltas.length === 0) return
         handled.current = freshIds
         if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
-        const { duration, easing } = flipTiming(document.documentElement.dataset.motion)
+        const { duration, easing } = FLIP_TIMING
         const byId = new Map()
         root.querySelectorAll('[data-flip-id]').forEach((el) => {
             if (el.offsetParent !== null) byId.set(el.getAttribute('data-flip-id'), el)

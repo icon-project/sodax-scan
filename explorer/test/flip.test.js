@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { flipDeltas, flipTiming } from '../lib/flip'
+import { flipDeltas, FLIP_TIMING } from '../lib/flip'
 
 const m = (o) => new Map(Object.entries(o))
 
@@ -32,10 +32,8 @@ describe('flipDeltas', () => {
     })
 })
 
-describe('flipTiming', () => {
-    it('a is 320ms, b is 420ms with a softer curve', () => {
-        expect(flipTiming('a').duration).toBe(320)
-        expect(flipTiming(undefined).duration).toBe(320)
-        expect(flipTiming('b')).toEqual({ duration: 420, easing: 'cubic-bezier(.16,1,.3,1)' })
+describe('FLIP_TIMING', () => {
+    it('is the 320ms spec glide', () => {
+        expect(FLIP_TIMING).toEqual({ duration: 320, easing: 'cubic-bezier(.23,1,.32,1)' })
     })
 })

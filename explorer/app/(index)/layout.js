@@ -4,7 +4,6 @@ import Favicon from '../favicon.ico'
 import Header from '@/components/header'
 import AdminBar from '@/components/admin-bar'
 import Footer from '@/components/footer'
-import MotionVariant from '@/components/motion-variant'
 import fetchData from '@/lib/fetch-data'
 
 export const metadata = {
@@ -51,7 +50,6 @@ export default async function RootLayout({ children }) {
         <html lang="en" className={`${inter.variable} ${inriaSerif.variable} ${shrikhand.variable}`}>
             <head></head>
             <body className="font-sans text-espresso min-h-screen bg-vibrant-white">
-                <MotionVariant />
                 <Header showSearchBar={false} assets={assets} />
                 <AdminBar />
                 <main className="px-4 mb-2 xl:px-24 xl:mb-12 2xl:px-48">
