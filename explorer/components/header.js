@@ -7,14 +7,14 @@ export default function Header({ showSearchBar, assets }) {
     assets = assets ?? []
 
     return (
-        <header className="px-4 py-4 xl:px-24 2xl:px-48 w-full bg-almost-white flex justify-between border-b border-light-grey">
-            <div>
-                <a className="" href="/">
-                    <img className="w-64 min-w-64 h-[32px]" src="/images/new_logo.svg"></img>
+        <header className="px-4 py-4 xl:px-24 2xl:px-48 w-full bg-almost-white flex items-center md:items-stretch justify-between max-md:gap-3 border-b border-light-grey">
+            <div className="min-w-0">
+                <a className="block" href="/">
+                    <img alt="SODAX Scan" className="w-44 min-w-0 md:w-64 md:min-w-64 h-[32px] object-contain object-left" src="/images/new_logo.svg"></img>
                 </a>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
                 <div className="xl:flex items-center gap-4 px-2 text-sm hidden">
                     <div
                         x-data="{}"
@@ -49,7 +49,7 @@ export default function Header({ showSearchBar, assets }) {
 
                 {showSearchBar ? <SearchBar showFull={false} /> : ''}
 
-                <Dropdown label="" dismissOnClick={false} renderTrigger={() => <Image className="hover:cursor-pointer" src={`/images/sodax_logo.svg`} width={24} height={24} />}>
+                <Dropdown label="" dismissOnClick={false} renderTrigger={() => <Image alt="SODAX apps" className="hover:cursor-pointer max-md:box-content max-md:p-2.5 max-md:-m-2.5" src={`/images/sodax_logo.svg`} width={24} height={24} />}>
                     <Dropdown.Item>
                         <a href={process.env.NEXT_PUBLIC_TESTNET_APP_URL}>Testnet</a>
                     </Dropdown.Item>
