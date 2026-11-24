@@ -27,7 +27,7 @@ export default async function MpcTimeline({ msgData, meta }) {
     const msgAction = msgData.action_detail || ''
 
     const labelCell = 'block md:table-cell xl:w-96 px-3 pt-3 pb-0 md:py-2 xl:px-6 xl:py-4 max-md:text-sm max-md:text-clay-dark font-medium whitespace-normal xl:whitespace-nowrap'
-    const valueCell = 'block md:table-cell min-w-0 break-all md:break-normal px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4'
+    const valueCell = 'block md:table-cell min-w-0 [overflow-wrap:anywhere] md:[overflow-wrap:normal] px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4'
 
     return (
         <div className="py-2 flex flex-col">

@@ -42,11 +42,11 @@ export default async function MessageDetail({ msgData, meta, isAdmin = false }) 
                     <div className="block md:table-row-group">
                         <div className="block md:table-row bg-white border-b">
                             <div className="block md:table-cell xl:w-96 px-3 pt-3 pb-0 md:py-2 xl:px-6 xl:py-4 max-md:text-sm max-md:text-clay-dark font-medium whitespace-normal xl:whitespace-nowrap">Status:</div>
-                            <div className="block md:table-cell min-w-0 break-all md:break-normal px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4">{statusNode}</div>
+                            <div className="block md:table-cell min-w-0 [overflow-wrap:anywhere] md:[overflow-wrap:normal] px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4">{statusNode}</div>
                         </div>
                         <div className="block md:table-row bg-white border-b">
                             <div className="block md:table-cell xl:w-96 px-3 pt-3 pb-0 md:py-2 xl:px-6 xl:py-4 max-md:text-sm max-md:text-clay-dark font-medium whitespace-normal xl:whitespace-nowrap">Serial No:</div>
-                            <div className="block md:table-cell min-w-0 break-all md:break-normal px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4 tabular-nums">
+                            <div className="block md:table-cell min-w-0 [overflow-wrap:anywhere] md:[overflow-wrap:normal] px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4 tabular-nums">
                                 {/* Same badges as the messages list: SolverMarketPlaceFill, then hub-only (sn == null). */}
                                 {helper.isSolverMarketPlaceFill(msgData)
                                     ? <span className="uppercase text-xs rounded-full px-2 py-0.5 bg-cream-white text-clay-dark tracking-wide">SOLVER MARKETPLACE FILL</span>
@@ -57,7 +57,7 @@ export default async function MessageDetail({ msgData, meta, isAdmin = false }) 
                         </div>
                         <div className="block md:table-row bg-white border-b">
                             <div className="block md:table-cell xl:w-96 px-3 pt-3 pb-0 md:py-2 xl:px-6 xl:py-4 max-md:text-sm max-md:text-clay-dark font-medium whitespace-normal xl:whitespace-nowrap">Source transaction hash:</div>
-                            <div className="block md:table-cell min-w-0 break-all md:break-normal px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4 ">
+                            <div className="block md:table-cell min-w-0 [overflow-wrap:anywhere] md:[overflow-wrap:normal] px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4 ">
                                 {helper.isSolverMarketPlaceFill(msgData)
                                     ? Render.renderChain(msgData.src_network)
                                     : Render.renderHashLink(meta.urls.tx[msgData.src_network], msgData.src_network, msgData.src_tx_hash, true)}
@@ -65,7 +65,7 @@ export default async function MessageDetail({ msgData, meta, isAdmin = false }) 
                         </div>
                         <div className="block md:table-row bg-white border-b">
                             <div className="block md:table-cell xl:w-96 px-3 pt-3 pb-0 md:py-2 xl:px-6 xl:py-4 max-md:text-sm max-md:text-clay-dark font-medium whitespace-normal xl:whitespace-nowrap">Destination transaction hash:</div>
-                            <div className="block md:table-cell min-w-0 break-all md:break-normal px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4">
+                            <div className="block md:table-cell min-w-0 [overflow-wrap:anywhere] md:[overflow-wrap:normal] px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4">
                                 {/* Hub-only events (sn == null) have no dest leg — mirror the
                                     source tx + chain so this row reads symmetrically rather than
                                     rendering "-". Intent's true dst chain still shows in Action.
@@ -79,21 +79,21 @@ export default async function MessageDetail({ msgData, meta, isAdmin = false }) 
                         </div>
                         {msgData.fee && (<div className="block md:table-row bg-white border-b">
                             <div className="block md:table-cell xl:w-96 px-3 pt-3 pb-0 md:py-2 xl:px-6 xl:py-4 max-md:text-sm max-md:text-clay-dark font-medium whitespace-normal xl:whitespace-nowrap">Transaction fee:</div>
-                            <div className="block md:table-cell min-w-0 break-all md:break-normal px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4">
+                            <div className="block md:table-cell min-w-0 [overflow-wrap:anywhere] md:[overflow-wrap:normal] px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4">
                                 {msgData.fee}
                             </div>
                         </div>)}
 
                         {msgData.slippage && (<div className="block md:table-row bg-white border-b">
                             <div className="block md:table-cell xl:w-96 px-3 pt-3 pb-0 md:py-2 xl:px-6 xl:py-4 max-md:text-sm max-md:text-clay-dark font-medium whitespace-normal xl:whitespace-nowrap">Slippage:</div>
-                            <div className="block md:table-cell min-w-0 break-all md:break-normal px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4">
+                            <div className="block md:table-cell min-w-0 [overflow-wrap:anywhere] md:[overflow-wrap:normal] px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4">
                                 {msgData.slippage}
                             </div>
                         </div>)}
 
                         {msgData.intent_tx_hash && (<div className="block md:table-row bg-white border-b">
                             <div className="block md:table-cell xl:w-96 px-3 pt-3 pb-0 md:py-2 xl:px-6 xl:py-4 max-md:text-sm max-md:text-clay-dark font-medium whitespace-normal xl:whitespace-nowrap">Intent Hash:</div>
-                            <div className="block md:table-cell min-w-0 break-all md:break-normal px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4">
+                            <div className="block md:table-cell min-w-0 [overflow-wrap:anywhere] md:[overflow-wrap:normal] px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4">
                                 <Link className="hover:underline underline-offset-2 inline-block" href={`/messages/search?value=${msgData.intent_tx_hash}`}>
                                     {msgData.intent_tx_hash}
                                 </Link>
@@ -102,7 +102,7 @@ export default async function MessageDetail({ msgData, meta, isAdmin = false }) 
 
                         <div className="block md:table-row bg-white border-b">
                             <div className="block md:table-cell xl:w-96 px-3 pt-3 pb-0 md:py-2 xl:px-6 xl:py-4 max-md:text-sm max-md:text-clay-dark font-medium whitespace-normal xl:whitespace-nowrap">Action:</div>
-                            <div className="block md:table-cell min-w-0 break-all md:break-normal px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4">
+                            <div className="block md:table-cell min-w-0 [overflow-wrap:anywhere] md:[overflow-wrap:normal] px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4">
                                 {msgAction}
                                 {/* <br /><br />{JSON.stringify(msgActionDetail)} */}
                             </div>
@@ -110,11 +110,11 @@ export default async function MessageDetail({ msgData, meta, isAdmin = false }) 
 
                         <div className="block md:table-row bg-white border-b">
                             <div className="block md:table-cell xl:w-96 px-3 pt-3 pb-0 md:py-2 xl:px-6 xl:py-4 max-md:text-sm max-md:text-clay-dark font-medium whitespace-normal xl:whitespace-nowrap">Created:</div>
-                            <div className="block md:table-cell min-w-0 break-all md:break-normal px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4 tabular-nums">{timeAgo(msgData.created_at * 1000)} ago ({new Date(msgData.created_at * 1000).toUTCString()})</div>
+                            <div className="block md:table-cell min-w-0 [overflow-wrap:anywhere] md:[overflow-wrap:normal] px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4 tabular-nums">{timeAgo(msgData.created_at * 1000)} ago ({new Date(msgData.created_at * 1000).toUTCString()})</div>
                         </div>
                         <div className="block md:table-row bg-white border-b">
                             <div className="block md:table-cell xl:w-96 px-3 pt-3 pb-0 md:py-2 xl:px-6 xl:py-4 max-md:text-sm max-md:text-clay-dark font-medium whitespace-normal xl:whitespace-nowrap">Last updated at:</div>
-                            <div className="block md:table-cell min-w-0 break-all md:break-normal px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4">
+                            <div className="block md:table-cell min-w-0 [overflow-wrap:anywhere] md:[overflow-wrap:normal] px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4">
                                 {msgData.updated_at
                                     ? `${timeAgo(msgData.updated_at * 1000)} ago (${new Date(msgData.updated_at * 1000).toUTCString()})`
                                     : ''}
