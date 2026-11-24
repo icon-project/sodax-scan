@@ -8,8 +8,141 @@
     --color-espresso: theme('colors.espresso');
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
+    /* ---- Semantic theme tokens (RGB channels, used as rgb(var(--x) / <alpha-value>)).
+       Light values are byte-identical to the previous brand-token colours. ---- */
+    --surface: 249 247 245; /* vibrant-white */
+    --header: 248 243 243; /* almost-white */
+    --raised: 255 255 255; /* white */
+    --sunken: 251 251 251; /* chalk */
+    --subtle: 237 230 230; /* cream-white */
+    --hover: 248 243 243; /* almost-white */
+    --selected: 246 231 153; /* soda-on-soda */
+    --line: 237 230 230; /* cream-white */
+    --line-strong: 185 172 171; /* clay-light */
+    --fg: 72 52 52; /* espresso */
+    --fg-muted: 107 92 91; /* clay-dark */
+    --fg-subtle: 142 126 125; /* clay */
+    --accent: 165 92 85; /* cherry-soda */
+    --focus: 165 92 85; /* cherry-soda */
+    --tint: 229 213 212; /* cream-cherry */
+    --skeleton: 237 230 230; /* cream-white */
+    --trend-up: 8 149 65; /* success-dark */
+    --trend-down: 167 54 57; /* error-dark */
+    --hero-from: 165 92 85; /* cherry-soda */
+    --hero-to: 150 77 72; /* cherry-dark */
+    --footer: 150 77 72; /* cherry-dark */
+    --st-executed: 230 248 236; --st-executed-fg: 72 52 52; --st-executed-dot: 10 186 81;
+    --st-failed: 250 236 236; --st-failed-fg: 167 54 57; --st-failed-dot: 206 68 70;
+    --st-rollbacked: 245 219 219; --st-rollbacked-fg: 167 54 57; --st-rollbacked-dot: 167 54 57;
+    --st-delivered: 240 234 235; --st-delivered-fg: 72 52 52; --st-delivered-dot: 72 52 52;
+    --st-attested: 229 213 212; --st-attested-fg: 72 52 52; --st-attested-dot: 165 92 85;
+    --st-pending: 248 243 243; --st-pending-fg: 107 92 91; --st-pending-border: 215 205 203;
+    --st-fallback: 237 230 230; --st-fallback-fg: 107 92 91; --st-fallback-dot: 185 172 171;
+    --icon-disc: transparent;
+    --icon-ring: transparent;
+    --shadow-card: 0 1px 2px rgba(72, 52, 52, 0.06), 0 4px 16px rgba(72, 52, 52, 0.08);
+    --shadow-overlay: 0 1px 3px rgba(72, 52, 52, 0.1), 0 4px 12px rgba(72, 52, 52, 0.08);
+    --picker-track: 237 230 230;
+    --picker-track-border: 237 230 230;
+    --picker-thumb: 255 255 255;
+    --picker-thumb-shadow: 0 1px 2px rgb(72 52 52 / 0.12);
+    --picker-icon: 107 92 91;
+    --picker-icon-active: 72 52 52;
+    --picker-icon-hover: 72 52 52;
+    color-scheme: light;
+
     --font-mono: ui-monospace, Menlo, Monaco, 'Cascadia Mono', 'Segoe UI Mono', 'Roboto Mono', 'Oxygen Mono', 'Ubuntu Monospace', 'Source Code Pro', 'Fira Mono', 'Droid Sans Mono',
         'Courier New', monospace;
+}
+
+/* Dark theme: warm charcoal / espresso / cherry axis (docs/design-audit/dark-mode-spec.md). */
+.dark {
+    --surface: 29 20 20; /* charcoal */
+    --header: 38 27 27;
+    --raised: 45 32 32;
+    --sunken: 34 24 24;
+    --subtle: 53 38 38;
+    --hover: 58 42 42;
+    --selected: 82 48 46;
+    --line: 66 47 47;
+    --line-strong: 142 126 125; /* clay */
+    --fg: 248 243 243; /* almost-white */
+    --fg-muted: 185 172 171; /* clay-light */
+    --fg-subtle: 142 126 125; /* clay: decorative only, fails 4.5 on raised */
+    --accent: 204 158 154; /* cherry-bright */
+    --focus: 204 158 154;
+    --tint: 82 48 46;
+    --skeleton: 72 52 52; /* espresso */
+    --trend-up: 109 214 150;
+    --trend-down: 216 105 108;
+    --hero-from: 120 63 59; /* cherry-dark + 25% charcoal */
+    --hero-to: 90 49 46; /* cherry-dark + 50% charcoal */
+    --footer: 90 49 46;
+    --st-executed: 23 56 33; --st-executed-fg: 206 240 220; --st-executed-dot: 109 214 150;
+    --st-failed: 81 33 34; --st-failed-fg: 245 219 219; --st-failed-dot: 216 105 108;
+    --st-rollbacked: 105 39 40; --st-rollbacked-fg: 245 219 219; --st-rollbacked-dot: 216 105 108;
+    --st-delivered: 53 38 38; --st-delivered-fg: 237 230 230; --st-delivered-dot: 185 172 171;
+    --st-attested: 71 40 38; --st-attested-fg: 227 190 187; --st-attested-dot: 204 158 154;
+    --st-pending: 38 27 27; --st-pending-fg: 185 172 171; --st-pending-border: 66 47 47;
+    --st-fallback: 53 38 38; --st-fallback-fg: 185 172 171; --st-fallback-dot: 185 172 171;
+    --icon-disc: #ede6e6; /* cream-white */
+    --icon-ring: rgb(255 255 255 / 0.15);
+    --shadow-card: 0 0 0 1px rgb(var(--line)), inset 0 1px 0 rgb(255 255 255 / 0.04);
+    --shadow-overlay: 0 0 0 1px rgb(var(--line)), 0 12px 32px rgb(0 0 0 / 0.45);
+    --picker-track: 29 20 20;
+    --picker-track-border: 66 47 47;
+    --picker-thumb: 72 52 52;
+    --picker-thumb-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+    --picker-icon: 185 172 171;
+    --picker-icon-active: 248 243 243;
+    --picker-icon-hover: 248 243 243;
+    color-scheme: dark;
+}
+
+/* Never print dark. */
+@media print {
+    :root,
+    .dark {
+    --surface: 249 247 245; /* vibrant-white */
+    --header: 248 243 243; /* almost-white */
+    --raised: 255 255 255; /* white */
+    --sunken: 251 251 251; /* chalk */
+    --subtle: 237 230 230; /* cream-white */
+    --hover: 248 243 243; /* almost-white */
+    --selected: 246 231 153; /* soda-on-soda */
+    --line: 237 230 230; /* cream-white */
+    --line-strong: 185 172 171; /* clay-light */
+    --fg: 72 52 52; /* espresso */
+    --fg-muted: 107 92 91; /* clay-dark */
+    --fg-subtle: 142 126 125; /* clay */
+    --accent: 165 92 85; /* cherry-soda */
+    --focus: 165 92 85; /* cherry-soda */
+    --tint: 229 213 212; /* cream-cherry */
+    --skeleton: 237 230 230; /* cream-white */
+    --trend-up: 8 149 65; /* success-dark */
+    --trend-down: 167 54 57; /* error-dark */
+    --hero-from: 165 92 85; /* cherry-soda */
+    --hero-to: 150 77 72; /* cherry-dark */
+    --footer: 150 77 72; /* cherry-dark */
+    --st-executed: 230 248 236; --st-executed-fg: 72 52 52; --st-executed-dot: 10 186 81;
+    --st-failed: 250 236 236; --st-failed-fg: 167 54 57; --st-failed-dot: 206 68 70;
+    --st-rollbacked: 245 219 219; --st-rollbacked-fg: 167 54 57; --st-rollbacked-dot: 167 54 57;
+    --st-delivered: 240 234 235; --st-delivered-fg: 72 52 52; --st-delivered-dot: 72 52 52;
+    --st-attested: 229 213 212; --st-attested-fg: 72 52 52; --st-attested-dot: 165 92 85;
+    --st-pending: 248 243 243; --st-pending-fg: 107 92 91; --st-pending-border: 215 205 203;
+    --st-fallback: 237 230 230; --st-fallback-fg: 107 92 91; --st-fallback-dot: 185 172 171;
+    --icon-disc: transparent;
+    --icon-ring: transparent;
+    --shadow-card: 0 1px 2px rgba(72, 52, 52, 0.06), 0 4px 16px rgba(72, 52, 52, 0.08);
+    --shadow-overlay: 0 1px 3px rgba(72, 52, 52, 0.1), 0 4px 12px rgba(72, 52, 52, 0.08);
+    --picker-track: 237 230 230;
+    --picker-track-border: 237 230 230;
+    --picker-thumb: 255 255 255;
+    --picker-thumb-shadow: 0 1px 2px rgb(72 52 52 / 0.12);
+    --picker-icon: 107 92 91;
+    --picker-icon-active: 72 52 52;
+    --picker-icon-hover: 72 52 52;
+    }
 }
 
 * {
@@ -55,10 +188,10 @@ a {
 }
 @keyframes row-tint {
     from {
-        background-color: theme('colors.cream-cherry');
+        background-color: rgb(var(--tint));
     }
     to {
-        background-color: theme('colors.white');
+        background-color: rgb(var(--raised));
     }
 }
 /* Mobile card: no height animation. Rows below glide via FLIP
@@ -117,8 +250,8 @@ a {
 .hero {
     /* Brand cherry-soda impact surface. Deep enough for white body text and
        the yellow-soda hero stat to read with real contrast. */
-    background-color: theme('colors.cherry-soda');
-    background-image: linear-gradient(180deg, theme('colors.cherry-soda') 0%, theme('colors.cherry-dark') 100%);
+    background-color: rgb(var(--hero-from));
+    background-image: linear-gradient(180deg, rgb(var(--hero-from)) 0%, rgb(var(--hero-to)) 100%);
 }
 
 /* Body is now Inter (font-sans). Keep hashes/addresses monospace so they stay
@@ -134,7 +267,7 @@ a {
 /* Global keyboard focus ring: cherry-soda on light surfaces, yellow-soda over
    the cherry hero / dark footer. Mouse clicks never show it (focus-visible). */
 :focus-visible {
-    outline: 2px solid theme('colors.cherry-soda');
+    outline: 2px solid rgb(var(--focus));
     outline-offset: 2px;
 }
 .hero :focus-visible,
