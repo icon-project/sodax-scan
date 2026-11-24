@@ -23,7 +23,7 @@ export default function MessageList({ data, meta, showPagination }: MessageListP
                             </div>
                             <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-2 text-sm min-w-0">
                                 <div className="min-w-0">{Render.renderSrcHashLink(item, meta)}</div>
-                                <span aria-hidden="true" className="text-clay">&rarr;</span>
+                                <span aria-hidden="true" className="text-clay-dark">&rarr;</span>
                                 <div className="min-w-0">{Render.renderDestHashLink(item, meta)}</div>
                             </div>
                             <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-clay-dark">

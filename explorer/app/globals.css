@@ -38,7 +38,7 @@ a {
 }
 
 .fade-in {
-    animation: fadeInAnimation ease 1.5s;
+    animation: fadeInAnimation ease-out 200ms;
 }
 
 .hero {
@@ -55,3 +55,54 @@ a {
     font-family: var(--font-mono);
 }
 
+
+/* ---- Accessibility ---- */
+
+/* Global keyboard focus ring: cherry-soda on light surfaces, yellow-soda over
+   the cherry hero / dark footer. Mouse clicks never show it (focus-visible). */
+:focus-visible {
+    outline: 2px solid theme('colors.cherry-soda');
+    outline-offset: 2px;
+}
+.hero :focus-visible,
+footer :focus-visible {
+    outline-color: theme('colors.yellow-soda');
+}
+
+/* 150ms colour transitions on interactive elements. */
+a,
+button,
+select,
+input,
+[role='button'] {
+    transition-property: color, background-color, border-color, box-shadow, opacity;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
+}
+
+/* Header ticker: pause on hover / keyboard focus (WCAG 2.2.2). */
+.animate-infinite-scroll:hover,
+.animate-infinite-scroll:focus-within {
+    animation-play-state: paused;
+}
+
+/* Respect reduced motion: stop the ticker, drop fades, skeleton pulses and
+   transitions. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    .animate-infinite-scroll {
+        animation: none !important;
+        transform: none !important;
+    }
+    .animate-pulse,
+    .fade-in {
+        animation: none !important;
+    }
+}

@@ -7,10 +7,10 @@ export default function Header({ showSearchBar, assets }) {
     assets = assets ?? []
 
     return (
-        <header className="px-4 py-4 xl:px-24 2xl:px-48 w-full bg-almost-white flex items-center md:items-stretch justify-between max-md:gap-3 border-b border-light-grey">
+        <header className="px-4 py-4 xl:px-24 2xl:px-48 w-full bg-almost-white flex items-center md:items-stretch justify-between max-md:gap-3 border-b border-cream-white">
             <div className="min-w-0">
-                <a className="block" href="/">
-                    <img alt="SODAX Scan" className="w-44 min-w-0 md:w-64 md:min-w-64 h-[32px] max-md:object-contain max-md:object-left" src="/images/new_logo.svg"></img>
+                <a className="block rounded-small" href="/" aria-label="SODAX Scan home">
+                    <img alt="" className="w-44 min-w-0 md:w-64 md:min-w-64 h-[32px] max-md:object-contain max-md:object-left" src="/images/new_logo.svg"></img>
                 </a>
             </div>
 
@@ -30,7 +30,8 @@ export default function Header({ showSearchBar, assets }) {
                                 ? assets.filter((asset) => asset.current_price != null).map((asset) => (
                                       <li key={asset.name}>
                                           <div key={asset.name} className="flex items-center gap-1 whitespace-nowrap">
-                                              <Image src={asset.image} width={20} height={20} className="rounded-full h-[20px] w-[20px]" />
+                                              <Image src={asset.image} alt="" width={20} height={20} className="rounded-full h-[20px] w-[20px]" />
+                                              <span className="sr-only">{asset.symbol}</span>
                                               <span className="tabular-nums">${asset.current_price.toFixed(2)}</span>
                                               <span className="tabular-nums text-espresso">
                                                   {/* Arrow carries the direction colour (graphic, 3:1 is enough); the figure stays espresso for 4.5:1 text contrast. */}
@@ -49,7 +50,11 @@ export default function Header({ showSearchBar, assets }) {
 
                 {showSearchBar ? <SearchBar showFull={false} /> : ''}
 
-                <Dropdown label="" dismissOnClick={false} renderTrigger={() => <Image alt="SODAX apps" className="hover:cursor-pointer max-md:box-content max-md:p-2.5 max-md:-m-2.5" src={`/images/sodax_logo.svg`} width={24} height={24} />}>
+                <Dropdown label="" dismissOnClick={false} renderTrigger={() => (
+                        <button type="button" aria-label="SODAX apps" className="inline-flex items-center justify-center rounded-small transition-colors duration-150 hover:bg-cream-white max-md:p-2.5 max-md:-m-2.5">
+                            <Image alt="" className="hover:cursor-pointer" src={`/images/sodax_logo.svg`} width={24} height={24} />
+                        </button>
+                    )}>
                     <Dropdown.Item>
                         <a href={process.env.NEXT_PUBLIC_TESTNET_APP_URL}>Testnet</a>
                     </Dropdown.Item>

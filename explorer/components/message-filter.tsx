@@ -228,7 +228,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                 })}
             </Dropdown>
 
-            <button className="rounded-full px-3 py-1.5 text-sm text-cherry-brighter underline-offset-2 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soda-bright max-md:min-h-11" onClick={() => props.resetClicked()}>
+            <button className="rounded-full px-3 py-1.5 text-sm text-white underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soda-bright max-md:min-h-11" onClick={() => props.resetClicked()}>
                 Reset
             </button>
         </div>

@@ -65,7 +65,7 @@ function renderChain(network) {
     if (!name) return <div>-</div>
     return (
         <div className="flex items-center gap-2">
-            <Image alt={String(network)} src={`/images/network-${name}.png`} width={24} height={24} className="rounded-full bg-transparent" />
+            <Image alt="" src={`/images/network-${name}.png`} width={24} height={24} className="rounded-full bg-transparent" />
             <span className="capitalize">{String(name)}</span>
         </div>
     )
@@ -87,10 +87,10 @@ function renderDestHashLink(item, meta) {
         scanUrl = meta.urls.tx[item.src_network]
         networkImg = (
             <div className="w-[3rem]">
-                <Image className="relative inline-block" alt={item.dest_network} src={`/images/network-${item.dest_network}.png`} width={24} height={24} />
+                <Image className="relative inline-block" alt={helper.REV_NETWORK_MAPPINGS[item.dest_network] || ""} src={`/images/network-${item.dest_network}.png`} width={24} height={24} />
                 <Image
                     className="relative inline-block -left-4 rounded-full bg-white"
-                    alt={item.src_network}
+                    alt={helper.REV_NETWORK_MAPPINGS[item.src_network] || ""}
                     src={`/images/network-${item.src_network}.png`}
                     width={24}
                     height={24}
@@ -101,7 +101,7 @@ function renderDestHashLink(item, meta) {
         link = <div className={linkClass}><span className="tx-hash" data-hash={item.rollback_tx_hash}>{truncateHash(item.rollback_tx_hash)}</span></div>
     } else if (item.dest_tx_hash) {
         scanUrl = meta.urls.tx[item.dest_network]
-        networkImg = <Image alt={item.dest_network} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[item.dest_network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
+        networkImg = <Image alt={helper.REV_NETWORK_MAPPINGS[item.dest_network] || ""} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[item.dest_network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
         link = <div className={linkClass}><span className="tx-hash" data-hash={item.dest_tx_hash}>{truncateHash(item.dest_tx_hash)}</span></div>
     } else if (item.sn == null && !helper.isMpcTransaction(item)) {
         // Hub-intent event (no serial number): single-tx event on the hub with
@@ -113,10 +113,10 @@ function renderDestHashLink(item, meta) {
         // dest tx yet and must NOT masquerade the source tx as the destination.
         // SolverMarketPlaceFills return early above: they have no tx hash to mirror.
         scanUrl = meta.urls.tx[item.src_network]
-        networkImg = <Image alt={item.src_network} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[item.src_network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
+        networkImg = <Image alt={helper.REV_NETWORK_MAPPINGS[item.src_network] || ""} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[item.src_network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
         link = <div className={linkClass}><span className="tx-hash" data-hash={item.src_tx_hash}>{truncateHash(item.src_tx_hash)}</span></div>
     } else {
-        networkImg = <Image alt={item.dest_network} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[item.dest_network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
+        networkImg = <Image alt={helper.REV_NETWORK_MAPPINGS[item.dest_network] || ""} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[item.dest_network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
         link = <div></div>
     }
 
@@ -200,7 +200,7 @@ function renderHashLink(scanUrl, network, hash, isFull = false) {
     }
     // Bare-hash chains display (and copy) without the 0x prefix, matching the link.
     const dispHash = isBareHash && typeof hash === 'string' && hash.startsWith('0x') ? hash.slice(2) : hash
-    networkImg = <Image alt={network} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
+    networkImg = <Image alt={helper.REV_NETWORK_MAPPINGS[network] || ""} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
     link = !isFull || isOdHash ? (
         <div className={linkClass}><span className="tx-hash" data-hash={dispHash}>{isFull ? dispHash : truncateHash(dispHash)}</span></div>
     ) : (

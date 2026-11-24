@@ -115,10 +115,10 @@ describe('SolverMarketPlaceFill rows', () => {
         const fill = { ...SolverMarketPlaceFill, src_network: '15', dest_network: '728126428' }
         const meta = { urls: { tx: {} } }
         const [srcImg, srcName] = Render.renderSrcHashLink(fill, meta).props.children
-        expect(srcImg.props.alt).toBe('15')
+        expect(srcImg.props.alt).toBe('')
         expect(srcName.props.children).toBe('near')
         const [destImg, destName] = Render.renderDestHashLink(fill, meta).props.children
-        expect(destImg.props.alt).toBe('728126428')
+        expect(destImg.props.alt).toBe('')
         expect(destName.props.children).toBe('tron')
     })
 

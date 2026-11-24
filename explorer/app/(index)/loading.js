@@ -14,7 +14,7 @@ export default function Loading() {
                 </div>
                 <div className="basis-4/12 flex flex-row-reverse items-end ">
                     <div className="px-4 text-white rounded-md text-right  ">
-                        <div className="text-sm opacity-75">Total Messages</div>
+                        <div className="text-xs uppercase tracking-wider">Total Messages</div>
                         <div className="text-3xl font-medium fade-in">0</div>
                     </div>
                 </div>
