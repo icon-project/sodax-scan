@@ -50,10 +50,10 @@ function renderMessageStatus(status) {
 // the "hub-only" badge.
 function renderSerialNo(item) {
     const badge = (label) => (
-        <span className="uppercase text-xs rounded-full px-2 py-0.5 bg-cream-white text-clay-dark tracking-wide">{label}</span>
+        <span className="inline-block whitespace-nowrap text-xs font-medium rounded-full px-2 py-0.5 bg-cream-white text-clay-dark">{label}</span>
     )
     if (helper.isMpcTransaction(item)) return badge('MPC')
-    if (helper.isSolverMarketPlaceFill(item)) return badge('SOLVER MARKETPLACE FILL')
+    if (helper.isSolverMarketPlaceFill(item)) return badge('Marketplace')
     if (item.sn == null) return badge('hub-only')
     return item.sn
 }
@@ -128,27 +128,46 @@ function renderDestHashLink(item, meta) {
     )
 }
 
-// One end of the desktop Route cell: network name (small label) over the
-// existing icon + short tx hash link renderer, so no hash/link data is lost.
-// SolverMarketPlaceFills already render icon + name and carry no hash.
-function routeLeg(network, node, showName) {
+// Hash shown under the destination network in the Route cell (null when none).
+// Mirrors renderDestHashLink: rollback tx, else dest tx, else (hub-intent event,
+// non-MPC, no sn) the source tx mirrored. SolverMarketPlaceFills carry no hash.
+function routeDestHash(item) {
+    if (helper.isSolverMarketPlaceFill(item)) return null
+    if (item.rollback_tx_hash) return item.rollback_tx_hash
+    if (item.dest_tx_hash) return item.dest_tx_hash
+    if (item.sn == null && !helper.isMpcTransaction(item)) return item.src_tx_hash || null
+    return null
+}
+
+// One end of the desktop Route cell: network icon, then network name (same size
+// and weight whether or not a hash exists) with the short hash as a quieter
+// second line only when present. Always vertically centred.
+function routeLeg(network, hash) {
     const name = helper.REV_NETWORK_MAPPINGS[network]
+    if (!name) return <div className="text-sm text-clay-dark">-</div>
     return (
-        <div className="min-w-0">
-            {showName && name && <div className="text-sm font-medium capitalize text-espresso leading-5">{String(name)}</div>}
-            <div className="text-xs text-clay-dark leading-4">{node}</div>
+        <div className="flex items-center gap-2 min-w-0">
+            <Image alt="" src={`/images/network-${name}.png`} width={24} height={24} className="rounded-full bg-transparent shrink-0" />
+            <div className="min-w-0">
+                <div className="text-sm font-medium capitalize text-espresso leading-5">{String(name)}</div>
+                {hash && (
+                    <div className="text-xs text-clay-dark leading-4">
+                        <span className="tx-hash" data-hash={hash}>{truncateHash(hash)}</span>
+                    </div>
+                )}
+            </div>
         </div>
     )
 }
 
 // Route cell: source -> destination in one column.
-function renderRoute(item, meta) {
-    const named = !helper.isSolverMarketPlaceFill(item)
+function renderRoute(item) {
+    const fill = helper.isSolverMarketPlaceFill(item)
     return (
         <div className="flex items-center gap-2 xl:gap-3 min-w-0">
-            {routeLeg(item.src_network, renderSrcHashLink(item, meta), named)}
-            <span aria-hidden="true" className="text-clay shrink-0">&rarr;</span>
-            {routeLeg(item.dest_network, renderDestHashLink(item, meta), named)}
+            {routeLeg(item.src_network, fill ? null : item.src_tx_hash)}
+            <span aria-hidden="true" className="text-clay-dark shrink-0 leading-none">&rarr;</span>
+            {routeLeg(item.dest_network, routeDestHash(item))}
         </div>
     )
 }
