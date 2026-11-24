@@ -29,11 +29,15 @@ export default function Header({ showSearchBar, assets }) {
                             {Array.isArray(assets)
                                 ? assets.filter((asset) => asset.current_price != null).map((asset) => (
                                       <li key={asset.name}>
-                                          <div key={asset.name} className="flex gap-1">
+                                          <div key={asset.name} className="flex items-center gap-1 whitespace-nowrap">
                                               <Image src={asset.image} width={20} height={20} className="rounded-full h-[20px] w-[20px]" />
                                               <span className="tabular-nums">${asset.current_price.toFixed(2)}</span>
-                                              <span className={`tabular-nums ${asset.price_change_percentage_24h > 0 ? 'text-success-dark' : 'text-error-dark'}`}>
-                                                  ({(asset.price_change_percentage_24h ?? 0).toFixed(2)}%)
+                                              <span className="tabular-nums text-espresso">
+                                                  {/* Arrow carries the direction colour (graphic, 3:1 is enough); the figure stays espresso for 4.5:1 text contrast. */}
+                                                  <span aria-hidden="true" className={asset.price_change_percentage_24h > 0 ? 'text-success-dark' : 'text-error-dark'}>
+                                                      {asset.price_change_percentage_24h > 0 ? '▲' : '▼'}
+                                                  </span>{' '}
+                                                  {Math.abs(asset.price_change_percentage_24h ?? 0).toFixed(2)}%
                                               </span>
                                           </div>
                                       </li>

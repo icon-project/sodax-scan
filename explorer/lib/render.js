@@ -24,17 +24,17 @@ const STATUS_PILLS = {
     // `attested` is the one new MPC status (R4). `routed`/`hub-burned`/`minted`/
     // `swept`/`released` are NOT status values (detail-timeline legs only).
     attested: { pill: 'bg-cream-cherry text-espresso', dot: 'bg-cherry-soda' },
-    pending: { pill: 'bg-almost-white text-clay-dark border border-cherry-grey', dot: 'bg-transparent border border-clay' }
+    pending: { pill: 'bg-almost-white text-clay-dark !border-cherry-grey', dot: 'bg-transparent border border-clay' }
 }
 // Total fallback (R4): unknown/undefined/null status renders a generic badge
 // rather than returning undefined (which produced a blank pill).
 const STATUS_PILL_FALLBACK = { pill: 'bg-cream-white text-clay-dark', dot: 'bg-clay-light' }
 
 function renderMessageStatus(status) {
-    const base = 'inline-flex items-center justify-center gap-1.5 text-xs font-medium rounded-full py-1 px-2.5 min-w-24 whitespace-nowrap'
+    const base = 'inline-flex items-center justify-center gap-1.5 text-xs font-medium rounded-full py-1 px-2.5 min-w-24 whitespace-nowrap border border-transparent'
     const s = (status || '').toLowerCase()
     const { pill, dot } = STATUS_PILLS[s] || STATUS_PILL_FALLBACK
-    const label = String(status || 'unknown')
+    const label = s || 'unknown'
     return (
         <span className={`${base} ${pill}`}>
             <span aria-hidden="true" className={`inline-block w-1.5 h-1.5 rounded-full ${dot}`}></span>
