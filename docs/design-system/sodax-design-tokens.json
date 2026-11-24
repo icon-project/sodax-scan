@@ -1,0 +1,476 @@
+{
+  "$schema": "https://design-tokens.org/schema/1.0",
+  "meta": {
+    "source": "Figma Design System - B2B World",
+    "fileKey": "yvIOJVF69NF6aV5ItWUsGF",
+    "generatedBy": "Claude via Figma MCP (live variable read, not visual inspection)",
+    "lastSynced": "2026-07-10",
+    "lastSyncNotes": [
+      "Full re-audit via figma.variables API (previous version had drift/typos from an earlier manual pass).",
+      "Added missing 'cherry-on-cherry' and 'cherry-plus' to Light neutrals.",
+      "Added entirely missing 'error' and 'success' semantic color collections.",
+      "Removed 'grey' and 'light-grey' from Dark neutrals: these are not B2B design-system variables (legacy palette leftovers, not present in this Figma file).",
+      "Corrected value typos: cherry-disabled, yellow-hover*, soda-disabled, cherry-brighter, cream-white (see git history for old values).",
+      "Rebuilt spacing scale to match the real 'Universal Sizes' Figma collection (2,4,8,12,14,16,18,22,24,26,28,32,40,44,48,56,80,120): old scale (1,6,10,20,64) did not exist in Figma.",
+      "Rebuilt borderRadius and stroke to use the real Figma variable names (Micro/XSmall/Small/Medium/Regular/Large/XLarge) instead of invented xs/sm/md/lg/xl aliases. There is no 'full/pill' radius token in Figma: pill shapes use an arbitrary large px value, not a token.",
+      "Typography is now split by breakpoint. The Figma 'Typography' collection has three MODES: Desktop / Tablet / Mobile: and every heading/body size has a distinct value per mode. Previous version only captured one flat scale and did not reflect this.",
+      "Added 'breakpoint' block from the 'Device size' Figma collection (Mobile 375 / Large mobile 640 / Tablet 820 / Desktop 1440 / Large desktop 2560)."
+    ]
+  },
+  "color": {
+    "primary": {
+      "$description": "Cherry soda brand palette: primary CTA and brand moments",
+      "cherry-soda": {
+        "$value": "#A55C55",
+        "$type": "color"
+      },
+      "cherry-dark": {
+        "$value": "#964D48",
+        "$type": "color"
+      },
+      "hover-cherry-dark": {
+        "$value": "#964D48",
+        "$type": "color",
+        "$description": "Currently aliases cherry-dark 1:1 in Figma: no distinct hover value defined yet"
+      },
+      "hover-cherry-soda": {
+        "$value": "#A55C55",
+        "$type": "color",
+        "$description": "Currently aliases cherry-soda 1:1 in Figma: no distinct hover value defined yet"
+      },
+      "clicked-cherry-on-cherry": {
+        "$value": "#C36C65",
+        "$type": "color"
+      },
+      "focused-cherry-on-cherry": {
+        "$value": "#C36C65",
+        "$type": "color"
+      },
+      "disabled-cherry-grey": {
+        "$value": "#D7CDCB",
+        "$type": "color"
+      }
+    },
+    "secondary": {
+      "$description": "Yellow soda accent palette",
+      "yellow-dark": {
+        "$value": "#ECC100",
+        "$type": "color"
+      },
+      "yellow-soda": {
+        "$value": "#FFD92F",
+        "$type": "color"
+      },
+      "hover-yellow-dark": {
+        "$value": "#ECC100",
+        "$type": "color",
+        "$description": "Currently aliases yellow-dark 1:1 in Figma"
+      },
+      "hover-yellow-soda": {
+        "$value": "#FFD92F",
+        "$type": "color",
+        "$description": "Currently aliases yellow-soda 1:1 in Figma"
+      },
+      "clicked-soda-on-soda": {
+        "$value": "#F6E799",
+        "$type": "color"
+      },
+      "focused-soda-on-soda": {
+        "$value": "#F6E799",
+        "$type": "color"
+      },
+      "disabled-soda-grey": {
+        "$value": "#D7D6CB",
+        "$type": "color"
+      }
+    },
+    "neutral": {
+      "light": {
+        "$description": "Light neutrals: backgrounds, surfaces, dividers",
+        "cherry-on-cherry": {
+          "$value": "#C36C65",
+          "$type": "color",
+          "$description": "Cards/buttons nested inside cherry surfaces"
+        },
+        "cherry-plus": {
+          "$value": "#AD635C",
+          "$type": "color",
+          "$description": "Newly added: matches hex previously hardcoded in build-section.tsx"
+        },
+        "cherry-bright": {
+          "$value": "#CC9E9A",
+          "$type": "color"
+        },
+        "cherry-brighter": {
+          "$value": "#E3BEBB",
+          "$type": "color"
+        },
+        "cream-cherry": {
+          "$value": "#E5D5D4",
+          "$type": "color"
+        },
+        "cream-white": {
+          "$value": "#EDE6E6",
+          "$type": "color"
+        },
+        "light-cream": {
+          "$value": "#F0EAEB",
+          "$type": "color"
+        },
+        "almost-white": {
+          "$value": "#F8F3F3",
+          "$type": "color"
+        },
+        "vibrant-white": {
+          "$value": "#F9F7F5",
+          "$type": "color",
+          "$description": "Figma variable is literally named 'Vibrat white' (upstream typo)"
+        },
+        "chalk": {
+          "$value": "#FBFBFB",
+          "$type": "color"
+        },
+        "white": {
+          "$value": "#FFFFFF",
+          "$type": "color"
+        }
+      },
+      "dark": {
+        "$description": "Dark neutrals: text, borders, dark surfaces",
+        "charcoal": {
+          "$value": "#1D1414",
+          "$type": "color"
+        },
+        "espresso": {
+          "$value": "#483434",
+          "$type": "color"
+        },
+        "clay-dark": {
+          "$value": "#6B5C5B",
+          "$type": "color"
+        },
+        "clay": {
+          "$value": "#8E7E7D",
+          "$type": "color"
+        },
+        "clay-light": {
+          "$value": "#B9ACAB",
+          "$type": "color"
+        },
+        "cherry-grey": {
+          "$value": "#D7CDCB",
+          "$type": "color"
+        }
+      }
+    },
+    "semantic": {
+      "error": {
+        "$description": "Error/destructive states: newly captured, was entirely missing before",
+        "error-base": {
+          "$value": "#FAECEC",
+          "$type": "color"
+        },
+        "error-lighter": {
+          "$value": "#F5DBDB",
+          "$type": "color"
+        },
+        "error-light": {
+          "$value": "#D8696C",
+          "$type": "color"
+        },
+        "error": {
+          "$value": "#CE4446",
+          "$type": "color"
+        },
+        "error-dark": {
+          "$value": "#A73639",
+          "$type": "color"
+        }
+      },
+      "success": {
+        "$description": "Success/confirmation states: newly captured, was entirely missing before",
+        "success-base": {
+          "$value": "#E6F8EC",
+          "$type": "color"
+        },
+        "success-lighter": {
+          "$value": "#CEF0DC",
+          "$type": "color"
+        },
+        "success-light": {
+          "$value": "#6DD696",
+          "$type": "color"
+        },
+        "success": {
+          "$value": "#0ABA51",
+          "$type": "color"
+        },
+        "success-dark": {
+          "$value": "#089541",
+          "$type": "color"
+        }
+      }
+    }
+  },
+  "spacing": {
+    "2": {
+      "$value": "2",
+      "$type": "dimension"
+    },
+    "4": {
+      "$value": "4",
+      "$type": "dimension"
+    },
+    "8": {
+      "$value": "8",
+      "$type": "dimension"
+    },
+    "12": {
+      "$value": "12",
+      "$type": "dimension"
+    },
+    "14": {
+      "$value": "14",
+      "$type": "dimension"
+    },
+    "16": {
+      "$value": "16",
+      "$type": "dimension"
+    },
+    "18": {
+      "$value": "18",
+      "$type": "dimension"
+    },
+    "22": {
+      "$value": "22",
+      "$type": "dimension"
+    },
+    "24": {
+      "$value": "24",
+      "$type": "dimension"
+    },
+    "26": {
+      "$value": "26",
+      "$type": "dimension"
+    },
+    "28": {
+      "$value": "28",
+      "$type": "dimension"
+    },
+    "32": {
+      "$value": "32",
+      "$type": "dimension"
+    },
+    "40": {
+      "$value": "40",
+      "$type": "dimension"
+    },
+    "44": {
+      "$value": "44",
+      "$type": "dimension"
+    },
+    "48": {
+      "$value": "48",
+      "$type": "dimension"
+    },
+    "56": {
+      "$value": "56",
+      "$type": "dimension"
+    },
+    "80": {
+      "$value": "80",
+      "$type": "dimension"
+    },
+    "120": {
+      "$value": "120",
+      "$type": "dimension"
+    },
+    "$description": "Universal Sizes: verified against the real Figma collection (px)"
+  },
+  "borderRadius": {
+    "$description": "Corner radius scale: real Figma variable names. No 'full/pill' token exists; pill shapes use an arbitrary large px value in code, not a variable.",
+    "micro": {
+      "$value": "2",
+      "$type": "dimension"
+    },
+    "xsmall": {
+      "$value": "4",
+      "$type": "dimension"
+    },
+    "small": {
+      "$value": "8",
+      "$type": "dimension"
+    },
+    "medium": {
+      "$value": "12",
+      "$type": "dimension"
+    },
+    "regular": {
+      "$value": "16",
+      "$type": "dimension"
+    },
+    "large": {
+      "$value": "24",
+      "$type": "dimension"
+    },
+    "xlarge": {
+      "$value": "32",
+      "$type": "dimension"
+    }
+  },
+  "stroke": {
+    "$description": "Border/stroke widths: real Figma variable names",
+    "xsmall": {
+      "$value": "1",
+      "$type": "dimension"
+    },
+    "msmall": {
+      "$value": "1.5",
+      "$type": "dimension"
+    },
+    "small": {
+      "$value": "2",
+      "$type": "dimension"
+    },
+    "medium": {
+      "$value": "4",
+      "$type": "dimension"
+    },
+    "large": {
+      "$value": "8",
+      "$type": "dimension"
+    },
+    "xlarge": {
+      "$value": "12",
+      "$type": "dimension"
+    }
+  },
+  "breakpoint": {
+    "$description": "Device size collection: the widths each Typography mode below corresponds to",
+    "mobile": {
+      "$value": "375",
+      "$type": "dimension"
+    },
+    "large-mobile": {
+      "$value": "640",
+      "$type": "dimension"
+    },
+    "tablet": {
+      "$value": "820",
+      "$type": "dimension"
+    },
+    "desktop": {
+      "$value": "1440",
+      "$type": "dimension"
+    },
+    "large-desktop": {
+      "$value": "2560",
+      "$type": "dimension"
+    }
+  },
+  "typography": {
+    "$description": "Type scale extracted from Figma's Typography variable collection. IMPORTANT: this collection has three MODES (Desktop / Tablet / Mobile): font sizes genuinely change per device, they are not a single flat scale.",
+    "fontFamily": {
+      "heading": {
+        "$value": "Inter",
+        "$type": "fontFamily"
+      },
+      "body": {
+        "$value": "Inter",
+        "$type": "fontFamily"
+      },
+      "serif-heading": {
+        "$value": "Inria Serif",
+        "$type": "fontFamily",
+        "$description": "Display headings"
+      },
+      "playful-heading": {
+        "$value": "Shrikhand",
+        "$type": "fontFamily",
+        "$description": "Single accent word per headline only"
+      }
+    },
+    "fontWeight": {
+      "light": {
+        "$value": "Light",
+        "$type": "fontWeight"
+      },
+      "regular": {
+        "$value": "Regular",
+        "$type": "fontWeight"
+      },
+      "medium": {
+        "$value": "Medium",
+        "$type": "fontWeight"
+      },
+      "bold": {
+        "$value": "Bold",
+        "$type": "fontWeight"
+      },
+      "black": {
+        "$value": "Black",
+        "$type": "fontWeight"
+      }
+    },
+    "fontSize": {
+      "$description": "px values per breakpoint mode, straight from Figma variables",
+      "h1": {
+        "desktop": 40,
+        "tablet": 36,
+        "mobile": 32
+      },
+      "h2": {
+        "desktop": 32,
+        "tablet": 28,
+        "mobile": 24
+      },
+      "h3": {
+        "desktop": 28,
+        "tablet": 24,
+        "mobile": 22
+      },
+      "h4": {
+        "desktop": 24,
+        "tablet": 22,
+        "mobile": 20
+      },
+      "h5": {
+        "desktop": 22,
+        "tablet": 20,
+        "mobile": 18
+      },
+      "body-large": {
+        "desktop": 18,
+        "tablet": 18,
+        "mobile": 16
+      },
+      "body-regular": {
+        "desktop": 16,
+        "tablet": 16,
+        "mobile": 14
+      },
+      "body-small": {
+        "desktop": 14,
+        "tablet": 14,
+        "mobile": 12
+      },
+      "body-xsmall": {
+        "desktop": 12,
+        "tablet": 12,
+        "mobile": 10
+      }
+    },
+    "lineHeight": {
+      "$description": "Not stored as separate Figma variables: these are hardcoded per composite font style (e.g. 'Headings/H2/Black') at Desktop size and were not re-verified per breakpoint. Treat as approximate; confirm in Figma before using at Tablet/Mobile sizes.",
+      "h1": 48,
+      "h2": 40,
+      "h3": 32,
+      "h4": 32,
+      "h5": 32,
+      "body-large": 26,
+      "body-regular": 22,
+      "body-small": 18,
+      "body-xsmall": 18
+    }
+  }
+}
