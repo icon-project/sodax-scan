@@ -141,7 +141,7 @@ export default function Home() {
             {messagesRes.isLoading && !messagesRes.data ? (
                 <SkeletonTable />
             ) : (
-                <div aria-busy={stale} className={`transition-opacity duration-150 ease-out ${stale ? 'opacity-60 pointer-events-none' : ''}`}>
+                <div aria-busy={stale} className={`[overflow-anchor:none] transition-opacity duration-150 ease-out ${stale ? 'opacity-60 pointer-events-none' : ''}`}>
                     <MessageList data={messagesRes.data?.data} meta={messagesRes.data?.meta} showPagination={false} onReset={resetFilters} filtersActive={filtersActive} freshIds={freshIds}></MessageList>
                 </div>
             )}
