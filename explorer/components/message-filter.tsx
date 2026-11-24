@@ -32,7 +32,7 @@ const MessageFilter = (props: MessageFilterProps) => {
     const [destFilter, setDestFilter] = useState<string>('')
 
     const dropdownTheme = {
-        inlineWrapper: 'flex items-center hover:text-cherry-brighter'
+        inlineWrapper: 'flex items-center hover:text-cherry-brighter max-md:min-h-11 max-md:px-3'
     }
 
     const filterNetworks = (networks: Network[], filterText: string): Network[] => {
@@ -43,9 +43,10 @@ const MessageFilter = (props: MessageFilterProps) => {
         )
     }
 
+    // Mobile: wrapping row (a scroll strip would clip the dropdown menus), Reset last, 44px targets. md+: unchanged.
     return (
-        <div className="flex flex-row-reverse gap-4 text-white p-1 rounded-md">
-            <button className="hover:text-cherry-brighter" onClick={() => props.resetClicked()}>
+        <div className="flex flex-wrap items-center md:flex-nowrap md:flex-row-reverse gap-x-1 md:gap-4 text-white p-1 rounded-md max-md:-mx-3">
+            <button className="hover:text-cherry-brighter max-md:order-last max-md:min-h-11 max-md:px-3" onClick={() => props.resetClicked()}>
                 Reset
             </button>
 

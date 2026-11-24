@@ -42,6 +42,10 @@ export default function Home() {
                     </h1>
                     <SearchBar showFull={true} />
                 </div>
+                <div className="md:hidden flex items-baseline gap-2 pt-3 text-white">
+                    <span className="text-xs uppercase tracking-wider text-cherry-brighter">Total Messages</span>
+                    <span className="text-2xl text-soda-bright leading-none tabular-nums">{totalMsgRes.isLoading ? 0 : totalMsgRes.data?.data.total?.toLocaleString('en-US')}</span>
+                </div>
                 <div className="mt-4 xl:mt-0 xl:basis-4/12 flex flex-row-reverse items-end">
                     <div className="px-4 text-right hidden md:block">
                         <div className="text-xs uppercase tracking-wider text-cherry-brighter mb-1">Total Messages</div>
