@@ -7,6 +7,7 @@ import type { MessageListProps } from '@/types'
 export default function MessageList({ data, meta, showPagination }: MessageListProps) {
     return (
         <div className="py-2">
+          <div className="md:relative md:overflow-x-auto md:shadow-md md:rounded-lg">
             {/* Below md: one card per message. From md up: the table below, unchanged. */}
             <ul className="md:hidden flex flex-col gap-2 list-none p-0 m-0">
                 {data?.map((item) => (
@@ -34,7 +35,7 @@ export default function MessageList({ data, meta, showPagination }: MessageListP
                 {data?.length == 0 && <li className="text-center py-12 bg-white rounded-regular shadow-md">No messages found. Please try again!</li>}
             </ul>
 
-            <div className="hidden md:block relative overflow-x-auto shadow-md sm:rounded-lg">
+            <div className="hidden md:block">
                 <div className="table w-full border-collapse min-h-32 bg-white">
                     <div className="table-header-group">
                         <div className="table-row uppercase text-left text-xs tracking-wide text-clay-dark bg-cream-white">
@@ -69,7 +70,8 @@ export default function MessageList({ data, meta, showPagination }: MessageListP
                         </div>
                     )}
                 </div>
-                {/* {showPagination ? (
+            </div>
+            {/* {showPagination ? (
                     <Pagination totalPages={meta.pagination.total} pageNumber={meta.pagination.number} pageSize={meta.pagination.size} />
                 ) : (
                     <div className="py-4 px-4 text-center hover:underline underline-offset-2">
@@ -77,8 +79,8 @@ export default function MessageList({ data, meta, showPagination }: MessageListP
                     </div>
                 )} */}
 
-                {showPagination && meta && <Pagination totalPages={meta.pagination.total} pageNumber={meta.pagination.number} pageSize={meta.pagination.size} />}
-            </div>
+            {showPagination && meta && <Pagination totalPages={meta.pagination.total} pageNumber={meta.pagination.number} pageSize={meta.pagination.size} />}
+          </div>
         </div>
     )
 }
