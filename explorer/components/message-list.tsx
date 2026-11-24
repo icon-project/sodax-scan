@@ -78,7 +78,7 @@ export default function MessageList({ data, meta, showPagination, onReset, filte
                         {data?.map((item) => (
                             <Link key={item.id} className={`group table-row bg-white hover:bg-almost-white border-b border-cream-white h-[52px]${freshIds?.has(item.id) ? ' row-enter' : ''}`} href={`/messages/${item.id}`}>
                                 {/* Hover: cream bg (row) + cherry accent bar on the first cell's left edge. */}
-                                <div className="relative table-cell align-middle px-3 py-2 xl:px-4 before:absolute before:left-0 before:inset-y-0 before:w-[3px] before:bg-cherry-soda before:opacity-0 group-hover:before:opacity-100">
+                                <div className="relative table-cell align-middle px-3 py-2 xl:px-4 before:absolute before:left-0 before:inset-y-0 before:w-[3px] before:bg-cherry-soda before:opacity-0 before:transition-opacity before:duration-150 before:ease-out group-hover:before:opacity-100">
                                     {Render.renderMessageStatus(item.status)}
                                 </div>
                                 <div className="table-cell align-middle px-3 py-2 xl:px-4 tabular-nums">{Render.renderSerialNo(item)}</div>

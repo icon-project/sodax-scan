@@ -109,6 +109,23 @@ a {
     }
 }
 
+.icon-pop {
+    animation: icon-pop 160ms var(--ease-out) backwards;
+}
+@keyframes icon-pop {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+.copied-fade {
+    animation: fadeInAnimation ease-out 150ms;
+}
+
 .hero {
     /* Brand cherry-soda impact surface. Deep enough for white body text and
        the yellow-soda hero stat to read with real contrast. */
