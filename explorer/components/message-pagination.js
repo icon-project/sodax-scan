@@ -3,7 +3,7 @@
 const MessagePagination = (props) => {
     const options = [10, 20, 50, 100, 200]
     return (
-        <div className="flex text-sm items-center justify-between gap-2">
+        <div className="flex text-sm items-center justify-between max-md:flex-wrap max-md:justify-center gap-2">
             <div className="flex items-center">
                 {/* <span className="hidden xl:inline-block">Items:</span> */}
                 <select
@@ -21,7 +21,7 @@ const MessagePagination = (props) => {
                     ))}
                 </select>
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between max-md:flex-wrap max-md:justify-center">
                 <button className="mx-1 border-none hover:underline max-md:min-h-11 max-md:min-w-11 max-md:px-1" onClick={() => props.pageNumberChanged(1)}>
                     First
                 </button>
