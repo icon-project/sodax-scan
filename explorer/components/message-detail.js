@@ -1,15 +1,15 @@
 import timeAgo from '@/lib/time-ago'
 import Render from '@/lib/render'
 import Link from 'next/link'
-import converter from '@/lib/converter'
 import helper from '@/lib/helper'
-import Script from 'next/script'
 import { AdminDetailProvider, ResubmitBanner, DetailStatus } from '@/components/admin-detail'
 import MpcTimeline from '@/components/mpc-timeline'
+import CopyButton from '@/components/copy-button'
+import { DetailCard, DetailGroup, DetailRow, DetailTime } from '@/components/detail-card'
 
 export default async function MessageDetail({ msgData, meta, isAdmin = false }) {
     // MPC rows are externally written and follow a kind-dependent lifecycle;
-    // render the timeline instead of the flat table (R7). Detection is CHAIN-based
+    // render the timeline instead of the flat card (R7). Detection is CHAIN-based
     // (ADR-002 revised): a completed MPC flow carries status `executed`, so status
     // cannot detect it — src/dest chain involvement can. The gate sits above the
     // admin resubmit block intentionally (m1): resubmit re-drives the indexer
@@ -18,118 +18,71 @@ export default async function MessageDetail({ msgData, meta, isAdmin = false }) 
         return <MpcTimeline msgData={msgData} meta={meta} />
     }
 
-    const round = (str) => {
-        return parseFloat(Number(str).toFixed(8))
-    }
-
-    const msgAction = msgData.action_detail || ""
+    const msgAction = msgData.action_detail || ''
     // Admin gets the interactive status cell (live re-check feedback) + banner;
     // everyone else gets the plain server-rendered pill.
     const canResubmit = isAdmin && msgData.src_network && msgData.src_tx_hash
     const statusNode = canResubmit ? <DetailStatus /> : Render.renderMessageStatus(msgData.status)
+    const fill = helper.isSolverMarketPlaceFill(msgData)
 
     const content = (
         <div className="py-2 flex flex-col">
             {canResubmit && <ResubmitBanner />}
-            <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-                <div className="table border-collapse w-full text-base text-left text-gray-900">
-                    <div className="xl:table-header-group hidden">
-                        <div className="table-row font-medium text-xl uppercase text-left text-espresso bg-cream-white">
-                            <div className="table-cell px-2 py-1 xl:px-6 xl:py-3">Message Detail</div>
-                            <div className="table-cell px-2 py-1 xl:px-6 xl:py-3"></div>
-                        </div>
-                    </div>
-                    <div className="table-row-group">
-                        <div className="table-row bg-white border-b">
-                            <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Status:</div>
-                            <div className="table-cell px-3 py-2 xl:px-6 xl:py-4">{statusNode}</div>
-                        </div>
-                        <div className="table-row bg-white border-b">
-                            <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Serial No:</div>
-                            <div className="table-cell px-3 py-2 xl:px-6 xl:py-4 ">
-                                {/* Same badges as the messages list: SolverMarketPlaceFill, then hub-only (sn == null). */}
-                                {helper.isSolverMarketPlaceFill(msgData)
-                                    ? <span className="uppercase text-xs rounded-full px-2 py-0.5 bg-cream-white text-clay-dark tracking-wide">SOLVER MARKETPLACE FILL</span>
-                                    : msgData.sn == null
-                                        ? <span className="uppercase text-xs rounded-full px-2 py-0.5 bg-cream-white text-clay-dark tracking-wide">hub-only</span>
-                                        : msgData.sn}
-                            </div>
-                        </div>
-                        <div className="table-row bg-white border-b">
-                            <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Source transaction hash:</div>
-                            <div className="table-cell px-3 py-2 xl:px-6 xl:py-4 ">
-                                {helper.isSolverMarketPlaceFill(msgData)
-                                    ? Render.renderChain(msgData.src_network)
-                                    : Render.renderHashLink(meta.urls.tx[msgData.src_network], msgData.src_network, msgData.src_tx_hash, true)}
-                            </div>
-                        </div>
-                        <div className="table-row bg-white border-b">
-                            <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Destination transaction hash:</div>
-                            <div className="table-cell px-3 py-2 xl:px-6 xl:py-4">
-                                {/* Hub-only events (sn == null) have no dest leg — mirror the
-                                    source tx + chain so this row reads symmetrically rather than
-                                    rendering "-". Intent's true dst chain still shows in Action.
-                                    SolverMarketPlaceFills have no tx at all, so they show the output leg's chain. */}
-                                {helper.isSolverMarketPlaceFill(msgData)
-                                    ? Render.renderChain(msgData.dest_network)
-                                    : msgData.sn == null
-                                        ? Render.renderHashLink(meta.urls.tx[msgData.src_network], msgData.src_network, msgData.src_tx_hash, true)
-                                        : Render.renderHashLink(meta.urls.tx[msgData.dest_network], msgData.dest_network, msgData.dest_tx_hash, true)}
-                            </div>
-                        </div>
-                        {msgData.fee && (<div className="table-row bg-white border-b">
-                            <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Transaction fee:</div>
-                            <div className="table-cell px-3 py-2 xl:px-6 xl:py-4">
-                                {msgData.fee}
-                            </div>
-                        </div>)}
-
-                        {msgData.slippage && (<div className="table-row bg-white border-b">
-                            <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Slippage:</div>
-                            <div className="table-cell px-3 py-2 xl:px-6 xl:py-4">
-                                {msgData.slippage}
-                            </div>
-                        </div>)}
-
-                        {msgData.intent_tx_hash && (<div className="table-row bg-white border-b">
-                            <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Intent Hash:</div>
-                            <div className="table-cell px-3 py-2 xl:px-6 xl:py-4">
-                                <Link className="hover:underline underline-offset-2 inline-block" href={`/messages/search?value=${msgData.intent_tx_hash}`}>
+            <DetailCard status={statusNode}>
+                <DetailGroup title="Identifiers">
+                    <DetailRow label="Serial no" tabular>
+                        {/* Same badges as the messages list: SolverMarketPlaceFill, then hub-only (sn == null). */}
+                        {fill || msgData.sn == null ? Render.renderSerialNo(msgData) : msgData.sn}
+                    </DetailRow>
+                    {msgData.intent_tx_hash && (
+                        <DetailRow label="Intent hash">
+                            <span className="inline-flex items-center gap-1 max-w-full">
+                                <Link className="tx-hash hover:underline underline-offset-2 min-w-0 break-all" href={`/messages/search?value=${msgData.intent_tx_hash}`}>
                                     {msgData.intent_tx_hash}
                                 </Link>
-                            </div>
-                        </div>)}
+                                <CopyButton value={msgData.intent_tx_hash} label="Copy intent hash" />
+                            </span>
+                        </DetailRow>
+                    )}
+                </DetailGroup>
 
-                        <div className="table-row bg-white border-b">
-                            <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Action:</div>
-                            <div className="table-cell px-3 py-2 xl:px-6 xl:py-4">
-                                {msgAction}
-                                {/* <br /><br />{JSON.stringify(msgActionDetail)} */}
-                            </div>
-                        </div>
+                <DetailGroup title="Route and hashes">
+                    <DetailRow label="Source transaction hash">
+                        {fill
+                            ? Render.renderChain(msgData.src_network)
+                            : Render.renderHashLink(meta.urls.tx[msgData.src_network], msgData.src_network, msgData.src_tx_hash, true)}
+                    </DetailRow>
+                    <DetailRow label="Destination transaction hash">
+                        {/* Hub-only events (sn == null) have no dest leg — mirror the
+                            source tx + chain so this row reads symmetrically rather than
+                            rendering "-". Intent's true dst chain still shows in Action.
+                            SolverMarketPlaceFills have no tx at all, so they show the output leg's chain. */}
+                        {fill
+                            ? Render.renderChain(msgData.dest_network)
+                            : msgData.sn == null
+                                ? Render.renderHashLink(meta.urls.tx[msgData.src_network], msgData.src_network, msgData.src_tx_hash, true)
+                                : Render.renderHashLink(meta.urls.tx[msgData.dest_network], msgData.dest_network, msgData.dest_tx_hash, true)}
+                    </DetailRow>
+                </DetailGroup>
 
-                        <div className="table-row bg-white border-b">
-                            <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Created:</div>
-                            <div className="table-cell px-3 py-2 xl:px-6 xl:py-4">{timeAgo(msgData.created_at * 1000)} ago ({new Date(msgData.created_at * 1000).toUTCString()})</div>
-                        </div>
-                        <div className="table-row bg-white border-b">
-                            <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Last updated at:</div>
-                            <div className="table-cell px-3 py-2 xl:px-6 xl:py-4">
-                                {msgData.updated_at
-                                    ? `${timeAgo(msgData.updated_at * 1000)} ago (${new Date(msgData.updated_at * 1000).toUTCString()})`
-                                    : ''}
-                            </div>
-                        </div>
+                <DetailGroup title="Action and fee">
+                    <DetailRow label="Action">{msgAction || <span className="text-clay-dark">—</span>}</DetailRow>
+                    {msgData.fee && <DetailRow label="Transaction fee" tabular>{msgData.fee}</DetailRow>}
+                    {msgData.slippage && <DetailRow label="Slippage" tabular>{msgData.slippage}</DetailRow>}
+                </DetailGroup>
 
-                    </div>
-                </div>
-            </div>
-
-            <Script>{`
-            for(var i=0;i<document.getElementsByClassName("copy-hash").length;i++){
-                document.getElementsByClassName("copy-hash")[i].onclick = function(){ navigator.clipboard.writeText(this.previousSibling.innerText); }
-            }
-            `}</Script>
+                <DetailGroup title="Timestamps">
+                    <DetailRow label="Created" tabular>
+                        <DetailTime relative={`${timeAgo(msgData.created_at * 1000)} ago`} utc={new Date(msgData.created_at * 1000).toUTCString()} />
+                    </DetailRow>
+                    <DetailRow label="Last updated" tabular>
+                        <DetailTime
+                            relative={msgData.updated_at ? `${timeAgo(msgData.updated_at * 1000)} ago` : ''}
+                            utc={msgData.updated_at ? new Date(msgData.updated_at * 1000).toUTCString() : ''}
+                        />
+                    </DetailRow>
+                </DetailGroup>
+            </DetailCard>
         </div>
     )
 

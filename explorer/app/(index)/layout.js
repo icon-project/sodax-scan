@@ -1,5 +1,5 @@
 import '../globals.css'
-import { inter, shrikhand } from '../fonts'
+import { inter, inriaSerif, shrikhand } from '../fonts'
 import Favicon from '../favicon.ico'
 import Header from '@/components/header'
 import AdminBar from '@/components/admin-bar'
@@ -7,20 +7,20 @@ import Footer from '@/components/footer'
 import fetchData from '@/lib/fetch-data'
 
 export const metadata = {
-    title: `SODAXScan · Fast and reliable message tracking`,
-    description: `SODAXScan tracks SODAX transactions across blockchain networks.`,
+    title: `SODAX Scan · Fast and reliable message tracking`,
+    description: `SODAX Scan tracks SODAX transactions across blockchain networks.`,
     icons: [{ rel: 'icon', url: Favicon.src }],
     openGraph: {
-        title: "SODAXScan · Fast and reliable message tracking",
-        description: "SODAXScan tracks SODAX transactions across blockchain networks.",
+        title: "SODAX Scan · Fast and reliable message tracking",
+        description: "SODAX Scan tracks SODAX transactions across blockchain networks.",
         url: "https://sodaxscan.com",
-        siteName: "Sodax Scan",
+        siteName: "SODAX Scan",
         images: [
             {
                 url: "https://sodaxscan.com/images/link-preview.png",
                 width: 1200,
                 height: 630,
-                alt: "Sodax Scan Preview",
+                alt: "SODAX Scan Preview",
             },
         ],
         locale: "en_US",
@@ -28,16 +28,15 @@ export const metadata = {
     },
     twitter: {
         card: "summary_large_image",
-        title: "Sodax Scan",
-        description: "SODAXScan tracks SODAX transactions across blockchain networks.",
+        title: "SODAX Scan",
+        description: "SODAX Scan tracks SODAX transactions across blockchain networks.",
         images: ["https://sodaxscan.com/images/link-preview.png"],
     },
 }
 
 export default async function RootLayout({ children }) {
     let assets = [
-        { name: 'BNB', symbol: 'BNB', image: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png', current_price: 0, price_change_percentage_24h: 0 },
-        { name: 'ICX', symbol: 'ICX', image: 'https://assets.coingecko.com/coins/images/1060/large/icon-icx-logo.png', current_price: 0, price_change_percentage_24h: 0 }
+        { name: 'BNB', symbol: 'BNB', image: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png', current_price: 0, price_change_percentage_24h: 0 }
     ]
     try {
         assets = await fetchData.getAssets()
@@ -48,12 +47,11 @@ export default async function RootLayout({ children }) {
     }
 
     return (
-        <html lang="en" className={`${inter.variable} ${shrikhand.variable}`}>
+        <html lang="en" className={`${inter.variable} ${inriaSerif.variable} ${shrikhand.variable}`}>
             <head></head>
-            <body className="font-sans text-espresso min-h-screen bg-almost-white">
+            <body className="font-sans text-espresso min-h-screen bg-vibrant-white">
                 <Header showSearchBar={false} assets={assets} />
                 <AdminBar />
-                <div className="-z-20 h-72 w-full absolute hero"></div>
                 <main className="px-4 mb-2 xl:px-24 xl:mb-12 2xl:px-48">
                     <div className="min-h-[34rem] 2xl:min-h-[46rem]">{children}</div>
                 </main>

@@ -31,58 +31,124 @@ const MessageFilter = (props: MessageFilterProps) => {
     const [srcFilter, setSrcFilter] = useState<string>('')
     const [destFilter, setDestFilter] = useState<string>('')
 
-    const dropdownTheme = {
-        inlineWrapper: 'flex items-center hover:text-cherry-brighter'
-    }
+    // Filter triggers are pills over the cherry hero. Inactive: outlined; active
+    // (a filter is set): solid white pill, so a filtered list is obvious at a glance.
+    const chipTheme = (active: boolean) => ({
+        inlineWrapper: `flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm transition-colors max-md:min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soda-bright ${
+            active
+                ? 'bg-white border-white text-cherry-dark font-medium hover:bg-almost-white'
+                : 'border-cherry-bright/60 text-white hover:bg-cherry-dark hover:border-cherry-brighter'
+        }`
+    })
 
     const filterNetworks = (networks: Network[], filterText: string): Network[] => {
         if (!filterText) return networks
         const lowerFilter = filterText.toLowerCase()
         return networks.filter(network => 
-            network.name.toLowerCase().includes(lowerFilter)
+            (network.name.toLowerCase().includes(lowerFilter) || String(helper.networkDisplayName(network.name)).toLowerCase().includes(lowerFilter))
         )
     }
 
+    // Wrapping row on mobile (a scroll strip would clip the dropdown menus), Route first and Reset last, 44px targets. md+: unchanged.
     return (
-        <div className="flex flex-row-reverse gap-4 text-white p-1 rounded-md">
-            <button className="hover:text-cherry-brighter" onClick={() => props.resetClicked()}>
-                Reset
-            </button>
-
-            <Dropdown label="Action" inline className="rounded-md " theme={dropdownTheme}>
+        <div className="flex flex-wrap items-center md:flex-nowrap md:justify-end gap-2 text-white p-1 rounded-md">
+            <Dropdown label="Route" inline className="rounded-md" theme={chipTheme(props.kind !== '')}>
                 <DropdownItem
-                    className={` min-w-48 ${props.actionType == '' ? 'bg-almost-white' : ''}`}
+                    className={`min-w-32 ${props.kind == '' ? 'bg-almost-white' : ''}`}
                     onClick={() => {
-                        props.actionTypeChanged('')
+                        props.kindChanged('')
                     }}
                 >
-                    All Actions
+                    All Routes
                 </DropdownItem>
 
-                {helper.getMsgTypes().map((actType) => {
+                {helper.MESSAGE_KINDS.map((kind) => {
                     return (
                         <DropdownItem
-                            key={actType}
-                            className={`min-w-48 ${props.actionType.includes(actType) ? 'bg-soda-clicked' : ''}`}
+                            key={kind.value}
+                            className={`${props.kind == kind.value ? 'bg-almost-white' : ''}`}
                             onClick={() => {
-                                props.actionTypeChanged(actType)
+                                props.kindChanged(kind.value)
                             }}
                         >
-                            {/* <input
-                                type="checkbox"
-                                checked={props.actionType?.includes(actType)}
-                                onChange={() => props.actionTypeChanged(actType)}
-                                onClick={(e) => e.stopPropagation()}
-                                className="cursor-pointer px-2 mr-1"
-                            /> */}
-                            {actType}
-
+                            {kind.label}
                         </DropdownItem>
                     )
                 })}
             </Dropdown>
 
-            <Dropdown label="Destination" inline className="rounded-md" theme={dropdownTheme}>
+            <Dropdown label="Status" inline className="rounded-md" theme={chipTheme(props.status !== '')}>
+                <DropdownItem
+                    className={`min-w-32 ${props.status == '' ? 'bg-almost-white' : ''}`}
+                    onClick={() => {
+                        props.statusChanged('')
+                    }}
+                >
+                    All Status
+                </DropdownItem>
+
+                {helper.STATUS_FILTERS.map((status) => {
+                    return (
+                        <DropdownItem
+                            key={status}
+                            className={`${props.status == status ? 'bg-almost-white' : ''}`}
+                            onClick={() => {
+                                props.statusChanged(status)
+                            }}
+                        >
+                            {Render.renderMessageStatus(status)}
+                        </DropdownItem>
+                    )
+                })}
+            </Dropdown>
+
+            <Dropdown label="Source" inline className="rounded-md" theme={chipTheme(props.srcNetwork !== '')}>
+                <div className="p-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} onKeyPress={(e) => e.stopPropagation()}>
+                    <input
+                        type="text"
+                        placeholder="Filter networks..."
+                        value={srcFilter}
+                        onChange={(e) => setSrcFilter(e.target.value)}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        onKeyPress={(e) => e.stopPropagation()}
+                        onKeyUp={(e) => e.stopPropagation()}
+                        className="w-full px-3 py-2 text-sm border border-clay-light rounded-md focus:outline-none focus:ring-2 focus:ring-cherry text-espresso"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                </div>
+                <DropdownItem
+                    className={`min-w-48 ${props.srcNetwork === '' ? 'bg-almost-white' : ''}`}
+                    onClick={() => {
+                        props.srcNetworkChanged('')
+                    }}
+                >
+                    All Networks
+                </DropdownItem>
+                {filterNetworks(helper.getNetworks(), srcFilter).map((network) => {
+                    const networkId = helper.NETWORK_MAPPINGS[network.id]
+                    return (
+                        <DropdownItem
+                            key={network.id}
+                            className={`min-w-48 ${props.srcNetwork?.split(',').map(v => v.trim()).includes(String(networkId)) ? 'bg-soda-clicked' : ''}`}
+                            onClick={() => {
+                                props.srcNetworkChanged(network.id)
+                            }}
+                        >
+                            {/* <input
+                                type="checkbox"
+                                checked={props.srcNetwork?.split(',').map(v => v.trim()).includes(networkId)}
+                                onChange={() => props.srcNetworkChanged(network.id)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="cursor-pointer px-2 mr-1"
+                            /> */}
+                            <Image className="relative inline-block mr-2 rounded-full bg-transparent" alt={network.name} src={network.logo} width={16} height={16} />
+                            {helper.networkDisplayName(network.name)}
+                        </DropdownItem>
+                    )
+                })}
+            </Dropdown>
+
+            <Dropdown label="Destination" inline className="rounded-md" theme={chipTheme(props.destNetwork !== '')}>
                 <div className="p-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} onKeyPress={(e) => e.stopPropagation()}>
                     <input
                         type="text"
@@ -123,107 +189,48 @@ const MessageFilter = (props: MessageFilterProps) => {
                                 className="cursor-pointer px-2 mr-1"
                             /> */}
                             <Image className="relative inline-block mr-2 rounded-full bg-transparent" alt={network.name} src={network.logo} width={16} height={16} />
-                            {network.name}
+                            {helper.networkDisplayName(network.name)}
                         </DropdownItem>
                     )
                 })}
             </Dropdown>
 
-            <Dropdown label="Source" inline className="rounded-md" theme={dropdownTheme}>
-                <div className="p-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} onKeyPress={(e) => e.stopPropagation()}>
-                    <input
-                        type="text"
-                        placeholder="Filter networks..."
-                        value={srcFilter}
-                        onChange={(e) => setSrcFilter(e.target.value)}
-                        onKeyDown={(e) => e.stopPropagation()}
-                        onKeyPress={(e) => e.stopPropagation()}
-                        onKeyUp={(e) => e.stopPropagation()}
-                        className="w-full px-3 py-2 text-sm border border-clay-light rounded-md focus:outline-none focus:ring-2 focus:ring-cherry text-espresso"
-                        onClick={(e) => e.stopPropagation()}
-                    />
-                </div>
+            <Dropdown label="Action" inline className="rounded-md " theme={chipTheme(props.actionType !== '')}>
                 <DropdownItem
-                    className={`min-w-48 ${props.srcNetwork === '' ? 'bg-almost-white' : ''}`}
+                    className={` min-w-48 ${props.actionType == '' ? 'bg-almost-white' : ''}`}
                     onClick={() => {
-                        props.srcNetworkChanged('')
+                        props.actionTypeChanged('')
                     }}
                 >
-                    All Networks
+                    All Actions
                 </DropdownItem>
-                {filterNetworks(helper.getNetworks(), srcFilter).map((network) => {
-                    const networkId = helper.NETWORK_MAPPINGS[network.id]
+
+                {helper.getMsgTypes().map((actType) => {
                     return (
                         <DropdownItem
-                            key={network.id}
-                            className={`min-w-48 ${props.srcNetwork?.split(',').map(v => v.trim()).includes(String(networkId)) ? 'bg-soda-clicked' : ''}`}
+                            key={actType}
+                            className={`min-w-48 ${props.actionType.includes(actType) ? 'bg-soda-clicked' : ''}`}
                             onClick={() => {
-                                props.srcNetworkChanged(network.id)
+                                props.actionTypeChanged(actType)
                             }}
                         >
                             {/* <input
                                 type="checkbox"
-                                checked={props.srcNetwork?.split(',').map(v => v.trim()).includes(networkId)}
-                                onChange={() => props.srcNetworkChanged(network.id)}
+                                checked={props.actionType?.includes(actType)}
+                                onChange={() => props.actionTypeChanged(actType)}
                                 onClick={(e) => e.stopPropagation()}
                                 className="cursor-pointer px-2 mr-1"
                             /> */}
-                            <Image className="relative inline-block mr-2 rounded-full bg-transparent" alt={network.name} src={network.logo} width={16} height={16} />
-                            {network.name}
+                            {actType}
+
                         </DropdownItem>
                     )
                 })}
             </Dropdown>
 
-            <Dropdown label="Status" inline className="rounded-md" theme={dropdownTheme}>
-                <DropdownItem
-                    className={`min-w-32 ${props.status == '' ? 'bg-almost-white' : ''}`}
-                    onClick={() => {
-                        props.statusChanged('')
-                    }}
-                >
-                    All Status
-                </DropdownItem>
-
-                {helper.STATUS_FILTERS.map((status) => {
-                    return (
-                        <DropdownItem
-                            key={status}
-                            className={`${props.status == status ? 'bg-almost-white' : ''}`}
-                            onClick={() => {
-                                props.statusChanged(status)
-                            }}
-                        >
-                            {Render.renderMessageStatus(status)}
-                        </DropdownItem>
-                    )
-                })}
-            </Dropdown>
-
-            <Dropdown label="Route" inline className="rounded-md" theme={dropdownTheme}>
-                <DropdownItem
-                    className={`min-w-32 ${props.kind == '' ? 'bg-almost-white' : ''}`}
-                    onClick={() => {
-                        props.kindChanged('')
-                    }}
-                >
-                    All Routes
-                </DropdownItem>
-
-                {helper.MESSAGE_KINDS.map((kind) => {
-                    return (
-                        <DropdownItem
-                            key={kind.value}
-                            className={`${props.kind == kind.value ? 'bg-almost-white' : ''}`}
-                            onClick={() => {
-                                props.kindChanged(kind.value)
-                            }}
-                        >
-                            {kind.label}
-                        </DropdownItem>
-                    )
-                })}
-            </Dropdown>
+            <button className="rounded-full px-3 py-1.5 text-sm text-white underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soda-bright max-md:min-h-11" onClick={() => props.resetClicked()}>
+                Reset
+            </button>
         </div>
     )
 }

@@ -1,11 +1,12 @@
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
-import Loading from './loading'
+import Spinner from '@/components/spinner'
 import FetchData from '@/lib/fetch-data'
 import MessageDetail from '@/components/message-detail'
 import MessageList from '@/components/message-list'
 import IntentSiblings from '@/components/intent-siblings'
 import PageTitle from '@/components/page-title'
+import { Hero, HeroOverlap } from '@/components/hero'
 import { isAdmin } from '@/lib/admin-server'
 
 export default async function SearchPage({ params, searchParams }) {
@@ -44,10 +45,14 @@ export default async function SearchPage({ params, searchParams }) {
 
     return (
         <div>
-            <PageTitle title={`Search`} />
-            <Suspense fallback={<Loading />}>
-                {showDetailPage ? <MessageDetail msgData={msgData} meta={rs.meta} isAdmin={isAdmin()}></MessageDetail> : <MessageList data={rs.data} meta={rs.meta}></MessageList>}
-            </Suspense>
+            <Hero>
+                <PageTitle before="Search" accent="hits" />
+            </Hero>
+            <HeroOverlap>
+                <Suspense fallback={<Spinner />}>
+                    {showDetailPage ? <MessageDetail msgData={msgData} meta={rs.meta} isAdmin={isAdmin()}></MessageDetail> : <MessageList data={rs.data} meta={rs.meta}></MessageList>}
+                </Suspense>
+            </HeroOverlap>
 
             {showDetailPage && msgData.intent_tx_hash && (
                 <IntentSiblings

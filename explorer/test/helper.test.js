@@ -256,3 +256,11 @@ describe('resolveIntentTxHash', () => {
         expect(lookup).not.toHaveBeenCalled()
     })
 })
+
+describe('networkDisplayName', () => {
+    it('shows BNB Chain for the bsc key and passes other names through', () => {
+        expect(helper.networkDisplayName('bsc')).toBe('BNB Chain')
+        expect(helper.networkDisplayName('solana')).toBe('solana')
+        expect(helper.networkDisplayName(undefined)).toBeUndefined()
+    })
+})

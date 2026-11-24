@@ -36,11 +36,11 @@ export default function DebugLogin() {
     }
 
     return (
-        <div className="pt-16 flex justify-center">
-            <form onSubmit={onSubmit} className="w-full max-w-sm bg-white rounded-xl shadow-md p-8">
-                <h1 className="text-2xl text-espresso tracking-tight pb-1">
+        <div className="flex justify-center">
+            <form onSubmit={onSubmit} className="w-full max-w-sm bg-white rounded-regular shadow-card p-8">
+                <h2 className="text-2xl text-espresso tracking-tight pb-1">
                     <span className="font-display italic text-cherry">Restricted</span> area
-                </h1>
+                </h2>
                 <p className="text-sm text-clay-dark mb-6">Enter the admin password to continue.</p>
                 <input
                     type="password"

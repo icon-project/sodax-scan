@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { ClipboardDocumentIcon } from '@heroicons/react/24/solid'
+import CopyButton from '@/components/copy-button'
 import helper from "./helper"
 
 // Shorten a hash for list display: first 7 + last 7 chars. The full value is
@@ -11,22 +11,36 @@ function truncateHash(hash) {
     return `${hash.slice(0, 7)}…${hash.slice(-7)}`
 }
 
+// Status pill: brand tokens only (no stock green/blue/amber, yellow is never a
+// surface). Sentence-case label with a leading status dot. Pill text contrast is
+// >= 4.5:1 for every entry (espresso/clay-dark/error-dark on their backgrounds).
+// executed -> success, failed/rollbacked -> error, the rest -> neutral cream/clay
+// with a distinct dot so they stay distinguishable.
+const STATUS_PILLS = {
+    executed: { pill: 'bg-success-base text-espresso', dot: 'bg-success' },
+    failed: { pill: 'bg-error-base text-error-dark', dot: 'bg-error' },
+    rollbacked: { pill: 'bg-error-lighter text-error-dark', dot: 'bg-error-dark' },
+    delivered: { pill: 'bg-light-cream text-espresso', dot: 'bg-espresso' },
+    // `attested` is the one new MPC status (R4). `routed`/`hub-burned`/`minted`/
+    // `swept`/`released` are NOT status values (detail-timeline legs only).
+    attested: { pill: 'bg-cream-cherry text-espresso', dot: 'bg-cherry-soda' },
+    pending: { pill: 'bg-almost-white text-clay-dark !border-cherry-grey', dot: 'bg-transparent border border-clay' }
+}
+// Total fallback (R4): unknown/undefined/null status renders a generic badge
+// rather than returning undefined (which produced a blank pill).
+const STATUS_PILL_FALLBACK = { pill: 'bg-cream-white text-clay-dark', dot: 'bg-clay-light' }
+
 function renderMessageStatus(status) {
-    const base = 'uppercase text-xs font-medium tracking-wide rounded-full py-1 inline-block w-24 text-center'
+    const base = 'inline-flex items-center justify-center gap-1.5 text-xs font-medium rounded-full py-1 px-2.5 min-w-24 whitespace-nowrap border border-transparent transition-colors duration-300'
     const s = (status || '').toLowerCase()
-    if (s == 'failed') return <span className={`${base} bg-cherry text-white`}>{status}</span>
-    if (s == 'rollbacked') return <span className={`${base} bg-soda-bright text-espresso`}>{status}</span>
-    if (s == 'pending') return <span className={`${base} bg-cherry-grey text-espresso`}>{status}</span>
-    if (s == 'executed') return <span className={`${base} bg-green-200 text-green-900`}>{status}</span>
-    if (s == 'delivered') return <span className={`${base} bg-blue-200 text-blue-900`}>{status}</span>
-    // `attested` is the one new MPC status (R4) — amber, distinct from the five
-    // legacy pills. `pending`/`delivered`/`executed`/`failed`/`rollbacked` reuse
-    // their legacy pills above; `routed`/`hub-burned`/`minted`/`swept`/`released`
-    // are NOT status values (detail-timeline legs only).
-    if (s == 'attested') return <span className={`${base} bg-amber-200 text-amber-900`}>{status}</span>
-    // Total fallback (R4): unknown/undefined/null status renders a generic badge
-    // rather than returning undefined (which produced a blank pill).
-    return <span className={`${base} bg-gray-200 text-gray-800`}>{status || 'unknown'}</span>
+    const { pill, dot } = STATUS_PILLS[s] || STATUS_PILL_FALLBACK
+    const label = s || 'unknown'
+    return (
+        <span className={`${base} ${pill}`}>
+            <span aria-hidden="true" className={`inline-block w-1.5 h-1.5 rounded-full transition-colors duration-300 ${dot}`}></span>
+            {label.charAt(0).toUpperCase() + label.slice(1)}
+        </span>
+    )
 }
 
 // Serial-No cell shared by the message list and the MPC detail timeline. An MPC
@@ -36,10 +50,10 @@ function renderMessageStatus(status) {
 // the "hub-only" badge.
 function renderSerialNo(item) {
     const badge = (label) => (
-        <span className="uppercase text-xs rounded-full px-2 py-0.5 bg-cream-white text-clay-dark tracking-wide">{label}</span>
+        <span className="inline-block whitespace-nowrap text-xs font-medium rounded-full px-2 py-0.5 bg-cream-white text-clay-dark">{label}</span>
     )
     if (helper.isMpcTransaction(item)) return badge('MPC')
-    if (helper.isSolverMarketPlaceFill(item)) return badge('SOLVER MARKETPLACE FILL')
+    if (helper.isSolverMarketPlaceFill(item)) return badge('Marketplace')
     if (item.sn == null) return badge('hub-only')
     return item.sn
 }
@@ -51,8 +65,8 @@ function renderChain(network) {
     if (!name) return <div>-</div>
     return (
         <div className="flex items-center gap-2">
-            <Image alt={String(network)} src={`/images/network-${name}.png`} width={24} height={24} className="rounded-full bg-transparent" />
-            <span className="capitalize">{String(name)}</span>
+            <Image alt="" src={`/images/network-${name}.png`} width={24} height={24} className="rounded-full bg-transparent" />
+            <span className="capitalize">{helper.networkDisplayName(name)}</span>
         </div>
     )
 }
@@ -62,54 +76,111 @@ function renderSrcHashLink(item, meta) {
     return renderHashLink(meta?.urls.tx[item.src_network], item.src_network, item.src_tx_hash)
 }
 
+// Bare-hash chains (XRP, Cardano) display without 0x, as on the detail page.
+function displayHash(network, hash) {
+    return BARE_HASH_NETWORKS.has(String(network)) && typeof hash === 'string' && hash.startsWith('0x') ? hash.slice(2) : hash
+}
+
+// Rollback line: the rollback tx lives on the SOURCE chain (the refund), so it is
+// never shown as the destination's own hash. It is rendered as a quiet secondary
+// line ("↩ <hash>") under the destination leg, labelled as a source-chain rollback.
+function rollbackLine(item) {
+    if (!item.rollback_tx_hash) return null
+    const srcName = helper.REV_NETWORK_MAPPINGS[item.src_network]
+    const title = `Rolled back on ${srcName ? helper.networkDisplayName(srcName) : 'the source chain'}`
+    const shown = displayHash(item.src_network, item.rollback_tx_hash)
+    return (
+        <div className="text-xs text-clay-dark leading-4 flex items-center gap-1" title={title}>
+            <span aria-hidden="true">&#8617;</span>
+            <span className="sr-only">{title}:</span>
+            <span className="tx-hash" data-hash={shown}>{truncateHash(shown)}</span>
+        </div>
+    )
+}
+
+// Destination leg for the mobile cards. The hash shown is only ever the dest
+// chain's own dest_tx_hash; hub events (sn == null) and rollbacks have no dest
+// tx, so they show the dest chain alone (never another chain's hash under it).
 function renderDestHashLink(item, meta) {
     if (helper.isSolverMarketPlaceFill(item)) return renderChain(item.dest_network)
 
-    let scanUrl
-    let networkImg
-    let linkClass = 'hover:underline inline-block'
-    let link
-    if (item.rollback_tx_hash) {
-        scanUrl = meta.urls.tx[item.src_network]
-        networkImg = (
-            <div className="w-[3rem]">
-                <Image className="relative inline-block" alt={item.dest_network} src={`/images/network-${item.dest_network}.png`} width={24} height={24} />
-                <Image
-                    className="relative inline-block -left-4 rounded-full bg-white"
-                    alt={item.src_network}
-                    src={`/images/network-${item.src_network}.png`}
-                    width={24}
-                    height={24}
-                />
+    const name = helper.REV_NETWORK_MAPPINGS[item.dest_network]
+    const shown = displayHash(item.dest_network, item.dest_tx_hash)
+    const hashEl = shown && <div className="hover:underline inline-block"><span className="tx-hash" data-hash={shown}>{truncateHash(shown)}</span></div>
+    let leg
+    if (name) {
+        leg = shown ? (
+            <div className="flex items-center gap-2">
+                <Image alt={helper.networkDisplayName(name)} src={`/images/network-${name}.png`} width={24} height={24} className="rounded-full bg-transparent" />
+                {hashEl}
+            </div>
+        ) : renderChain(item.dest_network)
+    } else if (item.dest_network != null) {
+        leg = (
+            <div className="flex items-center gap-2">
+                <span className="text-espresso">{`Chain ${item.dest_network}`}</span>
+                {hashEl}
             </div>
         )
-        linkClass = `${linkClass} relative inline-block -left-4`
-        link = <div className={linkClass}><span className="tx-hash" data-hash={item.rollback_tx_hash}>{truncateHash(item.rollback_tx_hash)}</span></div>
-    } else if (item.dest_tx_hash) {
-        scanUrl = meta.urls.tx[item.dest_network]
-        networkImg = <Image alt={item.dest_network} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[item.dest_network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
-        link = <div className={linkClass}><span className="tx-hash" data-hash={item.dest_tx_hash}>{truncateHash(item.dest_tx_hash)}</span></div>
-    } else if (item.sn == null && !helper.isMpcTransaction(item)) {
-        // Hub-intent event (no serial number): single-tx event on the hub with
-        // no separate destination leg. Mirror the source tx + chain into the
-        // dest column so the row reads symmetrically instead of as a half-empty
-        // relay leg. The intent's actual destination chain still shows in
-        // action_detail (e.g. "IntentSwap … -> SOL(solana)").
-        // MPC rows (also sn == null) are excluded: an in-progress MPC tx has no
-        // dest tx yet and must NOT masquerade the source tx as the destination.
-        // SolverMarketPlaceFills return early above: they have no tx hash to mirror.
-        scanUrl = meta.urls.tx[item.src_network]
-        networkImg = <Image alt={item.src_network} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[item.src_network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
-        link = <div className={linkClass}><span className="tx-hash" data-hash={item.src_tx_hash}>{truncateHash(item.src_tx_hash)}</span></div>
     } else {
-        networkImg = <Image alt={item.dest_network} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[item.dest_network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
-        link = <div></div>
+        leg = hashEl || <div className="text-clay-dark">-</div>
     }
+    const rb = rollbackLine(item)
+    if (!rb) return leg
+    return <div className="flex flex-col gap-0.5">{leg}{rb}</div>
+}
 
+// Hash shown under the destination network in the Route cell (null when none).
+// Only the destination chain's own dest_tx_hash qualifies: hub events (sn ==
+// null) have no dest tx and rollback txs live on the source chain, so neither is
+// ever attributed to the destination network. Exported for tests.
+function routeDestHash(item) {
+    if (helper.isSolverMarketPlaceFill(item)) return null
+    return item.dest_tx_hash || null
+}
+
+// One end of the desktop Route cell: network icon, then network name (same size
+// and weight whether or not a hash exists) with the short hash as a quieter
+// second line only when present. Always vertically centred.
+function routeLeg(network, hash, extra = null) {
+    const name = helper.REV_NETWORK_MAPPINGS[network]
+    const shown = displayHash(network, hash)
+    const hashLine = shown && (
+        <div className="text-xs text-clay-dark leading-4">
+            <span className="tx-hash" data-hash={shown}>{truncateHash(shown)}</span>
+        </div>
+    )
+    if (!name) {
+        // Unknown network: still show the hash (it is this leg's own), labelled generically.
+        if (!hashLine && !extra && network == null) return <div className="text-sm text-clay-dark">-</div>
+        return (
+            <div className="min-w-0">
+                <div className="text-sm font-medium text-espresso leading-5">{network == null ? 'Unknown chain' : `Chain ${network}`}</div>
+                {hashLine}
+                {extra}
+            </div>
+        )
+    }
     return (
-        <div className="flex items-center gap-2">
-            {networkImg}
-            {link}
+        <div className="flex items-center gap-2 min-w-0">
+            <Image alt="" src={`/images/network-${name}.png`} width={24} height={24} className="rounded-full bg-transparent shrink-0" />
+            <div className="min-w-0">
+                <div className="text-sm font-medium capitalize text-espresso leading-5">{helper.networkDisplayName(name)}</div>
+                {hashLine}
+                {extra}
+            </div>
+        </div>
+    )
+}
+
+// Route cell: source -> destination in one column.
+function renderRoute(item) {
+    const fill = helper.isSolverMarketPlaceFill(item)
+    return (
+        <div className="flex items-center gap-2 xl:gap-3 min-w-0">
+            {routeLeg(item.src_network, fill ? null : item.src_tx_hash)}
+            <span aria-hidden="true" className="text-clay-dark shrink-0 leading-none">&rarr;</span>
+            {routeLeg(item.dest_network, routeDestHash(item), rollbackLine(item))}
         </div>
     )
 }
@@ -124,7 +195,6 @@ function renderHashLink(scanUrl, network, hash, isFull = false) {
     let networkImg
     let linkClass = 'hover:underline inline-block'
     let link = <div>-</div>
-    let copyButton = <ClipboardDocumentIcon width={20} height={20} className={'opacity-75 text-gray-900 copy-hash cursor-pointer ml-2'} />
 
     scanUrl = scanUrl ? scanUrl.replace(/\/+$/, '') : ''
     let href = `${scanUrl}/${hash}`
@@ -143,20 +213,20 @@ function renderHashLink(scanUrl, network, hash, isFull = false) {
     }
     // Bare-hash chains display (and copy) without the 0x prefix, matching the link.
     const dispHash = isBareHash && typeof hash === 'string' && hash.startsWith('0x') ? hash.slice(2) : hash
-    networkImg = <Image alt={network} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
+    networkImg = <Image alt={helper.REV_NETWORK_MAPPINGS[network] || ""} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
     link = !isFull || isOdHash ? (
         <div className={linkClass}><span className="tx-hash" data-hash={dispHash}>{isFull ? dispHash : truncateHash(dispHash)}</span></div>
     ) : (
-        <div className="flex">
-            <Link className={linkClass} href={href} target="_blank">
+        <div className="flex items-center gap-1 max-md:min-w-0">
+            <Link className={`${linkClass} max-md:min-w-0 max-md:break-all`} href={href} target="_blank">
                 <span className="tx-hash" data-hash={dispHash}>{dispHash}</span>
             </Link>
-            {copyButton}
+            <CopyButton value={dispHash} />
         </div>
     )
 
     return (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
             {networkImg}
             {link}
         </div>
@@ -168,6 +238,8 @@ export default {
     renderHashLink,
     renderSrcHashLink,
     renderDestHashLink,
+    renderRoute,
+    routeDestHash,
     renderSerialNo,
     renderChain
 }

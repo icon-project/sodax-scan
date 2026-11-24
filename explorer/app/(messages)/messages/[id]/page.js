@@ -1,12 +1,13 @@
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import Loading from './loading'
+import Spinner from '@/components/spinner'
 import FetchData from '@/lib/fetch-data'
 import helper from '@/lib/helper'
 import MessageDetail from '@/components/message-detail'
 import IntentSiblings from '@/components/intent-siblings'
 import PageTitle from '@/components/page-title'
+import { Hero, HeroOverlap } from '@/components/hero'
 import { isAdmin } from '@/lib/admin-server'
 
 export default async function MessageDetailPage({ params, searchParams }) {
@@ -42,11 +43,15 @@ export default async function MessageDetailPage({ params, searchParams }) {
 
     return (
         <div>
-            <PageTitle title={'Message Detail'} />
+            <Hero>
+                <PageTitle before="Message" accent="info" />
+            </Hero>
 
-            <Suspense fallback={<Loading />}>
-                <MessageDetail msgData={{ ...msgData, intent_tx_hash: intentTxHash }} meta={rs.meta} isAdmin={isAdmin()}></MessageDetail>
-            </Suspense>
+            <HeroOverlap>
+                <Suspense fallback={<Spinner />}>
+                    <MessageDetail msgData={{ ...msgData, intent_tx_hash: intentTxHash }} meta={rs.meta} isAdmin={isAdmin()}></MessageDetail>
+                </Suspense>
+            </HeroOverlap>
 
             {intentTxHash && (
                 <IntentSiblings

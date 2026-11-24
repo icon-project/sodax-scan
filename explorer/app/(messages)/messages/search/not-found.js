@@ -1,3 +1,9 @@
+import { Hero } from '@/components/hero'
+
 export default function NotFound() {
-    return <div className="h-32 text-3xl text-white py-20 opacity-75">No results found.</div>
+    return (
+        <Hero>
+            <div className="text-3xl text-white py-10">No results found.</div>
+        </Hero>
+    )
 }

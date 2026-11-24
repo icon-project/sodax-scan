@@ -97,6 +97,11 @@ export interface MessageListProps {
     data?: MessageItem[]
     meta?: MessageMeta
     showPagination?: boolean
+    /** Reset the active filters; when set and `filtersActive`, the empty state offers it. */
+    onReset?: () => void
+    filtersActive?: boolean
+    /** Ids that just arrived on the live list; they get an entrance animation. Optional. */
+    freshIds?: Set<string | number>
 }
 
 export interface MessageDetailProps {
