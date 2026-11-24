@@ -32,8 +32,8 @@ export default function Header({ showSearchBar, assets }) {
             <div className="min-w-0">
                 <a className="block rounded-small" href="/" aria-label="SODAX Scan home">
                     {/* Both logos are rendered and swapped by the html.dark class (CSS only: no flash, no JS). */}
-                    <img alt="" className="block dark:hidden w-36 min-w-0 md:w-64 md:min-w-64 h-[32px] max-md:object-contain max-md:object-left" src="/images/new_logo.svg"></img>
-                    <img alt="" className="hidden dark:block w-36 min-w-0 md:w-64 md:min-w-64 h-[32px] max-md:object-contain max-md:object-left" src="/images/new_logo-on-dark.svg"></img>
+                    <img alt="" className="inline dark:hidden w-36 min-w-0 md:w-64 md:min-w-64 h-[32px] max-md:object-contain max-md:object-left" src="/images/new_logo.svg"></img>
+                    <img alt="" className="hidden dark:inline w-36 min-w-0 md:w-64 md:min-w-64 h-[32px] max-md:object-contain max-md:object-left" src="/images/new_logo-on-dark.svg"></img>
                 </a>
             </div>
 
