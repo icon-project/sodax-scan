@@ -28,13 +28,13 @@ const Pagination = ({ totalPages, pageSize, pageNumber }) => {
     }
 
     return (
-        <div className="flex text-sm items-center justify-between py-4 px-4">
+        <div className="flex text-sm items-center justify-between gap-2 py-4 px-4">
             <div className="flex items-center gap-2">
                 <span className='hidden xl:inline-block'>Show</span>
                 <select
                     id="ps"
                     name="ps"
-                    className="bg-transparent cursor-pointer border border-cherry-grey rounded-md px-2 py-1"
+                    className="max-md:min-h-11 bg-transparent cursor-pointer border border-cherry-grey rounded-md px-2 py-1"
                     value={selectedOption}
                     onChange={(e) => pageSizeChanged(e.target.value, setSelectedOption)}
                 >
@@ -47,19 +47,19 @@ const Pagination = ({ totalPages, pageSize, pageNumber }) => {
                 <span className='hidden xl:inline-block'>records</span>
             </div>
             <div className="flex items-center justify-between">
-                <Link className="ml-1 border border-cherry-grey rounded-md px-2 py-1 hover:bg-cream-white" href={`/messages?ps=${pageSize}&p=1`}>
+                <Link className="ml-1 border border-cherry-grey rounded-md px-2 py-1 max-md:min-h-11 max-md:min-w-11 max-md:inline-flex max-md:items-center max-md:justify-center hover:bg-cream-white" href={`/messages?ps=${pageSize}&p=1`}>
                     First
                 </Link>
-                <Link className="ml-1 border border-cherry-grey rounded-md  px-2 py-1 hover:bg-cream-white" href={`/messages?ps=${pageSize}&p=${pageNumber - 1}`}>
+                <Link className="ml-1 border border-cherry-grey rounded-md px-2 py-1 max-md:min-h-11 max-md:min-w-11 max-md:inline-flex max-md:items-center max-md:justify-center hover:bg-cream-white" href={`/messages?ps=${pageSize}&p=${pageNumber - 1}`}>
                     &lt;
                 </Link>
-                <div className="ml-1 border border-cherry-grey rounded-md px-2 py-1 tabular-nums">
+                <div className="ml-1 border border-cherry-grey rounded-md px-2 py-1 max-md:min-h-11 max-md:min-w-11 max-md:inline-flex max-md:items-center max-md:justify-center tabular-nums">
                     <span  className='hidden xl:inline-block'>Page</span> {pageNumber} <span className='xl:hidden inline-block'>/</span><span className='hidden xl:inline-block'>of</span> {totalPages}
                 </div>
-                <Link className="ml-1 border border-cherry-grey rounded-md px-2 py-1 hover:bg-cream-white" href={`/messages?ps=${pageSize}&p=${pageNumber + 1}`}>
+                <Link className="ml-1 border border-cherry-grey rounded-md px-2 py-1 max-md:min-h-11 max-md:min-w-11 max-md:inline-flex max-md:items-center max-md:justify-center hover:bg-cream-white" href={`/messages?ps=${pageSize}&p=${pageNumber + 1}`}>
                     &gt;
                 </Link>
-                <Link className="ml-1 border border-cherry-grey rounded-md px-2 py-1 hover:bg-cream-white" href={`/messages?ps=${pageSize}&p=${totalPages}`}>
+                <Link className="ml-1 border border-cherry-grey rounded-md px-2 py-1 max-md:min-h-11 max-md:min-w-11 max-md:inline-flex max-md:items-center max-md:justify-center hover:bg-cream-white" href={`/messages?ps=${pageSize}&p=${totalPages}`}>
                     Last
                 </Link>
             </div>

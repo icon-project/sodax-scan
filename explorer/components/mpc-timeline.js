@@ -26,37 +26,37 @@ export default async function MpcTimeline({ msgData, meta }) {
     const { steps } = helper.deriveMpcSteps(msgData)
     const msgAction = msgData.action_detail || ''
 
-    const labelCell = 'table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap'
-    const valueCell = 'table-cell px-3 py-2 xl:px-6 xl:py-4'
+    const labelCell = 'block md:table-cell xl:w-96 px-3 pt-3 pb-0 md:py-2 xl:px-6 xl:py-4 max-md:text-sm max-md:text-clay-dark font-medium whitespace-normal xl:whitespace-nowrap'
+    const valueCell = 'block md:table-cell min-w-0 break-all md:break-normal px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4'
 
     return (
         <div className="py-2 flex flex-col">
             <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-                <div className="table border-collapse w-full text-base text-left text-espresso">
+                <div className="block md:table border-collapse w-full text-base text-left text-espresso">
                     <div className="xl:table-header-group hidden">
                         <div className="table-row font-medium text-xl uppercase text-left text-espresso bg-cream-white">
                             <div className="table-cell px-2 py-1 xl:px-6 xl:py-3">Message Detail</div>
                             <div className="table-cell px-2 py-1 xl:px-6 xl:py-3"></div>
                         </div>
                     </div>
-                    <div className="table-row-group">
-                        <div className="table-row bg-white border-b">
+                    <div className="block md:table-row-group">
+                        <div className="block md:table-row bg-white border-b">
                             <div className={labelCell}>Status:</div>
                             <div className={valueCell}>{Render.renderMessageStatus(msgData.status)}</div>
                         </div>
                         {msgData.mpc_id && (
-                            <div className="table-row bg-white border-b">
+                            <div className="block md:table-row bg-white border-b">
                                 <div className={labelCell}>MPC ID:</div>
                                 <div className={valueCell}>{msgData.mpc_id}</div>
                             </div>
                         )}
-                        <div className="table-row bg-white border-b">
+                        <div className="block md:table-row bg-white border-b">
                             <div className={labelCell}>Serial No:</div>
                             {/* MPC rows show the shared "MPC" badge (Render.renderSerialNo),
                                 the same marker used in the list Serial-No column. */}
                             <div className={`${valueCell} tabular-nums`}>{Render.renderSerialNo(msgData)}</div>
                         </div>
-                        <div className="table-row bg-white border-b">
+                        <div className="block md:table-row bg-white border-b">
                             <div className={labelCell}>Source transaction hash:</div>
                             <div className={valueCell}>
                                 {Render.renderHashLink(meta.urls.tx[msgData.src_network], msgData.src_network, msgData.src_tx_hash, true)}
@@ -64,7 +64,7 @@ export default async function MpcTimeline({ msgData, meta }) {
                         </div>
 
                         {steps.map((step) => (
-                            <div key={step.key} className="table-row bg-white border-b">
+                            <div key={step.key} className="block md:table-row bg-white border-b">
                                 <div className={labelCell}>
                                     <span>
                                         {step.key === 'released'
@@ -81,7 +81,7 @@ export default async function MpcTimeline({ msgData, meta }) {
                         ))}
 
                         {msgData.intent_tx_hash && (
-                            <div className="table-row bg-white border-b">
+                            <div className="block md:table-row bg-white border-b">
                                 <div className={labelCell}>Intent Hash:</div>
                                 <div className={valueCell}>
                                     <Link className="hover:underline underline-offset-2 inline-block" href={`/messages/search?value=${msgData.intent_tx_hash}`}>
@@ -91,16 +91,16 @@ export default async function MpcTimeline({ msgData, meta }) {
                             </div>
                         )}
 
-                        <div className="table-row bg-white border-b">
+                        <div className="block md:table-row bg-white border-b">
                             <div className={labelCell}>Action:</div>
                             <div className={valueCell}>{msgAction}</div>
                         </div>
 
-                        <div className="table-row bg-white border-b">
+                        <div className="block md:table-row bg-white border-b">
                             <div className={labelCell}>Created:</div>
                             <div className={`${valueCell} tabular-nums`}>{timeAgo(msgData.created_at * 1000)} ago ({new Date(msgData.created_at * 1000).toUTCString()})</div>
                         </div>
-                        <div className="table-row bg-white border-b">
+                        <div className="block md:table-row bg-white border-b">
                             <div className={labelCell}>Last updated at:</div>
                             <div className={valueCell}>
                                 {msgData.updated_at

@@ -161,8 +161,8 @@ function renderHashLink(scanUrl, network, hash, isFull = false) {
     link = !isFull || isOdHash ? (
         <div className={linkClass}><span className="tx-hash" data-hash={dispHash}>{isFull ? dispHash : truncateHash(dispHash)}</span></div>
     ) : (
-        <div className="flex">
-            <Link className={linkClass} href={href} target="_blank">
+        <div className="flex min-w-0">
+            <Link className={`${linkClass} min-w-0 break-all`} href={href} target="_blank">
                 <span className="tx-hash" data-hash={dispHash}>{dispHash}</span>
             </Link>
             {copyButton}
