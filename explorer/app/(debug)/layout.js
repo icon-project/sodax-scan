@@ -1,5 +1,5 @@
 import '../globals.css'
-import { inter, shrikhand } from '../fonts'
+import { inter, inriaSerif, shrikhand } from '../fonts'
 import Header from '@/components/header'
 import Footer from '@/components/footer'
 
@@ -11,7 +11,7 @@ export const metadata = {
 
 export default function DebugLayout({ children }) {
     return (
-        <html lang="en" className={`${inter.variable} ${shrikhand.variable}`}>
+        <html lang="en" className={`${inter.variable} ${inriaSerif.variable} ${shrikhand.variable}`}>
             <body className="font-sans text-espresso min-h-screen bg-vibrant-white">
                 <Header showSearchBar={false} />
                 <div className="-z-20 h-72 w-full absolute hero"></div>

@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react'
 import MessageList from '@/components/message-list'
 import MessageFilter from '@/components/message-filter'
 import FetchData from '@/lib/fetch-data'
+import { Headline } from '@/components/page-title'
 import SearchBar from '@/components/searchbar'
 import converter from '@/lib/converter'
 import useSWR from 'swr'
@@ -37,9 +38,7 @@ export default function Home() {
         <div>
             <div className="py-2 xl:py-6 xl:flex xl:items-end xl:justify-between w-full">
                 <div className="xl:basis-8/12">
-                    <h1 className="text-3xl xl:text-4xl text-white tracking-tight pb-3">
-                        <span className="font-display italic text-soda-bright">Explore</span> Messages
-                    </h1>
+                    <Headline before="Explore" accent="all" after="messages" className="pb-3" />
                     <SearchBar showFull={true} />
                 </div>
                 <div className="md:hidden flex items-baseline gap-2 pt-3 text-white">

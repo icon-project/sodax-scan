@@ -42,7 +42,7 @@ export default async function MessageDetailPage({ params, searchParams }) {
 
     return (
         <div>
-            <PageTitle title={'Message Detail'} />
+            <PageTitle before="Message" accent="info" />
 
             <Suspense fallback={<Loading />}>
                 <MessageDetail msgData={{ ...msgData, intent_tx_hash: intentTxHash }} meta={rs.meta} isAdmin={isAdmin()}></MessageDetail>

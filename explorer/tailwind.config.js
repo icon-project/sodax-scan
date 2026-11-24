@@ -15,7 +15,8 @@ module.exports = {
         extend: {
             fontFamily: {
                 sans: ['var(--font-inter)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-                display: ['var(--font-shrikhand)', 'cursive']
+                display: ['var(--font-shrikhand)', 'cursive'],
+                'serif-heading': ['var(--font-inria-serif)', 'Georgia', 'serif']
             },
             colors: {
                 // ---- Design-system tokens (source: docs/design-system/sodax-design-tokens.json) ----

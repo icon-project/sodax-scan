@@ -11,7 +11,7 @@ export default async function MessagesPage({ params, searchParams }) {
 
     return (
         <div>
-            <PageTitle title={'Messages'} />
+            <PageTitle before="Message" accent="feed" />
 
             <Suspense fallback={<Loading />}>
                 <MessageList data={rs.data} meta={rs.meta} showPagination="true"></MessageList>

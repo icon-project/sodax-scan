@@ -1,5 +1,5 @@
 import '../globals.css'
-import { inter, shrikhand } from '../fonts'
+import { inter, inriaSerif, shrikhand } from '../fonts'
 import Favicon from '../favicon.ico'
 import Header from '@/components/header'
 import AdminBar from '@/components/admin-bar'
@@ -48,7 +48,7 @@ export default async function RootLayout({ children }) {
     }
 
     return (
-        <html lang="en" className={`${inter.variable} ${shrikhand.variable}`}>
+        <html lang="en" className={`${inter.variable} ${inriaSerif.variable} ${shrikhand.variable}`}>
             <head></head>
             <body className="font-sans text-espresso min-h-screen bg-vibrant-white">
                 <Header showSearchBar={false} assets={assets} />

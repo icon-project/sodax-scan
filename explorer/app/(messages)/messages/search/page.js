@@ -44,7 +44,7 @@ export default async function SearchPage({ params, searchParams }) {
 
     return (
         <div>
-            <PageTitle title={`Search`} />
+            <PageTitle before="Search" accent="hits" />
             <Suspense fallback={<Loading />}>
                 {showDetailPage ? <MessageDetail msgData={msgData} meta={rs.meta} isAdmin={isAdmin()}></MessageDetail> : <MessageList data={rs.data} meta={rs.meta}></MessageList>}
             </Suspense>
