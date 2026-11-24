@@ -31,9 +31,15 @@ const MessageFilter = (props: MessageFilterProps) => {
     const [srcFilter, setSrcFilter] = useState<string>('')
     const [destFilter, setDestFilter] = useState<string>('')
 
-    const dropdownTheme = {
-        inlineWrapper: 'flex items-center hover:text-cherry-brighter max-md:min-h-11 max-md:px-3'
-    }
+    // Filter triggers are pills over the cherry hero. Inactive: outlined; active
+    // (a filter is set): solid white pill, so a filtered list is obvious at a glance.
+    const chipTheme = (active: boolean) => ({
+        inlineWrapper: `flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm transition-colors max-md:min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soda-bright ${
+            active
+                ? 'bg-white border-white text-cherry-dark font-medium hover:bg-almost-white'
+                : 'border-cherry-bright/60 text-white hover:bg-cherry-dark hover:border-cherry-brighter'
+        }`
+    })
 
     const filterNetworks = (networks: Network[], filterText: string): Network[] => {
         if (!filterText) return networks
@@ -45,8 +51,8 @@ const MessageFilter = (props: MessageFilterProps) => {
 
     // Wrapping row on mobile (a scroll strip would clip the dropdown menus), Route first and Reset last, 44px targets. md+: unchanged.
     return (
-        <div className="flex flex-wrap items-center md:flex-nowrap md:justify-end gap-x-1 md:gap-4 text-white p-1 rounded-md max-md:-mx-3">
-            <Dropdown label="Route" inline className="rounded-md" theme={dropdownTheme}>
+        <div className="flex flex-wrap items-center md:flex-nowrap md:justify-end gap-2 text-white p-1 rounded-md">
+            <Dropdown label="Route" inline className="rounded-md" theme={chipTheme(props.kind !== '')}>
                 <DropdownItem
                     className={`min-w-32 ${props.kind == '' ? 'bg-almost-white' : ''}`}
                     onClick={() => {
@@ -71,7 +77,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                 })}
             </Dropdown>
 
-            <Dropdown label="Status" inline className="rounded-md" theme={dropdownTheme}>
+            <Dropdown label="Status" inline className="rounded-md" theme={chipTheme(props.status !== '')}>
                 <DropdownItem
                     className={`min-w-32 ${props.status == '' ? 'bg-almost-white' : ''}`}
                     onClick={() => {
@@ -96,7 +102,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                 })}
             </Dropdown>
 
-            <Dropdown label="Source" inline className="rounded-md" theme={dropdownTheme}>
+            <Dropdown label="Source" inline className="rounded-md" theme={chipTheme(props.srcNetwork !== '')}>
                 <div className="p-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} onKeyPress={(e) => e.stopPropagation()}>
                     <input
                         type="text"
@@ -142,7 +148,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                 })}
             </Dropdown>
 
-            <Dropdown label="Destination" inline className="rounded-md" theme={dropdownTheme}>
+            <Dropdown label="Destination" inline className="rounded-md" theme={chipTheme(props.destNetwork !== '')}>
                 <div className="p-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} onKeyPress={(e) => e.stopPropagation()}>
                     <input
                         type="text"
@@ -189,7 +195,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                 })}
             </Dropdown>
 
-            <Dropdown label="Action" inline className="rounded-md " theme={dropdownTheme}>
+            <Dropdown label="Action" inline className="rounded-md " theme={chipTheme(props.actionType !== '')}>
                 <DropdownItem
                     className={` min-w-48 ${props.actionType == '' ? 'bg-almost-white' : ''}`}
                     onClick={() => {
@@ -222,7 +228,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                 })}
             </Dropdown>
 
-            <button className="hover:text-cherry-brighter max-md:min-h-11 max-md:px-3" onClick={() => props.resetClicked()}>
+            <button className="rounded-full px-3 py-1.5 text-sm text-cherry-brighter underline-offset-2 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soda-bright max-md:min-h-11" onClick={() => props.resetClicked()}>
                 Reset
             </button>
         </div>
