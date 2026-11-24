@@ -129,7 +129,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                     return (
                         <DropdownItem
                             key={network.id}
-                            className={`min-w-48 ${props.srcNetwork?.split(',').map(v => v.trim()).includes(String(networkId)) ? 'bg-selected' : ''}`}
+                            className={`min-w-48 ${props.srcNetwork?.split(',').map(v => v.trim()).includes(String(networkId)) ? 'bg-menu-selected' : ''}`}
                             onClick={() => {
                                 props.srcNetworkChanged(network.id)
                             }}
@@ -143,6 +143,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                             /> */}
                             <NetworkIcon className="mr-2" alt={network.name} src={network.logo} size={16} />
                             {helper.networkDisplayName(network.name)}
+                            {props.srcNetwork?.split(',').map(v => v.trim()).includes(String(networkId)) ? <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="hidden dark:block w-4 h-4 ml-auto pl-2 box-content shrink-0"><path fillRule="evenodd" clipRule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 111.4-1.4l3.8 3.8 6.8-6.8a1 1 0 011.4 0z" /></svg> : null}
                         </DropdownItem>
                     )
                 })}
@@ -176,7 +177,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                     return (
                         <DropdownItem
                             key={network.id}
-                            className={`min-w-48 ${props.destNetwork?.split(',').map(v => v.trim()).includes(String(networkId)) ? 'bg-selected' : ''}`}
+                            className={`min-w-48 ${props.destNetwork?.split(',').map(v => v.trim()).includes(String(networkId)) ? 'bg-menu-selected' : ''}`}
                             onClick={() => {
                                 props.destNetworkChanged(network.id)
                             }}
@@ -190,6 +191,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                             /> */}
                             <NetworkIcon className="mr-2" alt={network.name} src={network.logo} size={16} />
                             {helper.networkDisplayName(network.name)}
+                            {props.destNetwork?.split(',').map(v => v.trim()).includes(String(networkId)) ? <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="hidden dark:block w-4 h-4 ml-auto pl-2 box-content shrink-0"><path fillRule="evenodd" clipRule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 111.4-1.4l3.8 3.8 6.8-6.8a1 1 0 011.4 0z" /></svg> : null}
                         </DropdownItem>
                     )
                 })}
@@ -209,7 +211,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                     return (
                         <DropdownItem
                             key={actType}
-                            className={`min-w-48 ${props.actionType.includes(actType) ? 'bg-selected' : ''}`}
+                            className={`min-w-48 ${props.actionType.includes(actType) ? 'bg-menu-selected' : ''}`}
                             onClick={() => {
                                 props.actionTypeChanged(actType)
                             }}
@@ -222,7 +224,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                                 className="cursor-pointer px-2 mr-1"
                             /> */}
                             {actType}
-
+                            {props.actionType.includes(actType) ? <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="hidden dark:block w-4 h-4 ml-auto pl-2 box-content shrink-0"><path fillRule="evenodd" clipRule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 111.4-1.4l3.8 3.8 6.8-6.8a1 1 0 011.4 0z" /></svg> : null}
                         </DropdownItem>
                     )
                 })}

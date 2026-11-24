@@ -87,6 +87,7 @@ module.exports = {
                 subtle: 'rgb(var(--subtle) / <alpha-value>)',
                 hover: 'rgb(var(--hover) / <alpha-value>)',
                 selected: 'rgb(var(--selected) / <alpha-value>)',
+                'menu-selected': 'rgb(var(--menu-selected) / <alpha-value>)',
                 line: 'rgb(var(--line) / <alpha-value>)',
                 'line-control': 'rgb(var(--line-control) / <alpha-value>)',
                 'line-strong': 'rgb(var(--line-strong) / <alpha-value>)',

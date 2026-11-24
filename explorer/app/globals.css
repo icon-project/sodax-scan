@@ -17,6 +17,7 @@
     --subtle: 237 230 230; /* cream-white */
     --hover: 248 243 243; /* almost-white */
     --selected: 246 231 153; /* soda-on-soda */
+    --menu-selected: 246 231 153; /* soda-on-soda */
     --line: 237 230 230; /* cream-white */
     --line-strong: 185 172 171; /* clay-light */
     --fg: 72 52 52; /* espresso */
@@ -68,6 +69,7 @@
     --subtle: 39 28 28;
     --hover: 41 29 29;
     --selected: 82 48 46;
+    --menu-selected: 125 80 76; /* 1.7:1 vs flowbite dark menu #483434; text 6.1:1 */
     --line: 66 47 47;
     --line-strong: 142 126 125; /* clay */
     --fg: 248 243 243; /* almost-white */
@@ -118,6 +120,7 @@
     --subtle: 237 230 230; /* cream-white */
     --hover: 248 243 243; /* almost-white */
     --selected: 246 231 153; /* soda-on-soda */
+    --menu-selected: 246 231 153; /* soda-on-soda */
     --line: 237 230 230; /* cream-white */
     --line-strong: 185 172 171; /* clay-light */
     --fg: 72 52 52; /* espresso */
