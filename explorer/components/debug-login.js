@@ -48,7 +48,7 @@ export default function DebugLogin() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Password"
-                    className="block w-full p-3 text-sm border border-line-strong rounded-lg focus:outline-none focus:border-focus focus:ring-1 focus:ring-focus"
+                    className="block w-full p-3 text-sm bg-raised text-fg dark:placeholder:text-fg-muted border border-line-strong rounded-lg focus:outline-none focus:border-focus focus:ring-1 focus:ring-focus"
                 />
                 {error ? <div className="text-sm text-accent mt-3">{error}</div> : null}
                 <button
