@@ -1,3 +1,4 @@
+import { Hero, HeroOverlap } from '@/components/hero'
 import SkeletonTable from '@/components/skeleton-table'
 import { Headline } from '@/components/page-title'
 import SearchBar from '@/components/searchbar'
@@ -5,6 +6,7 @@ import SearchBar from '@/components/searchbar'
 export default function Loading() {
     return (
         <div>
+            <Hero>
             <div className="py-10 flex items-end justify-between w-full">
                 <div className="basis-8/12">
                     <Headline before="Explore" accent="all" after="messages" className="pb-2" />
@@ -17,8 +19,11 @@ export default function Loading() {
                     </div>
                 </div>
             </div>
+            </Hero>
 
-            <SkeletonTable />
+            <HeroOverlap>
+                <SkeletonTable />
+            </HeroOverlap>
         </div>
     )
 }

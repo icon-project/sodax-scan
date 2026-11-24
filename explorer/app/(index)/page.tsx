@@ -5,6 +5,7 @@ import MessageList from '@/components/message-list'
 import MessageFilter from '@/components/message-filter'
 import FetchData from '@/lib/fetch-data'
 import { Headline } from '@/components/page-title'
+import { Hero, HeroOverlap } from '@/components/hero'
 import SearchBar from '@/components/searchbar'
 import converter from '@/lib/converter'
 import useSWR from 'swr'
@@ -36,6 +37,7 @@ export default function Home() {
 
     return (
         <div>
+            <Hero>
             <div className="py-2 xl:py-6 xl:flex xl:items-end xl:justify-between w-full">
                 <div className="xl:basis-8/12">
                     <Headline before="Explore" accent="all" after="messages" className="pb-3" />
@@ -110,6 +112,9 @@ export default function Home() {
                 }}
             />
 
+            </Hero>
+
+            <HeroOverlap>
             {/* Message List */}
             {messagesRes.isLoading ? <SkeletonTable /> : <MessageList data={messagesRes.data?.data} meta={messagesRes.data?.meta} showPagination={false}></MessageList>}
 
@@ -127,6 +132,7 @@ export default function Home() {
                     }}
                 />
             )}
+            </HeroOverlap>
         </div>
     )
 }
