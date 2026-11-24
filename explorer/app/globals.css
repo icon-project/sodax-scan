@@ -89,12 +89,12 @@ a {
 
 .tick {
     display: inline-block;
-    animation: tick 220ms var(--ease-out) backwards;
+    animation: tick 180ms var(--ease-out) backwards;
 }
 @keyframes tick {
     from {
-        opacity: 0.55;
-        transform: translateY(6px);
+        opacity: 0.75;
+        transform: translateY(4px);
     }
     to {
         opacity: 1;
