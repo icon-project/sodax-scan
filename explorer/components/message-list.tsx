@@ -7,14 +7,14 @@ import type { MessageListProps } from '@/types'
 export default function MessageList({ data, meta, showPagination }: MessageListProps) {
     return (
         <div className="py-2">
-          <div className="md:relative md:overflow-x-auto md:shadow-md md:rounded-lg">
+          <div className="md:relative md:overflow-x-auto md:shadow-card md:rounded-regular">
             {/* Below md: one card per message. From md up: the table below, unchanged. */}
             <ul className="md:hidden flex flex-col gap-2 list-none p-0 m-0">
                 {data?.map((item) => (
                     <li key={item.id}>
                         <Link
                             href={`/messages/${item.id}`}
-                            className="block min-w-0 bg-white rounded-regular shadow-md p-4 active:bg-almost-white hover:bg-almost-white"
+                            className="block min-w-0 bg-white rounded-regular shadow-card p-4 active:bg-almost-white hover:bg-almost-white"
                         >
                             <div className="flex items-center justify-between gap-2">
                                 {Render.renderMessageStatus(item.status)}
@@ -32,7 +32,7 @@ export default function MessageList({ data, meta, showPagination }: MessageListP
                         </Link>
                     </li>
                 ))}
-                {data?.length == 0 && <li className="text-center py-12 bg-white rounded-regular shadow-md">No messages found. Please try again!</li>}
+                {data?.length == 0 && <li className="text-center py-12 bg-white rounded-regular shadow-card">No messages found. Please try again!</li>}
             </ul>
 
             <div className="hidden md:block">

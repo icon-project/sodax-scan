@@ -4,7 +4,7 @@ export default function SkeletonTable({ count = 10 }) {
         <div className="py-2">
             <div className="md:hidden flex flex-col gap-2">
                 {Array.from({ length: count }).map((_, index) => (
-                    <div key={index} className="bg-white rounded-regular shadow-md p-4 animate-pulse">
+                    <div key={index} className="bg-white rounded-regular shadow-card p-4 animate-pulse">
                         <div className="flex items-center justify-between">
                             <div className="h-6 w-24 bg-cream-white rounded-full"></div>
                             <div className="h-4 w-16 bg-cream-white rounded-full"></div>
@@ -17,7 +17,7 @@ export default function SkeletonTable({ count = 10 }) {
                     </div>
                 ))}
             </div>
-            <div className="hidden md:block relative overflow-x-auto shadow-md sm:rounded-lg">
+            <div className="hidden md:block relative overflow-x-auto shadow-card rounded-regular">
                 <div className="table w-full border-collapse">
                     <div className="table-header-group">
                         <div className="table-row uppercase text-xs tracking-wide text-clay-dark bg-cream-white">
