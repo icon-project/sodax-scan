@@ -1,8 +1,11 @@
+// Loading skeleton that mirrors the real list: cards below md, the 5-column
+// table (same header, paddings and 52px rows) from md up. Pulse is disabled
+// under prefers-reduced-motion (globals.css).
 export default function SkeletonTable({ count = 10 }) {
-    // Generating {count = 30} skeletons to match the size of the list.
     return (
-        <div className="py-2">
-            <div className="md:hidden flex flex-col gap-2">
+        <div className="py-2" role="status" aria-busy="true">
+            <span className="sr-only">Loading messages…</span>
+            <div className="md:hidden flex flex-col gap-2" aria-hidden="true">
                 {Array.from({ length: count }).map((_, index) => (
                     <div key={index} className="bg-white rounded-regular shadow-card p-4 animate-pulse">
                         <div className="flex items-center justify-between">
@@ -17,20 +20,20 @@ export default function SkeletonTable({ count = 10 }) {
                     </div>
                 ))}
             </div>
-            <div className="hidden md:block relative overflow-x-auto shadow-card rounded-regular">
-                <div className="table w-full border-collapse">
+            <div className="hidden md:block relative overflow-x-auto shadow-card rounded-regular" aria-hidden="true">
+                <div className="table w-full border-collapse bg-white">
                     <div className="table-header-group">
-                        <div className="table-row uppercase text-xs tracking-wide text-clay-dark bg-almost-white border-b border-cream-white">
-                            <div className="table-cell px-1 py-1 xl:px-3 xl:py-3">Status</div>
-                            <div className="table-cell px-1 py-1 xl:px-3 xl:py-3">ID / Type</div>
-                            <div className="table-cell px-1 py-1 xl:px-3 xl:py-3 w-full">Route</div>
-                            <div className="table-cell px-1 py-1 xl:px-3 xl:py-3">Action</div>
-                            <div className="table-cell px-1 py-1 xl:px-3 xl:py-3 text-right">Created</div>
+                        <div className="table-row uppercase text-left text-xs tracking-wide text-clay-dark bg-almost-white border-b border-cream-white">
+                            <div className="table-cell px-3 py-3 xl:px-4">Status</div>
+                            <div className="table-cell px-3 py-3 xl:px-4">ID / Type</div>
+                            <div className="table-cell px-3 py-3 xl:px-4 w-full">Route</div>
+                            <div className="table-cell px-3 py-3 xl:px-4">Action</div>
+                            <div className="table-cell px-3 py-3 xl:px-4 text-right">Created</div>
                         </div>
                     </div>
                     <div className="table-row-group">
                         {Array.from({ length: count }).map((_, index) => (
-                            <Skeleton key={index} />
+                            <SkeletonRow key={index} />
                         ))}
                     </div>
                 </div>
@@ -39,31 +42,32 @@ export default function SkeletonTable({ count = 10 }) {
     )
 }
 
-function SkeletonTableCell() {
-    return (
-        <div className="max-w-sm animate-pulse">
-            <div className="h-5 bg-cream-white rounded-full w-full"></div>
-        </div>
-    )
+function Bar({ className }) {
+    return <div className={`h-4 bg-cream-white rounded-full ${className}`}></div>
 }
 
-function Skeleton() {
+function SkeletonRow() {
     return (
-        <div className="table-row bg-white hover:bg-almost-white border-b border-cream-white h-[52px]">
-            <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">
-                <SkeletonTableCell />
+        <div className="table-row bg-white border-b border-cream-white h-[52px]">
+            <div className="table-cell align-middle px-3 py-2 xl:px-4">
+                <div className="animate-pulse"><div className="h-6 w-24 bg-cream-white rounded-full"></div></div>
             </div>
-            <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">
-                <SkeletonTableCell />
+            <div className="table-cell align-middle px-3 py-2 xl:px-4">
+                <div className="animate-pulse"><Bar className="w-20" /></div>
             </div>
-            <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">
-                <SkeletonTableCell />
+            <div className="table-cell align-middle px-3 py-2 xl:px-4">
+                <div className="animate-pulse flex items-center gap-2">
+                    <div className="h-6 w-6 bg-cream-white rounded-full"></div>
+                    <Bar className="w-20" />
+                    <div className="h-6 w-6 bg-cream-white rounded-full ml-3"></div>
+                    <Bar className="w-20" />
+                </div>
             </div>
-            <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">
-                <SkeletonTableCell />
+            <div className="table-cell align-middle px-3 py-2 xl:px-4">
+                <div className="animate-pulse"><Bar className="w-24" /></div>
             </div>
-            <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3 text-right">
-                <SkeletonTableCell />
+            <div className="table-cell align-middle px-3 py-2 xl:px-4">
+                <div className="animate-pulse flex justify-end"><Bar className="w-16" /></div>
             </div>
         </div>
     )

@@ -97,6 +97,9 @@ export interface MessageListProps {
     data?: MessageItem[]
     meta?: MessageMeta
     showPagination?: boolean
+    /** Reset the active filters; when set and `filtersActive`, the empty state offers it. */
+    onReset?: () => void
+    filtersActive?: boolean
 }
 
 export interface MessageDetailProps {

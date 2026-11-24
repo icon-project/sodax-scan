@@ -5,7 +5,34 @@ import Render from '@/lib/render'
 import actionLabel from '@/lib/action-label'
 import type { MessageListProps } from '@/types'
 
-export default function MessageList({ data, meta, showPagination }: MessageListProps) {
+function EmptyState({ onReset, filtersActive }: { onReset?: () => void; filtersActive?: boolean }) {
+    const canReset = filtersActive && onReset
+    return (
+        <div role="status" className="flex flex-col items-center justify-center gap-3 px-4 py-16 text-center bg-white rounded-regular shadow-card">
+            <p className="text-base font-medium text-espresso">{canReset ? 'No messages match these filters' : 'No messages found'}</p>
+            <p className="text-sm text-clay-dark">{canReset ? 'Try removing a filter to see more results.' : 'Check back in a moment or try a different search.'}</p>
+            {canReset && (
+                <button
+                    type="button"
+                    onClick={onReset}
+                    className="mt-1 inline-flex items-center justify-center h-10 px-5 rounded-full bg-cherry-soda text-white text-sm font-medium transition-colors duration-150 hover:bg-cherry-dark active:bg-cherry-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cherry-soda"
+                >
+                    Reset filters
+                </button>
+            )}
+        </div>
+    )
+}
+
+export default function MessageList({ data, meta, showPagination, onReset, filtersActive }: MessageListProps) {
+    if (data && data.length === 0) {
+        return (
+            <div className="py-2">
+                <EmptyState onReset={onReset} filtersActive={filtersActive} />
+                {showPagination && meta && <Pagination totalPages={meta.pagination.total} pageNumber={meta.pagination.number} pageSize={meta.pagination.size} />}
+            </div>
+        )
+    }
     return (
         <div className="py-2">
           <div className="md:relative md:overflow-x-auto md:shadow-card md:rounded-regular">
@@ -33,7 +60,6 @@ export default function MessageList({ data, meta, showPagination }: MessageListP
                         </Link>
                     </li>
                 ))}
-                {data?.length == 0 && <li className="text-center py-12 bg-white rounded-regular shadow-card">No messages found. Please try again!</li>}
             </ul>
 
             <div className="hidden md:block">
@@ -62,11 +88,6 @@ export default function MessageList({ data, meta, showPagination }: MessageListP
                             </Link>
                         ))}
                     </div>
-                    {data?.length == 0 && (
-                        <div className="table-row-group w-full h-32">
-                            <div className='absolute left-0 w-full text-center mt-12'>No messages found. Please try again!</div>
-                        </div>
-                    )}
                 </div>
             </div>
             {/* {showPagination ? (

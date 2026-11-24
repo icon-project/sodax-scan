@@ -35,6 +35,15 @@ export default function Home() {
     })
 
 
+    const resetFilters = () => {
+        setSrcNetwork('')
+        setDestNetwork('')
+        setActionType('')
+        setStatus('')
+        setKind('')
+    }
+    const filtersActive = Boolean(srcNetwork || destNetwork || actionType || status || kind)
+
     return (
         <div>
             <Hero>
@@ -103,20 +112,14 @@ export default function Home() {
                 kindChanged={(value) => {
                     setKind(value)
                 }}
-                resetClicked={() => {
-                    setSrcNetwork('')
-                    setDestNetwork('')
-                    setActionType('')
-                    setStatus('')
-                    setKind('')
-                }}
+                resetClicked={resetFilters}
             />
 
             </Hero>
 
             <HeroOverlap>
             {/* Message List */}
-            {messagesRes.isLoading ? <SkeletonTable /> : <MessageList data={messagesRes.data?.data} meta={messagesRes.data?.meta} showPagination={false}></MessageList>}
+            {messagesRes.isLoading ? <SkeletonTable /> : <MessageList data={messagesRes.data?.data} meta={messagesRes.data?.meta} showPagination={false} onReset={resetFilters} filtersActive={filtersActive}></MessageList>}
 
             {/* Paging */}
             {!messagesRes.isLoading && (
