@@ -10,7 +10,7 @@ export default function Header({ showSearchBar, assets }) {
         <header className="px-4 py-4 xl:px-24 2xl:px-48 w-full bg-almost-white flex items-center md:items-stretch justify-between max-md:gap-3 border-b border-light-grey">
             <div className="min-w-0">
                 <a className="block" href="/">
-                    <img alt="SODAX Scan" className="w-44 min-w-0 md:w-64 md:min-w-64 h-[32px] object-contain object-left" src="/images/new_logo.svg"></img>
+                    <img alt="SODAX Scan" className="w-44 min-w-0 md:w-64 md:min-w-64 h-[32px] max-md:object-contain max-md:object-left" src="/images/new_logo.svg"></img>
                 </a>
             </div>
 
