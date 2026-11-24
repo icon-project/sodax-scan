@@ -352,3 +352,101 @@ html.theme-switching *::after {
     transition: background-color 200ms ease-out, color 200ms ease-out, border-color 200ms ease-out, fill 200ms ease-out, stroke 200ms ease-out, box-shadow 200ms ease-out,
         outline-color 200ms ease-out !important;
 }
+
+/* ---- Theme picker (components/theme-picker.js) ----
+   Desktop 88x32 track / 28px segments; below md 116x40 / 36px segments (hit area
+   extended to 44px tall). Thumb and active-icon colour key off
+   html[data-theme-pref] so they are correct before hydration. */
+.tp-root {
+    --seg: 28px;
+    --gap: 0px;
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    gap: var(--gap);
+    padding: 2px;
+    width: calc(3 * var(--seg) + 2 * var(--gap) + 4px);
+    border-radius: 9999px;
+    background-color: rgb(var(--picker-track));
+    box-shadow: inset 0 0 0 1px rgb(var(--picker-track-border));
+}
+.tp-thumb {
+    --i: 2; /* System: also the no-JS default */
+    --s: 1;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: var(--seg);
+    height: var(--seg);
+    border-radius: 9999px;
+    background-color: rgb(var(--picker-thumb));
+    box-shadow: var(--picker-thumb-shadow);
+    transform: translateX(calc(var(--i) * (var(--seg) + var(--gap)))) scale(var(--s));
+    transition: transform 240ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+html[data-theme-pref='light'] .tp-thumb {
+    --i: 0;
+}
+html[data-theme-pref='dark'] .tp-thumb {
+    --i: 1;
+}
+.tp-root:has(.tp-seg:active) .tp-thumb {
+    --s: 0.94;
+    transition-duration: 100ms;
+}
+.tp-seg {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: var(--seg);
+    height: var(--seg);
+    border-radius: 9999px;
+    cursor: pointer;
+    color: rgb(var(--picker-icon));
+}
+.tp-seg:hover {
+    color: rgb(var(--picker-icon-hover));
+}
+html[data-theme-pref='light'] .tp-seg[data-value='light'],
+html[data-theme-pref='dark'] .tp-seg[data-value='dark'],
+html[data-theme-pref='system'] .tp-seg[data-value='system'],
+html:not([data-theme-pref]) .tp-seg[data-value='system'] {
+    color: rgb(var(--picker-icon-active));
+}
+.tp-icon {
+    width: 16px;
+    height: 16px;
+}
+.tp-moon-in {
+    animation: icon-pop 160ms var(--ease-out) backwards, tp-moon-in 120ms ease-out backwards;
+}
+@keyframes tp-moon-in {
+    from {
+        rotate: -12deg;
+    }
+    to {
+        rotate: 0deg;
+    }
+}
+@media (max-width: 767px) {
+    .tp-root {
+        --seg: 36px;
+        --gap: 2px;
+    }
+    .tp-icon {
+        width: 18px;
+        height: 18px;
+    }
+    /* 44px-tall hit area; vertical only so neighbouring segments never overlap. */
+    .tp-seg::before {
+        content: '';
+        position: absolute;
+        inset: -4px 0;
+    }
+}
+@media print {
+    .tp-root {
+        display: none;
+    }
+}
