@@ -154,6 +154,17 @@
     --picker-icon: 107 92 91;
     --picker-icon-active: 72 52 52;
     --picker-icon-hover: 72 52 52;
+    --line-control: 215 205 203; /* cherry-grey */
+    --hash-hl-bg: 246 231 153; /* soda-on-soda */
+    --hash-hl-fg: 72 52 52; /* espresso */
+    color-scheme: light;
+    }
+    /* Logo swap keys off html.dark: show the light logo on paper. */
+    .dark img[src$='new_logo-on-dark.svg'] {
+        display: none !important;
+    }
+    .dark img[src$='/new_logo.svg'] {
+        display: inline !important;
     }
 }
 
