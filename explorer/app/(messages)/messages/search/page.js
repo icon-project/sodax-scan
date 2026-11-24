@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
-import Loading from './loading'
+import Spinner from '@/components/spinner'
 import FetchData from '@/lib/fetch-data'
 import MessageDetail from '@/components/message-detail'
 import MessageList from '@/components/message-list'
@@ -49,7 +49,7 @@ export default async function SearchPage({ params, searchParams }) {
                 <PageTitle before="Search" accent="hits" />
             </Hero>
             <HeroOverlap>
-                <Suspense fallback={<Loading />}>
+                <Suspense fallback={<Spinner />}>
                     {showDetailPage ? <MessageDetail msgData={msgData} meta={rs.meta} isAdmin={isAdmin()}></MessageDetail> : <MessageList data={rs.data} meta={rs.meta}></MessageList>}
                 </Suspense>
             </HeroOverlap>

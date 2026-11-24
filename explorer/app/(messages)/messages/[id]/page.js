@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import Loading from './loading'
+import Spinner from '@/components/spinner'
 import FetchData from '@/lib/fetch-data'
 import helper from '@/lib/helper'
 import MessageDetail from '@/components/message-detail'
@@ -48,7 +48,7 @@ export default async function MessageDetailPage({ params, searchParams }) {
             </Hero>
 
             <HeroOverlap>
-                <Suspense fallback={<Loading />}>
+                <Suspense fallback={<Spinner />}>
                     <MessageDetail msgData={{ ...msgData, intent_tx_hash: intentTxHash }} meta={rs.meta} isAdmin={isAdmin()}></MessageDetail>
                 </Suspense>
             </HeroOverlap>
