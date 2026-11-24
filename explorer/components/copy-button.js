@@ -23,7 +23,7 @@ export default function CopyButton({ value, label = 'Copy hash' }) {
     }
 
     return (
-        <span className="inline-flex items-center shrink-0">
+        <span className="relative inline-flex items-center shrink-0">
             <button
                 type="button"
                 onClick={copy}
@@ -32,7 +32,12 @@ export default function CopyButton({ value, label = 'Copy hash' }) {
             >
                 {copied ? <CheckIcon width={18} height={18} className="icon-pop text-success-dark" aria-hidden="true" /> : <ClipboardDocumentIcon width={18} height={18} aria-hidden="true" />}
             </button>
-            <span role="status" aria-live="polite" className={copied ? 'text-xs text-espresso ml-1 copied-fade' : 'sr-only'}>
+            {/* Out of flow (absolute) so showing it never moves the button or re-wraps the hash. */}
+            <span
+                role="status"
+                aria-live="polite"
+                className={copied ? 'absolute right-0 bottom-full mb-1 z-10 rounded-small bg-espresso px-2 py-1 text-xs text-white whitespace-nowrap pointer-events-none copied-fade' : 'sr-only'}
+            >
                 {copied ? 'Copied' : ''}
             </span>
         </span>
