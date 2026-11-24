@@ -105,4 +105,9 @@ input,
     .fade-in {
         animation: none !important;
     }
+    /* Loading spinner keeps a slow spin so loading is still conveyed. */
+    [role='status'].animate-spin {
+        animation-duration: 1.5s !important;
+        animation-iteration-count: infinite !important;
+    }
 }
