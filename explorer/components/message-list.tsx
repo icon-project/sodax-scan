@@ -7,7 +7,34 @@ import type { MessageListProps } from '@/types'
 export default function MessageList({ data, meta, showPagination }: MessageListProps) {
     return (
         <div className="py-2">
-            <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+            {/* Below md: one card per message. From md up: the table below, unchanged. */}
+            <ul className="md:hidden flex flex-col gap-2 list-none p-0 m-0">
+                {data?.map((item) => (
+                    <li key={item.id}>
+                        <Link
+                            href={`/messages/${item.id}`}
+                            className="block min-w-0 bg-white rounded-regular shadow-md p-4 active:bg-almost-white hover:bg-almost-white"
+                        >
+                            <div className="flex items-center justify-between gap-2">
+                                {Render.renderMessageStatus(item.status)}
+                                <span className="text-xs text-clay-dark tabular-nums whitespace-nowrap">{timeAgo(item.created_at * 1000)} ago</span>
+                            </div>
+                            <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-2 text-sm min-w-0">
+                                <div className="min-w-0">{Render.renderSrcHashLink(item, meta)}</div>
+                                <span aria-hidden="true" className="text-clay">&rarr;</span>
+                                <div className="min-w-0">{Render.renderDestHashLink(item, meta)}</div>
+                            </div>
+                            <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-clay-dark">
+                                <span className="tabular-nums">{Render.renderSerialNo(item)}</span>
+                                <span className="break-all">{item.action_type}</span>
+                            </div>
+                        </Link>
+                    </li>
+                ))}
+                {data?.length == 0 && <li className="text-center py-12 bg-white rounded-regular shadow-md">No messages found. Please try again!</li>}
+            </ul>
+
+            <div className="hidden md:block relative overflow-x-auto shadow-md sm:rounded-lg">
                 <div className="table w-full border-collapse min-h-32 bg-white">
                     <div className="table-header-group">
                         <div className="table-row uppercase text-left text-xs tracking-wide text-clay-dark bg-cream-white">
