@@ -32,7 +32,7 @@ export default async function MessageDetail({ msgData, meta, isAdmin = false }) 
         <div className="py-2 flex flex-col">
             {canResubmit && <ResubmitBanner />}
             <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-                <div className="table border-collapse w-full text-base text-left text-gray-900">
+                <div className="table border-collapse w-full text-base text-left text-espresso">
                     <div className="xl:table-header-group hidden">
                         <div className="table-row font-medium text-xl uppercase text-left text-espresso bg-cream-white">
                             <div className="table-cell px-2 py-1 xl:px-6 xl:py-3">Message Detail</div>

@@ -28,7 +28,7 @@ export default function SkeletonTable({ count = 10 }) {
 function SkeletonTableCell() {
     return (
         <div className="max-w-sm animate-pulse">
-            <div className="h-5 bg-gray-200 rounded-full w-full"></div>
+            <div className="h-5 bg-cream-white rounded-full w-full"></div>
         </div>
     )
 }

@@ -32,7 +32,7 @@ export default function Header({ showSearchBar, assets }) {
                                           <div key={asset.name} className="flex gap-1">
                                               <Image src={asset.image} width={20} height={20} className="rounded-full h-[20px] w-[20px]" />
                                               <span>${asset.current_price.toFixed(2)}</span>
-                                              <span className={asset.price_change_percentage_24h > 0 ? 'text-green-500' : 'text-red-500'}>
+                                              <span className={asset.price_change_percentage_24h > 0 ? 'text-success-dark' : 'text-error-dark'}>
                                                   ({(asset.price_change_percentage_24h ?? 0).toFixed(2)}%)
                                               </span>
                                           </div>

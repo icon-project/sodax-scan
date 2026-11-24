@@ -63,12 +63,12 @@ export default function IntentSiblings({
             if (matches.length < 2) return // single occurrence — nothing to twin
             clearActive()
             for (const m of matches) {
-                m.style.backgroundColor = '#F6E799' // brand soda-clicked
-                m.style.color = '#483434'           // brand espresso
+                m.style.backgroundColor = 'var(--color-soda-on-soda)'
+                m.style.color = 'var(--color-espresso)'
                 m.style.borderRadius = '2px'
                 // Halo via box-shadow (not padding) so the highlight reads as a
                 // padded pill without changing the box size — no layout shift.
-                m.style.boxShadow = '0 0 0 2px #F6E799'
+                m.style.boxShadow = '0 0 0 2px var(--color-soda-on-soda)'
                 active.push(m)
             }
         }
@@ -163,12 +163,12 @@ export default function IntentSiblings({
             {siblings.length > 0 ? (
                 <MessageList data={siblings} meta={meta} />
             ) : (
-                <div className="px-2 xl:px-6 py-6 bg-white border-b text-sm text-gray-600">
+                <div className="px-2 xl:px-6 py-6 bg-white border-b text-sm text-clay-dark">
                     No related intent messages yet.
                 </div>
             )}
             {isYoung && (
-                <div className="px-2 xl:px-6 py-2 text-xs text-gray-500">
+                <div className="px-2 xl:px-6 py-2 text-xs text-clay-dark">
                     {lastCheckedSecAgo !== null
                         ? `Last checked ${lastCheckedSecAgo}s ago`
                         : 'Watching for new siblings'}

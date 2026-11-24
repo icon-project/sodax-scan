@@ -12,7 +12,7 @@ export const metadata = {
 export default function DebugLayout({ children }) {
     return (
         <html lang="en" className={`${inter.variable} ${shrikhand.variable}`}>
-            <body className="font-sans text-espresso min-h-screen bg-almost-white">
+            <body className="font-sans text-espresso min-h-screen bg-vibrant-white">
                 <Header showSearchBar={false} />
                 <div className="-z-20 h-72 w-full absolute hero"></div>
                 <main className="px-4 mb-2 xl:px-24 xl:mb-12 2xl:px-48">

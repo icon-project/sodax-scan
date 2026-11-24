@@ -37,7 +37,7 @@ export const metadata = {
 export default function MessageLayout({ children }) {
     return (
         <html lang="en" className={`${inter.variable} ${shrikhand.variable}`}>
-            <body className="font-sans text-espresso min-h-screen bg-almost-white">
+            <body className="font-sans text-espresso min-h-screen bg-vibrant-white">
                 <Header showSearchBar={true} />
                 <AdminBar />
                 <div className="-z-20 h-72 w-full absolute hero"></div>

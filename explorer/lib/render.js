@@ -138,7 +138,7 @@ function renderHashLink(scanUrl, network, hash, isFull = false) {
     let networkImg
     let linkClass = 'hover:underline inline-block'
     let link = <div>-</div>
-    let copyButton = <ClipboardDocumentIcon width={20} height={20} className={'opacity-75 text-gray-900 copy-hash cursor-pointer ml-2'} />
+    let copyButton = <ClipboardDocumentIcon width={20} height={20} className={'opacity-75 text-espresso copy-hash cursor-pointer ml-2'} />
 
     scanUrl = scanUrl ? scanUrl.replace(/\/+$/, '') : ''
     let href = `${scanUrl}/${hash}`
