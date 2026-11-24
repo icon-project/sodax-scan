@@ -80,9 +80,9 @@ input,
     transition-timing-function: ease-out;
 }
 
-/* Header ticker: pause on hover / keyboard focus (WCAG 2.2.2). */
-.animate-infinite-scroll:hover,
-.animate-infinite-scroll:focus-within {
+/* Header ticker: pause both copies together on hover / keyboard focus (WCAG 2.2.2). */
+.ticker:hover .animate-infinite-scroll,
+.ticker:focus-within .animate-infinite-scroll {
     animation-play-state: paused;
 }
 
