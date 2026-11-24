@@ -28,9 +28,9 @@ export default function CopyButton({ value, label = 'Copy hash' }) {
                 type="button"
                 onClick={copy}
                 aria-label={label}
-                className="inline-flex items-center justify-center w-8 h-8 max-md:w-11 max-md:h-11 rounded-small text-clay-dark [transition:transform_100ms_ease-out,color_150ms_ease-out,background-color_150ms_ease-out] active:scale-95 hover:bg-almost-white hover:text-espresso active:bg-cream-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cherry-soda"
+                className="inline-flex items-center justify-center w-8 h-8 max-md:w-11 max-md:h-11 rounded-small text-fg-muted [transition:transform_100ms_ease-out,color_150ms_ease-out,background-color_150ms_ease-out] active:scale-95 hover:bg-hover hover:text-fg active:bg-subtle focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus"
             >
-                {copied ? <CheckIcon width={18} height={18} className="icon-pop text-success-dark" aria-hidden="true" /> : <ClipboardDocumentIcon width={18} height={18} aria-hidden="true" />}
+                {copied ? <CheckIcon width={18} height={18} className="icon-pop text-trend-up" aria-hidden="true" /> : <ClipboardDocumentIcon width={18} height={18} aria-hidden="true" />}
             </button>
             {/* Out of flow (absolute) so showing it never moves the button or re-wraps the hash.
                 Stays mounted and fades out on revert (150ms). Visual only; the sr-only

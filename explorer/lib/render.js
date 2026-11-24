@@ -11,24 +11,24 @@ function truncateHash(hash) {
     return `${hash.slice(0, 7)}…${hash.slice(-7)}`
 }
 
-// Status pill: brand tokens only (no stock green/blue/amber, yellow is never a
-// surface). Sentence-case label with a leading status dot. Pill text contrast is
+// Status pill: semantic status tokens (globals.css: light = brand tokens, dark = charcoal blends; no stock
+// green/blue/amber, yellow is never a surface). Sentence-case label with a leading status dot. Pill text contrast is
 // >= 4.5:1 for every entry (espresso/clay-dark/error-dark on their backgrounds).
 // executed -> success, failed/rollbacked -> error, the rest -> neutral cream/clay
 // with a distinct dot so they stay distinguishable.
 const STATUS_PILLS = {
-    executed: { pill: 'bg-success-base text-espresso', dot: 'bg-success' },
-    failed: { pill: 'bg-error-base text-error-dark', dot: 'bg-error' },
-    rollbacked: { pill: 'bg-error-lighter text-error-dark', dot: 'bg-error-dark' },
-    delivered: { pill: 'bg-light-cream text-espresso', dot: 'bg-espresso' },
+    executed: { pill: 'bg-st-executed text-st-executed-fg', dot: 'bg-st-executed-dot' },
+    failed: { pill: 'bg-st-failed text-st-failed-fg', dot: 'bg-st-failed-dot' },
+    rollbacked: { pill: 'bg-st-rollbacked text-st-rollbacked-fg', dot: 'bg-st-rollbacked-dot' },
+    delivered: { pill: 'bg-st-delivered text-st-delivered-fg', dot: 'bg-st-delivered-dot' },
     // `attested` is the one new MPC status (R4). `routed`/`hub-burned`/`minted`/
     // `swept`/`released` are NOT status values (detail-timeline legs only).
-    attested: { pill: 'bg-cream-cherry text-espresso', dot: 'bg-cherry-soda' },
-    pending: { pill: 'bg-almost-white text-clay-dark !border-cherry-grey', dot: 'bg-transparent border border-clay' }
+    attested: { pill: 'bg-st-attested text-st-attested-fg', dot: 'bg-st-attested-dot' },
+    pending: { pill: 'bg-st-pending text-st-pending-fg !border-st-pending-border', dot: 'bg-transparent border border-fg-subtle' }
 }
 // Total fallback (R4): unknown/undefined/null status renders a generic badge
 // rather than returning undefined (which produced a blank pill).
-const STATUS_PILL_FALLBACK = { pill: 'bg-cream-white text-clay-dark', dot: 'bg-clay-light' }
+const STATUS_PILL_FALLBACK = { pill: 'bg-st-fallback text-st-fallback-fg', dot: 'bg-st-fallback-dot' }
 
 function renderMessageStatus(status) {
     const base = 'inline-flex items-center justify-center gap-1.5 text-xs font-medium rounded-full py-1 px-2.5 min-w-24 whitespace-nowrap border border-transparent transition-colors duration-300'
@@ -50,7 +50,7 @@ function renderMessageStatus(status) {
 // the "hub-only" badge.
 function renderSerialNo(item) {
     const badge = (label) => (
-        <span className="inline-block whitespace-nowrap text-xs font-medium rounded-full px-2 py-0.5 bg-cream-white text-clay-dark">{label}</span>
+        <span className="inline-block whitespace-nowrap text-xs font-medium rounded-full px-2 py-0.5 bg-subtle text-fg-muted">{label}</span>
     )
     if (helper.isMpcTransaction(item)) return badge('MPC')
     if (helper.isSolverMarketPlaceFill(item)) return badge('Marketplace')
@@ -90,7 +90,7 @@ function rollbackLine(item) {
     const title = `Rolled back on ${srcName ? helper.networkDisplayName(srcName) : 'the source chain'}`
     const shown = displayHash(item.src_network, item.rollback_tx_hash)
     return (
-        <div className="text-xs text-clay-dark leading-4 flex items-center gap-1" title={title}>
+        <div className="text-xs text-fg-muted leading-4 flex items-center gap-1" title={title}>
             <span aria-hidden="true">&#8617;</span>
             <span className="sr-only">{title}:</span>
             <span className="tx-hash" data-hash={shown}>{truncateHash(shown)}</span>
@@ -118,12 +118,12 @@ function renderDestHashLink(item, meta) {
     } else if (item.dest_network != null) {
         leg = (
             <div className="flex items-center gap-2">
-                <span className="text-espresso">{`Chain ${item.dest_network}`}</span>
+                <span className="text-fg">{`Chain ${item.dest_network}`}</span>
                 {hashEl}
             </div>
         )
     } else {
-        leg = hashEl || <div className="text-clay-dark">-</div>
+        leg = hashEl || <div className="text-fg-muted">-</div>
     }
     const rb = rollbackLine(item)
     if (!rb) return leg
@@ -146,16 +146,16 @@ function routeLeg(network, hash, extra = null) {
     const name = helper.REV_NETWORK_MAPPINGS[network]
     const shown = displayHash(network, hash)
     const hashLine = shown && (
-        <div className="text-xs text-clay-dark leading-4">
+        <div className="text-xs text-fg-muted leading-4">
             <span className="tx-hash" data-hash={shown}>{truncateHash(shown)}</span>
         </div>
     )
     if (!name) {
         // Unknown network: still show the hash (it is this leg's own), labelled generically.
-        if (!hashLine && !extra && network == null) return <div className="text-sm text-clay-dark">-</div>
+        if (!hashLine && !extra && network == null) return <div className="text-sm text-fg-muted">-</div>
         return (
             <div className="min-w-0">
-                <div className="text-sm font-medium text-espresso leading-5">{network == null ? 'Unknown chain' : `Chain ${network}`}</div>
+                <div className="text-sm font-medium text-fg leading-5">{network == null ? 'Unknown chain' : `Chain ${network}`}</div>
                 {hashLine}
                 {extra}
             </div>
@@ -165,7 +165,7 @@ function routeLeg(network, hash, extra = null) {
         <div className="flex items-center gap-2 min-w-0">
             <Image alt="" src={`/images/network-${name}.png`} width={24} height={24} className="rounded-full bg-transparent shrink-0" />
             <div className="min-w-0">
-                <div className="text-sm font-medium capitalize text-espresso leading-5">{helper.networkDisplayName(name)}</div>
+                <div className="text-sm font-medium capitalize text-fg leading-5">{helper.networkDisplayName(name)}</div>
                 {hashLine}
                 {extra}
             </div>
@@ -179,7 +179,7 @@ function renderRoute(item) {
     return (
         <div className="flex items-center gap-2 xl:gap-3 min-w-0">
             {routeLeg(item.src_network, fill ? null : item.src_tx_hash)}
-            <span aria-hidden="true" className="text-clay-dark shrink-0 leading-none">&rarr;</span>
+            <span aria-hidden="true" className="text-fg-muted shrink-0 leading-none">&rarr;</span>
             {routeLeg(item.dest_network, routeDestHash(item), rollbackLine(item))}
         </div>
     )

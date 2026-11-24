@@ -38,6 +38,9 @@
     --st-attested: 229 213 212; --st-attested-fg: 72 52 52; --st-attested-dot: 165 92 85;
     --st-pending: 248 243 243; --st-pending-fg: 107 92 91; --st-pending-border: 215 205 203;
     --st-fallback: 237 230 230; --st-fallback-fg: 107 92 91; --st-fallback-dot: 185 172 171;
+    --line-control: 215 205 203; /* cherry-grey */
+    --hash-hl-bg: 246 231 153; /* soda-on-soda: sibling-hash hover highlight */
+    --hash-hl-fg: 72 52 52; /* espresso */
     --icon-disc: transparent;
     --icon-ring: transparent;
     --shadow-card: 0 1px 2px rgba(72, 52, 52, 0.06), 0 4px 16px rgba(72, 52, 52, 0.08);
@@ -85,6 +88,9 @@
     --st-attested: 71 40 38; --st-attested-fg: 227 190 187; --st-attested-dot: 204 158 154;
     --st-pending: 38 27 27; --st-pending-fg: 185 172 171; --st-pending-border: 66 47 47;
     --st-fallback: 53 38 38; --st-fallback-fg: 185 172 171; --st-fallback-dot: 185 172 171;
+    --line-control: 66 47 47;
+    --hash-hl-bg: 82 48 46;
+    --hash-hl-fg: 248 243 243;
     --icon-disc: #ede6e6; /* cream-white */
     --icon-ring: rgb(255 255 255 / 0.15);
     --shadow-card: 0 0 0 1px rgb(var(--line)), inset 0 1px 0 rgb(255 255 255 / 0.04);
@@ -326,4 +332,10 @@ input,
         animation-duration: 1.5s !important;
         animation-iteration-count: infinite !important;
     }
+}
+
+/* Flowbite dropdown menu floats over content: in dark it needs real separation
+   (hairline + deep shadow). Light keeps flowbite's own `shadow`. */
+.dark [data-testid='flowbite-tooltip'] {
+    box-shadow: var(--shadow-overlay);
 }

@@ -2,7 +2,7 @@
 export default function Footer() {
     const year = new Date().getFullYear()
     return (
-        <footer className="bg-cherry-dark text-white">
+        <footer className="bg-footer text-white">
             <div className="px-4 py-5 xl:px-24 2xl:px-48 flex flex-wrap justify-between items-center gap-x-6 gap-y-3 text-sm">
                 <div className="tabular-nums">© {year} SODAX Scan</div>
                 <a

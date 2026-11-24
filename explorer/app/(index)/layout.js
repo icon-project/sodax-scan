@@ -49,7 +49,7 @@ export default async function RootLayout({ children }) {
     return (
         <html lang="en" className={`${inter.variable} ${inriaSerif.variable} ${shrikhand.variable}`}>
             <head></head>
-            <body className="font-sans text-espresso min-h-screen bg-vibrant-white">
+            <body className="font-sans text-fg min-h-screen bg-surface">
                 <Header showSearchBar={false} assets={assets} />
                 <AdminBar />
                 <main className="px-4 mb-2 xl:px-24 xl:mb-12 2xl:px-48">

@@ -73,6 +73,7 @@ module.exports = {
                 hover: 'rgb(var(--hover) / <alpha-value>)',
                 selected: 'rgb(var(--selected) / <alpha-value>)',
                 line: 'rgb(var(--line) / <alpha-value>)',
+                'line-control': 'rgb(var(--line-control) / <alpha-value>)',
                 'line-strong': 'rgb(var(--line-strong) / <alpha-value>)',
                 fg: 'rgb(var(--fg) / <alpha-value>)',
                 'fg-muted': 'rgb(var(--fg-muted) / <alpha-value>)',

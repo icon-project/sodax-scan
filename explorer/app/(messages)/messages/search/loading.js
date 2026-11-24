@@ -9,7 +9,7 @@ export default function Loading() {
                 <PageTitle before="Search" accent="hits" />
             </Hero>
             <HeroOverlap>
-                <div className="bg-white rounded-regular shadow-card">
+                <div className="bg-raised rounded-regular shadow-card">
                     <Spinner />
                 </div>
             </HeroOverlap>

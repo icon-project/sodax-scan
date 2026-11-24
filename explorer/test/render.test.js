@@ -12,52 +12,52 @@ const label = (el) => el.props.children[1]
 
 describe('renderMessageStatus (R4)', () => {
     it('renders the five legacy pills with brand-token colors', () => {
-        expect(cls(Render.renderMessageStatus('failed'))).toContain('bg-error-base')
-        expect(cls(Render.renderMessageStatus('rollbacked'))).toContain('bg-error-lighter')
-        expect(cls(Render.renderMessageStatus('pending'))).toContain('border-cherry-grey')
-        expect(cls(Render.renderMessageStatus('executed'))).toContain('bg-success-base')
-        expect(cls(Render.renderMessageStatus('delivered'))).toContain('bg-light-cream')
+        expect(cls(Render.renderMessageStatus('failed'))).toContain('bg-st-failed')
+        expect(cls(Render.renderMessageStatus('rollbacked'))).toContain('bg-st-rollbacked')
+        expect(cls(Render.renderMessageStatus('pending'))).toContain('border-st-pending-border')
+        expect(cls(Render.renderMessageStatus('executed'))).toContain('bg-st-executed')
+        expect(cls(Render.renderMessageStatus('delivered'))).toContain('bg-st-delivered')
     })
 
     it('executed (the MPC terminal status) renders the legacy executed pill', () => {
         const el = Render.renderMessageStatus('executed')
-        expect(cls(el)).toContain('bg-success-base')
+        expect(cls(el)).toContain('bg-st-executed')
         expect(label(el)).toBe('Executed')
     })
 
     it('renders the one new MPC status pill (attested = cream-cherry)', () => {
         const el = Render.renderMessageStatus('attested')
-        expect(cls(el)).toContain('bg-cream-cherry')
+        expect(cls(el)).toContain('bg-st-attested')
         expect(label(el)).toBe('Attested')
     })
 
     it('has a pill (non-fallback) for every STATUS_FILTERS entry — no drift', () => {
         for (const status of helper.STATUS_FILTERS) {
             const el = Render.renderMessageStatus(status)
-            expect(cls(el)).not.toContain('bg-cream-white')
+            expect(cls(el)).not.toContain('bg-st-fallback')
         }
     })
 
     it('removed status values (routed/hub-burned/minted) and legs (swept/released) fall through to the fallback', () => {
         for (const s of ['routed', 'hub-burned', 'minted', 'swept', 'released']) {
-            expect(cls(Render.renderMessageStatus(s))).toContain('bg-cream-white')
+            expect(cls(Render.renderMessageStatus(s))).toContain('bg-st-fallback')
         }
     })
 
     it('is case-insensitive on the attested pill', () => {
-        expect(cls(Render.renderMessageStatus('ATTESTED'))).toContain('bg-cream-cherry')
-        expect(cls(Render.renderMessageStatus('Attested'))).toContain('bg-cream-cherry')
+        expect(cls(Render.renderMessageStatus('ATTESTED'))).toContain('bg-st-attested')
+        expect(cls(Render.renderMessageStatus('Attested'))).toContain('bg-st-attested')
     })
 
     it('AC-R13/R14 negative: a mismatched status literal renders the fallback, not the pill', () => {
-        expect(cls(Render.renderMessageStatus('attestted'))).toContain('bg-cream-white')
-        expect(cls(Render.renderMessageStatus('hub_burned'))).toContain('bg-cream-white')
+        expect(cls(Render.renderMessageStatus('attestted'))).toContain('bg-st-fallback')
+        expect(cls(Render.renderMessageStatus('hub_burned'))).toContain('bg-st-fallback')
     })
 
     it('never returns undefined — unknown status renders the fallback badge', () => {
         const el = Render.renderMessageStatus('some-unexpected-status')
         expect(el).toBeDefined()
-        expect(cls(el)).toContain('bg-cream-white')
+        expect(cls(el)).toContain('bg-st-fallback')
         expect(label(el)).toBe('Some-unexpected-status')
     })
 
@@ -65,7 +65,7 @@ describe('renderMessageStatus (R4)', () => {
         for (const bad of [null, undefined, '']) {
             const el = Render.renderMessageStatus(bad)
             expect(el).toBeDefined()
-            expect(cls(el)).toContain('bg-cream-white')
+            expect(cls(el)).toContain('bg-st-fallback')
             expect(label(el)).toBe('Unknown')
         }
     })

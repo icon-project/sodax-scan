@@ -37,7 +37,7 @@ const MessageFilter = (props: MessageFilterProps) => {
         inlineWrapper: `flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm transition-colors max-md:min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soda-bright ${
             active
                 ? 'bg-white border-white text-cherry-dark font-medium hover:bg-almost-white'
-                : 'border-cherry-bright/60 text-white hover:bg-cherry-dark hover:border-cherry-brighter'
+                : 'border-cherry-bright/60 dark:border-cherry-brighter/80 text-white hover:bg-cherry-dark hover:border-cherry-brighter'
         }`
     })
 
@@ -54,7 +54,7 @@ const MessageFilter = (props: MessageFilterProps) => {
         <div className="flex flex-wrap items-center md:flex-nowrap md:justify-end gap-2 text-white p-1 rounded-md">
             <Dropdown label="Route" inline className="rounded-md" theme={chipTheme(props.kind !== '')}>
                 <DropdownItem
-                    className={`min-w-32 ${props.kind == '' ? 'bg-almost-white' : ''}`}
+                    className={`min-w-32 ${props.kind == '' ? 'bg-hover' : ''}`}
                     onClick={() => {
                         props.kindChanged('')
                     }}
@@ -66,7 +66,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                     return (
                         <DropdownItem
                             key={kind.value}
-                            className={`${props.kind == kind.value ? 'bg-almost-white' : ''}`}
+                            className={`${props.kind == kind.value ? 'bg-hover' : ''}`}
                             onClick={() => {
                                 props.kindChanged(kind.value)
                             }}
@@ -79,7 +79,7 @@ const MessageFilter = (props: MessageFilterProps) => {
 
             <Dropdown label="Status" inline className="rounded-md" theme={chipTheme(props.status !== '')}>
                 <DropdownItem
-                    className={`min-w-32 ${props.status == '' ? 'bg-almost-white' : ''}`}
+                    className={`min-w-32 ${props.status == '' ? 'bg-hover' : ''}`}
                     onClick={() => {
                         props.statusChanged('')
                     }}
@@ -91,7 +91,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                     return (
                         <DropdownItem
                             key={status}
-                            className={`${props.status == status ? 'bg-almost-white' : ''}`}
+                            className={`${props.status == status ? 'bg-hover' : ''}`}
                             onClick={() => {
                                 props.statusChanged(status)
                             }}
@@ -112,12 +112,12 @@ const MessageFilter = (props: MessageFilterProps) => {
                         onKeyDown={(e) => e.stopPropagation()}
                         onKeyPress={(e) => e.stopPropagation()}
                         onKeyUp={(e) => e.stopPropagation()}
-                        className="w-full px-3 py-2 text-sm border border-clay-light rounded-md focus:outline-none focus:ring-2 focus:ring-cherry text-espresso"
+                        className="w-full px-3 py-2 text-sm bg-raised border border-line-strong rounded-md focus:outline-none focus:ring-2 focus:ring-focus text-fg"
                         onClick={(e) => e.stopPropagation()}
                     />
                 </div>
                 <DropdownItem
-                    className={`min-w-48 ${props.srcNetwork === '' ? 'bg-almost-white' : ''}`}
+                    className={`min-w-48 ${props.srcNetwork === '' ? 'bg-hover' : ''}`}
                     onClick={() => {
                         props.srcNetworkChanged('')
                     }}
@@ -129,7 +129,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                     return (
                         <DropdownItem
                             key={network.id}
-                            className={`min-w-48 ${props.srcNetwork?.split(',').map(v => v.trim()).includes(String(networkId)) ? 'bg-soda-clicked' : ''}`}
+                            className={`min-w-48 ${props.srcNetwork?.split(',').map(v => v.trim()).includes(String(networkId)) ? 'bg-selected' : ''}`}
                             onClick={() => {
                                 props.srcNetworkChanged(network.id)
                             }}
@@ -158,12 +158,12 @@ const MessageFilter = (props: MessageFilterProps) => {
                         onKeyDown={(e) => e.stopPropagation()}
                         onKeyPress={(e) => e.stopPropagation()}
                         onKeyUp={(e) => e.stopPropagation()}
-                        className="w-full px-3 py-2 text-sm border border-clay-light rounded-md focus:outline-none focus:ring-2 focus:ring-cherry text-espresso"
+                        className="w-full px-3 py-2 text-sm bg-raised border border-line-strong rounded-md focus:outline-none focus:ring-2 focus:ring-focus text-fg"
                         onClick={(e) => e.stopPropagation()}
                     />
                 </div>
                 <DropdownItem
-                    className={`min-w-48 ${props.destNetwork === '' ? 'bg-almost-white' : ''}`}
+                    className={`min-w-48 ${props.destNetwork === '' ? 'bg-hover' : ''}`}
                     onClick={() => {
                         props.destNetworkChanged('')
                     }}
@@ -176,7 +176,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                     return (
                         <DropdownItem
                             key={network.id}
-                            className={`min-w-48 ${props.destNetwork?.split(',').map(v => v.trim()).includes(String(networkId)) ? 'bg-soda-clicked' : ''}`}
+                            className={`min-w-48 ${props.destNetwork?.split(',').map(v => v.trim()).includes(String(networkId)) ? 'bg-selected' : ''}`}
                             onClick={() => {
                                 props.destNetworkChanged(network.id)
                             }}
@@ -197,7 +197,7 @@ const MessageFilter = (props: MessageFilterProps) => {
 
             <Dropdown label="Action" inline className="rounded-md " theme={chipTheme(props.actionType !== '')}>
                 <DropdownItem
-                    className={` min-w-48 ${props.actionType == '' ? 'bg-almost-white' : ''}`}
+                    className={` min-w-48 ${props.actionType == '' ? 'bg-hover' : ''}`}
                     onClick={() => {
                         props.actionTypeChanged('')
                     }}
@@ -209,7 +209,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                     return (
                         <DropdownItem
                             key={actType}
-                            className={`min-w-48 ${props.actionType.includes(actType) ? 'bg-soda-clicked' : ''}`}
+                            className={`min-w-48 ${props.actionType.includes(actType) ? 'bg-selected' : ''}`}
                             onClick={() => {
                                 props.actionTypeChanged(actType)
                             }}

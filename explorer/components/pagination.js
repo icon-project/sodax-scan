@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation'
 import { ChevronDoubleLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronDoubleRightIcon } from '@heroicons/react/24/outline'
 
 const BTN =
-    'inline-flex items-center justify-center w-10 h-10 rounded-small border border-cherry-grey bg-white text-espresso transition-colors duration-150 ' +
-    'hover:bg-almost-white active:bg-cream-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cherry-soda'
-const BTN_DISABLED = 'inline-flex items-center justify-center w-10 h-10 rounded-small border border-cream-white bg-almost-white text-clay-light cursor-not-allowed'
+    'inline-flex items-center justify-center w-10 h-10 rounded-small border border-line-control bg-raised text-fg transition-colors duration-150 ' +
+    'hover:bg-hover active:bg-subtle focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus'
+const BTN_DISABLED = 'inline-flex items-center justify-center w-10 h-10 rounded-small border border-line bg-header text-fg-subtle cursor-not-allowed'
 
 function PageControl({ label, icon: Icon, disabled, href, onClick }) {
     const icon = <Icon width={18} height={18} aria-hidden="true" />
@@ -46,7 +46,7 @@ export function PaginationBar({ pageNumber, totalPages, pageSize, sizes = [10, 2
     )
 
     return (
-        <nav aria-label="Pagination" className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-4 px-1 text-sm text-espresso">
+        <nav aria-label="Pagination" className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-4 px-1 text-sm text-fg">
             <div className="flex items-center gap-1.5">
                 {control('First page', ChevronDoubleLeftIcon, 1, atStart)}
                 {control('Previous page', ChevronLeftIcon, page - 1, atStart)}
@@ -56,11 +56,11 @@ export function PaginationBar({ pageNumber, totalPages, pageSize, sizes = [10, 2
                 {control('Next page', ChevronRightIcon, page + 1, atEnd)}
                 {control('Last page', ChevronDoubleRightIcon, total, atEnd)}
             </div>
-            <label className="flex items-center gap-1 text-clay-dark">
+            <label className="flex items-center gap-1 text-fg-muted">
                 <span>Rows</span>
                 <select
                     name="ps"
-                    className="h-10 min-w-[4.5rem] rounded-small border border-transparent bg-transparent px-2 text-espresso cursor-pointer transition-colors duration-150 hover:bg-almost-white hover:border-cherry-grey focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cherry-soda"
+                    className="h-10 min-w-[4.5rem] rounded-small border border-transparent bg-transparent px-2 text-fg cursor-pointer transition-colors duration-150 hover:bg-hover hover:border-line-control focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                     value={pageSize}
                     onChange={(e) => onSize(e.target.value)}
                 >
