@@ -12,6 +12,7 @@ import useSWR from 'swr'
 import SkeletonTable from '@/components/skeleton-table'
 import MessagePagination from '@/components/message-pagination'
 import helper from '@/lib/helper'
+import TotalCounter from '@/components/total-counter'
 import useFreshIds from '@/lib/use-fresh-ids'
 
 // Which query each fetched payload belongs to (see useFreshIds).
@@ -68,12 +69,12 @@ export default function Home() {
                 </div>
                 <div className="md:hidden flex items-baseline gap-2 pt-3 text-white">
                     <span className="text-xs uppercase tracking-wider text-white">Total Messages</span>
-                    <span className="text-2xl text-soda-bright leading-none tabular-nums">{totalMsgRes.isLoading ? 0 : totalMsgRes.data?.data.total?.toLocaleString('en-US')}</span>
+                    <span className="text-2xl text-soda-bright leading-none tabular-nums"><TotalCounter value={totalMsgRes.data?.data.total} /></span>
                 </div>
                 <div className="mt-4 xl:mt-0 xl:basis-4/12 hidden md:flex flex-row-reverse items-end">
                     <div className="px-4 text-right hidden md:block">
                         <div className="text-xs uppercase tracking-wider text-cherry-brighter mb-1">Total Messages</div>
-                        <div className="text-5xl xl:text-6xl font-normal text-soda-bright leading-none tabular-nums fade-in">{totalMsgRes.isLoading ? 0 : totalMsgRes.data?.data.total?.toLocaleString('en-US')}</div>
+                        <div className="text-5xl xl:text-6xl font-normal text-soda-bright leading-none tabular-nums"><TotalCounter value={totalMsgRes.data?.data.total} /></div>
                     </div>
                 </div>
             </div>
