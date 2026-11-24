@@ -48,14 +48,9 @@ a {
 @keyframes row-enter {
     from {
         opacity: 0;
-        background-color: theme('colors.cream-cherry');
-    }
-    40% {
-        opacity: 1;
     }
     to {
         opacity: 1;
-        background-color: theme('colors.white');
     }
 }
 @keyframes row-tint {
@@ -77,14 +72,17 @@ a {
         opacity: 1;
     }
 }
+/* Fade: easeOutCubic over 560ms is ~90% done at ~300ms (the old 480ms
+   expo-out curve was 90% done at 183ms). Tint: ease-in-out so the highlight
+   holds before it settles, instead of vanishing in the first 300ms. */
 .row-enter {
-    animation: row-enter 1200ms var(--ease-out) backwards;
+    animation: row-enter 560ms cubic-bezier(0.33, 1, 0.68, 1) backwards, row-tint 1200ms ease-in-out backwards;
 }
 .card-enter {
-    animation: card-enter 280ms var(--ease-out) backwards;
+    animation: card-enter 560ms cubic-bezier(0.33, 1, 0.68, 1) backwards;
 }
 .card-enter > a {
-    animation: row-tint 1200ms var(--ease-out) backwards;
+    animation: row-tint 1200ms ease-in-out backwards;
 }
 
 .tick {
