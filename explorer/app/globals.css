@@ -352,7 +352,7 @@ input,
    load or navigation, never under reduced motion (lib/theme.js, theme-picker).
    Only colour properties transition, so animations (ticker, FLIP, row-enter)
    keep running. */
-html.theme-switching *,
+html.theme-switching *:not(.tp-thumb),
 html.theme-switching *::before,
 html.theme-switching *::after {
     transition: background-color 200ms ease-out, color 200ms ease-out, border-color 200ms ease-out, fill 200ms ease-out, stroke 200ms ease-out, box-shadow 200ms ease-out,
