@@ -11,22 +11,36 @@ function truncateHash(hash) {
     return `${hash.slice(0, 7)}…${hash.slice(-7)}`
 }
 
+// Status pill: brand tokens only (no stock green/blue/amber, yellow is never a
+// surface). Sentence-case label with a leading status dot. Pill text contrast is
+// >= 4.5:1 for every entry (espresso/clay-dark/error-dark on their backgrounds).
+// executed -> success, failed/rollbacked -> error, the rest -> neutral cream/clay
+// with a distinct dot so they stay distinguishable.
+const STATUS_PILLS = {
+    executed: { pill: 'bg-success-base text-espresso', dot: 'bg-success' },
+    failed: { pill: 'bg-error-base text-error-dark', dot: 'bg-error' },
+    rollbacked: { pill: 'bg-error-lighter text-error-dark', dot: 'bg-error-dark' },
+    delivered: { pill: 'bg-light-cream text-espresso', dot: 'bg-espresso' },
+    // `attested` is the one new MPC status (R4). `routed`/`hub-burned`/`minted`/
+    // `swept`/`released` are NOT status values (detail-timeline legs only).
+    attested: { pill: 'bg-cream-cherry text-espresso', dot: 'bg-cherry-soda' },
+    pending: { pill: 'bg-almost-white text-clay-dark border border-cherry-grey', dot: 'bg-transparent border border-clay' }
+}
+// Total fallback (R4): unknown/undefined/null status renders a generic badge
+// rather than returning undefined (which produced a blank pill).
+const STATUS_PILL_FALLBACK = { pill: 'bg-cream-white text-clay-dark', dot: 'bg-clay-light' }
+
 function renderMessageStatus(status) {
-    const base = 'uppercase text-xs font-medium tracking-wide rounded-full py-1 inline-block w-24 text-center'
+    const base = 'inline-flex items-center justify-center gap-1.5 text-xs font-medium rounded-full py-1 px-2.5 min-w-24 whitespace-nowrap'
     const s = (status || '').toLowerCase()
-    if (s == 'failed') return <span className={`${base} bg-cherry text-white`}>{status}</span>
-    if (s == 'rollbacked') return <span className={`${base} bg-soda-bright text-espresso`}>{status}</span>
-    if (s == 'pending') return <span className={`${base} bg-cherry-grey text-espresso`}>{status}</span>
-    if (s == 'executed') return <span className={`${base} bg-green-200 text-green-900`}>{status}</span>
-    if (s == 'delivered') return <span className={`${base} bg-blue-200 text-blue-900`}>{status}</span>
-    // `attested` is the one new MPC status (R4) — amber, distinct from the five
-    // legacy pills. `pending`/`delivered`/`executed`/`failed`/`rollbacked` reuse
-    // their legacy pills above; `routed`/`hub-burned`/`minted`/`swept`/`released`
-    // are NOT status values (detail-timeline legs only).
-    if (s == 'attested') return <span className={`${base} bg-amber-200 text-amber-900`}>{status}</span>
-    // Total fallback (R4): unknown/undefined/null status renders a generic badge
-    // rather than returning undefined (which produced a blank pill).
-    return <span className={`${base} bg-gray-200 text-gray-800`}>{status || 'unknown'}</span>
+    const { pill, dot } = STATUS_PILLS[s] || STATUS_PILL_FALLBACK
+    const label = String(status || 'unknown')
+    return (
+        <span className={`${base} ${pill}`}>
+            <span aria-hidden="true" className={`inline-block w-1.5 h-1.5 rounded-full ${dot}`}></span>
+            {label.charAt(0).toUpperCase() + label.slice(1)}
+        </span>
+    )
 }
 
 // Serial-No cell shared by the message list and the MPC detail timeline. An MPC
