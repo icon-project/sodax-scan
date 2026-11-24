@@ -314,6 +314,13 @@ const CHAIN_MODE = {
     [NETWORK.CARDANO]: 'memo',
 }
 
+// Human-facing chain names where the internal key (also used for icon file
+// names, e.g. network-bsc.png) is not what users call the chain.
+const NETWORK_DISPLAY_NAMES = {
+    bsc: 'BNB Chain'
+}
+const networkDisplayName = (name) => (name == null ? name : NETWORK_DISPLAY_NAMES[String(name)] ?? String(name))
+
 // Resolve a numeric chain id (as stored in *_network) to its lifecycle mode.
 // Returns 'sweep' | 'memo' | undefined (chain not in the map).
 const getChainMode = (networkId) => {
@@ -446,6 +453,7 @@ const getMsgTypes = () => {
 }
 
 export default {
+    networkDisplayName,
     getNativeAsset,
     getNetworks,
     getMsgTypes,

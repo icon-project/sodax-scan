@@ -45,7 +45,7 @@ const MessageFilter = (props: MessageFilterProps) => {
         if (!filterText) return networks
         const lowerFilter = filterText.toLowerCase()
         return networks.filter(network => 
-            network.name.toLowerCase().includes(lowerFilter)
+            (network.name.toLowerCase().includes(lowerFilter) || String(helper.networkDisplayName(network.name)).toLowerCase().includes(lowerFilter))
         )
     }
 
@@ -142,7 +142,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                                 className="cursor-pointer px-2 mr-1"
                             /> */}
                             <Image className="relative inline-block mr-2 rounded-full bg-transparent" alt={network.name} src={network.logo} width={16} height={16} />
-                            {network.name}
+                            {helper.networkDisplayName(network.name)}
                         </DropdownItem>
                     )
                 })}
@@ -189,7 +189,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                                 className="cursor-pointer px-2 mr-1"
                             /> */}
                             <Image className="relative inline-block mr-2 rounded-full bg-transparent" alt={network.name} src={network.logo} width={16} height={16} />
-                            {network.name}
+                            {helper.networkDisplayName(network.name)}
                         </DropdownItem>
                     )
                 })}

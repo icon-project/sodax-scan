@@ -66,7 +66,7 @@ function renderChain(network) {
     return (
         <div className="flex items-center gap-2">
             <Image alt="" src={`/images/network-${name}.png`} width={24} height={24} className="rounded-full bg-transparent" />
-            <span className="capitalize">{String(name)}</span>
+            <span className="capitalize">{helper.networkDisplayName(name)}</span>
         </div>
     )
 }
@@ -87,7 +87,7 @@ function displayHash(network, hash) {
 function rollbackLine(item) {
     if (!item.rollback_tx_hash) return null
     const srcName = helper.REV_NETWORK_MAPPINGS[item.src_network]
-    const title = `Rolled back on ${srcName || 'the source chain'}`
+    const title = `Rolled back on ${srcName ? helper.networkDisplayName(srcName) : 'the source chain'}`
     const shown = displayHash(item.src_network, item.rollback_tx_hash)
     return (
         <div className="text-xs text-clay-dark leading-4 flex items-center gap-1" title={title}>
@@ -111,7 +111,7 @@ function renderDestHashLink(item, meta) {
     if (name) {
         leg = shown ? (
             <div className="flex items-center gap-2">
-                <Image alt={String(name)} src={`/images/network-${name}.png`} width={24} height={24} className="rounded-full bg-transparent" />
+                <Image alt={helper.networkDisplayName(name)} src={`/images/network-${name}.png`} width={24} height={24} className="rounded-full bg-transparent" />
                 {hashEl}
             </div>
         ) : renderChain(item.dest_network)
@@ -165,7 +165,7 @@ function routeLeg(network, hash, extra = null) {
         <div className="flex items-center gap-2 min-w-0">
             <Image alt="" src={`/images/network-${name}.png`} width={24} height={24} className="rounded-full bg-transparent shrink-0" />
             <div className="min-w-0">
-                <div className="text-sm font-medium capitalize text-espresso leading-5">{String(name)}</div>
+                <div className="text-sm font-medium capitalize text-espresso leading-5">{helper.networkDisplayName(name)}</div>
                 {hashLine}
                 {extra}
             </div>
