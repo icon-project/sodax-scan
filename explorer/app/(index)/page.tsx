@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useMemo, useState } from 'react'
 import MessageList from '@/components/message-list'
 import MessageFilter from '@/components/message-filter'
 import FetchData from '@/lib/fetch-data'
@@ -43,8 +43,10 @@ export default function Home() {
     )
     const dataKey = messagesRes.data ? dataKeys.get(messagesRes.data) : undefined
     // With keepPreviousData the old rows stay up while a new query loads.
-    const stale = Boolean(messagesRes.data) && dataKey !== queryKey
-    const freshIds = useFreshIds(messagesRes.data?.data?.map((m: { id: string | number }) => m.id), dataKey, queryKey, pageNumber)
+    // Not stale on error: never leave the old rows dimmed and inert after a failed fetch.
+    const stale = Boolean(messagesRes.data) && dataKey !== queryKey && !messagesRes.error
+    const rowIds = useMemo(() => messagesRes.data?.data?.map((m: { id: string | number }) => m.id), [messagesRes.data])
+    const freshIds = useFreshIds(rowIds, dataKey, queryKey, pageNumber)
     const totalMsgRes = useSWR('statistics/total_messages', () => FetchData.getTotalMessages(), {
         refreshInterval: 2000
     })
@@ -134,7 +136,9 @@ export default function Home() {
 
             <HeroOverlap>
             {/* Message List */}
-            {messagesRes.isLoading ? (
+            {/* SWR 2.4 reports isLoading for every uncached key even with keepPreviousData,
+                so only fall back to the skeleton when there are no rows to keep. */}
+            {messagesRes.isLoading && !messagesRes.data ? (
                 <SkeletonTable />
             ) : (
                 <div aria-busy={stale} className={`transition-opacity duration-150 ease-out ${stale ? 'opacity-60 pointer-events-none' : ''}`}>

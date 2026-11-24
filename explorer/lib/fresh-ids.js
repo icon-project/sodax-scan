@@ -8,6 +8,8 @@
 // arrived at once (tab was hidden, bulk catch-up).
 
 export const MAX_FRESH_BURST = 5
+// Cap on remembered ids per query (a long-open tab keeps polling the same view).
+export const MAX_SEEN = 500
 
 function uniqueIds(ids) {
     return Array.from(new Set((ids || []).filter((id) => id !== undefined && id !== null)))
@@ -21,6 +23,8 @@ export function nextFreshState(prev, { key, ids, page = 1, max = MAX_FRESH_BURST
     const added = all.filter((id) => !prev.seen.has(id))
     const seen = new Set(prev.seen)
     all.forEach((id) => seen.add(id))
+    // Sets iterate in insertion order, so dropping from the front keeps the newest ids.
+    if (seen.size > MAX_SEEN) Array.from(seen).slice(0, seen.size - MAX_SEEN).forEach((id) => seen.delete(id))
     const animate = page === 1 && added.length > 0 && added.length <= max
     return { key, seen, fresh: animate ? added : [] }
 }
