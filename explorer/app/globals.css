@@ -6,6 +6,7 @@
     /* Brand tokens exposed to inline styles / JS (single source: tailwind.config.js) */
     --color-soda-on-soda: theme('colors.soda-on-soda');
     --color-espresso: theme('colors.espresso');
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
     --font-mono: ui-monospace, Menlo, Monaco, 'Cascadia Mono', 'Segoe UI Mono', 'Roboto Mono', 'Oxygen Mono', 'Ubuntu Monospace', 'Source Code Pro', 'Fira Mono', 'Droid Sans Mono',
         'Courier New', monospace;
@@ -39,6 +40,58 @@ a {
 
 .fade-in {
     animation: fadeInAnimation ease-out 200ms;
+}
+
+/* Live list: a newly arrived row fades in and carries a cream-cherry tint that
+   settles to the normal row background. Applied only while the id is in
+   freshIds (cleared ~1.5s later), so re-renders never replay it. */
+@keyframes row-enter {
+    from {
+        opacity: 0;
+        background-color: theme('colors.cream-cherry');
+    }
+    40% {
+        opacity: 1;
+    }
+    to {
+        opacity: 1;
+        background-color: theme('colors.white');
+    }
+}
+@keyframes row-tint {
+    from {
+        background-color: theme('colors.cream-cherry');
+    }
+    to {
+        background-color: theme('colors.white');
+    }
+}
+@keyframes card-enter {
+    from {
+        grid-template-rows: 0fr;
+        margin-bottom: -0.5rem;
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        grid-template-rows: 1fr;
+        margin-bottom: 0;
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.row-enter {
+    animation: row-enter 1200ms var(--ease-out) backwards;
+}
+.card-enter {
+    display: grid;
+    grid-template-rows: 1fr;
+    animation: card-enter 280ms var(--ease-out) backwards;
+}
+.card-enter > a {
+    min-height: 0;
+    overflow: hidden;
+    animation: row-tint 1200ms var(--ease-out) backwards;
 }
 
 .hero {
@@ -104,6 +157,16 @@ input,
     .animate-pulse,
     .fade-in {
         animation: none !important;
+    }
+    /* New-row highlight: colour tint only (no movement, no opacity change). */
+    .row-enter {
+        animation: row-tint 1200ms linear backwards !important;
+    }
+    .card-enter {
+        animation: none !important;
+    }
+    .card-enter > a {
+        animation: row-tint 1200ms linear backwards !important;
     }
     /* Loading spinner keeps a slow spin so loading is still conveyed. */
     [role='status'].animate-spin {

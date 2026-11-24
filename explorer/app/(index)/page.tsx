@@ -12,6 +12,10 @@ import useSWR from 'swr'
 import SkeletonTable from '@/components/skeleton-table'
 import MessagePagination from '@/components/message-pagination'
 import helper from '@/lib/helper'
+import useFreshIds from '@/lib/use-fresh-ids'
+
+// Which query each fetched payload belongs to (see useFreshIds).
+const dataKeys = new WeakMap<object, string>()
 
 export default function Home() {
     // filter
@@ -25,11 +29,19 @@ export default function Home() {
     const [pageSize, setPageSize] = useState(20)
     const [pageNumber, setPageNumber] = useState(1)
 
+    const queryKey = JSON.stringify([pageSize, pageNumber, status, srcNetwork, destNetwork, actionType, kind])
     let messagesRes = useSWR(
         ['messages', pageSize, pageNumber, status, srcNetwork, destNetwork, actionType, kind],
-        () => FetchData.getMessages(pageSize, pageNumber, status, srcNetwork, destNetwork, actionType, kind),
+        async () => {
+            const res = await FetchData.getMessages(pageSize, pageNumber, status, srcNetwork, destNetwork, actionType, kind)
+            // Remember which query this payload answers (response shape unchanged).
+            if (res && typeof res === 'object') dataKeys.set(res, queryKey)
+            return res
+        },
         { refreshInterval: 2000 }
     )
+    const dataKey = messagesRes.data ? dataKeys.get(messagesRes.data) : undefined
+    const freshIds = useFreshIds(messagesRes.data?.data?.map((m: { id: string | number }) => m.id), dataKey, queryKey, pageNumber)
     const totalMsgRes = useSWR('statistics/total_messages', () => FetchData.getTotalMessages(), {
         refreshInterval: 2000
     })
@@ -119,7 +131,7 @@ export default function Home() {
 
             <HeroOverlap>
             {/* Message List */}
-            {messagesRes.isLoading ? <SkeletonTable /> : <MessageList data={messagesRes.data?.data} meta={messagesRes.data?.meta} showPagination={false} onReset={resetFilters} filtersActive={filtersActive}></MessageList>}
+            {messagesRes.isLoading ? <SkeletonTable /> : <MessageList data={messagesRes.data?.data} meta={messagesRes.data?.meta} showPagination={false} onReset={resetFilters} filtersActive={filtersActive} freshIds={freshIds}></MessageList>}
 
             {/* Paging */}
             {!messagesRes.isLoading && (
