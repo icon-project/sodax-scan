@@ -149,3 +149,59 @@ describe('renderRoute (desktop Route cell)', () => {
         expect(out).toContain('→')
     })
 })
+
+describe('route destination hash attribution', () => {
+    const html = async (el) => (await import('react-dom/server')).renderToStaticMarkup(el)
+    const meta = { urls: { tx: {} } }
+    const hub = { ...legacyNonMpc, id: 20, sn: null, action_type: 'CancelIntent', src_network: '4', src_tx_hash: '0xhubsrc', dest_network: '6', dest_tx_hash: null }
+
+    it('normal message: hash under each chain', async () => {
+        const out = await html(Render.renderRoute(legacyNonMpc, meta))
+        expect(out).toContain('data-hash="0xsrc_legacy"')
+        expect(out).toContain('data-hash="0xdest_legacy"')
+        expect(Render.routeDestHash(legacyNonMpc)).toBe('0xdest_legacy')
+    })
+
+    it('hub event (sn null): source hash is never shown under the dest chain', async () => {
+        expect(Render.routeDestHash(hub)).toBeNull()
+        const out = await html(Render.renderRoute(hub, meta))
+        expect(out.match(/data-hash="0xhubsrc"/g)).toHaveLength(1)
+        const mobile = await html(Render.renderDestHashLink(hub, meta))
+        expect(mobile).not.toContain('0xhubsrc')
+        expect(mobile).not.toContain('data-hash')
+    })
+
+    it('MPC message: no dest hash until one exists, never the source hash', async () => {
+        const mpc = { ...legacyNonMpc, id: 21, sn: null, mpc_id: 'abc', dest_tx_hash: null, src_tx_hash: '0xmpcsrc' }
+        expect(Render.routeDestHash(mpc)).toBeNull()
+        const out = await html(Render.renderRoute(mpc, meta))
+        expect(out.match(/data-hash="0xmpcsrc"/g)).toHaveLength(1)
+    })
+
+    it('rollback hash is not attributed to the destination chain; row carries a cue', async () => {
+        const rb = { ...legacyNonMpc, rollback_tx_hash: '0xrollback', dest_tx_hash: null }
+        expect(Render.routeDestHash(rb)).toBeNull()
+        const out = await html(Render.renderRoute(rb, meta))
+        expect(out).not.toContain('0xrollback')
+        expect(out).toContain('Rolled back on')
+    })
+
+    it('unknown dest network still renders a leg, and keeps its own hash', async () => {
+        const unk = { ...legacyNonMpc, dest_network: '999999', dest_tx_hash: '0xunknown' }
+        const out = await html(Render.renderRoute(unk, meta))
+        expect(out).toContain('Chain 999999')
+        expect(out).toContain('data-hash="0xunknown"')
+        const hubUnk = { ...hub, dest_network: '999999' }
+        const out2 = await html(Render.renderRoute(hubUnk, meta))
+        expect(out2).toContain('Chain 999999')
+        expect(out2.match(/data-hash/g)).toHaveLength(1)
+        expect(await html(Render.renderDestHashLink(hubUnk, meta))).not.toContain('data-hash')
+    })
+
+    it('bare-hash chains drop 0x in the route cell (matches detail page)', async () => {
+        const xrp = { ...legacyNonMpc, src_network: '66', src_tx_hash: '0xABCDEF' }
+        const out = await html(Render.renderRoute(xrp, meta))
+        expect(out).toContain('data-hash="ABCDEF"')
+        expect(out).not.toContain('0xABCDEF')
+    })
+})
