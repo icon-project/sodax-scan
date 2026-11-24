@@ -131,3 +131,21 @@ describe('SolverMarketPlaceFill rows', () => {
         expect(Render.renderChain('999999').props.children).toBe('-')
     })
 })
+
+describe('renderRoute (desktop Route cell)', () => {
+    const html = async (el) => (await import('react-dom/server')).renderToStaticMarkup(el)
+    const meta = { urls: { tx: {} } }
+
+    it('keeps both short tx hashes available for a relay row', async () => {
+        const out = await html(Render.renderRoute(legacyNonMpc, meta))
+        expect(out).toContain(`data-hash="${legacyNonMpc.src_tx_hash}"`)
+        expect(out).toContain(`data-hash="${legacyNonMpc.dest_tx_hash}"`)
+        expect(out).toContain('→')
+    })
+
+    it('shows chain names without a hash for SolverMarketPlaceFill rows', async () => {
+        const out = await html(Render.renderRoute(SolverMarketPlaceFill, meta))
+        expect(out).not.toContain('data-hash')
+        expect(out).toContain('→')
+    })
+})

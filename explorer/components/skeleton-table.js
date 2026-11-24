@@ -20,11 +20,10 @@ export default function SkeletonTable({ count = 10 }) {
             <div className="hidden md:block relative overflow-x-auto shadow-card rounded-regular">
                 <div className="table w-full border-collapse">
                     <div className="table-header-group">
-                        <div className="table-row uppercase text-xs tracking-wide text-clay-dark bg-cream-white">
+                        <div className="table-row uppercase text-xs tracking-wide text-clay-dark bg-almost-white border-b border-cream-white">
                             <div className="table-cell px-1 py-1 xl:px-3 xl:py-3">Status</div>
-                            <div className="table-cell px-1 py-1 xl:px-3 xl:py-3">Serial No</div>
-                            <div className="table-cell px-1 py-1 xl:px-3 xl:py-3">Source Tx Hash</div>
-                            <div className="table-cell px-1 py-1 xl:px-3 xl:py-3">Destination Tx Hash</div>
+                            <div className="table-cell px-1 py-1 xl:px-3 xl:py-3">ID / Type</div>
+                            <div className="table-cell px-1 py-1 xl:px-3 xl:py-3 w-full">Route</div>
                             <div className="table-cell px-1 py-1 xl:px-3 xl:py-3">Action</div>
                             <div className="table-cell px-1 py-1 xl:px-3 xl:py-3 text-right">Created</div>
                         </div>
@@ -50,10 +49,7 @@ function SkeletonTableCell() {
 
 function Skeleton() {
     return (
-        <div className="table-row bg-white hover:bg-almost-white border-b border-light-grey h-14">
-            <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">
-                <SkeletonTableCell />
-            </div>
+        <div className="table-row bg-white hover:bg-almost-white border-b border-cream-white h-[52px]">
             <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">
                 <SkeletonTableCell />
             </div>

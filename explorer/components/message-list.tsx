@@ -2,6 +2,7 @@ import timeAgo from '@/lib/time-ago'
 import Link from 'next/link'
 import Pagination from './pagination'
 import Render from '@/lib/render'
+import actionLabel from '@/lib/action-label'
 import type { MessageListProps } from '@/types'
 
 export default function MessageList({ data, meta, showPagination }: MessageListProps) {
@@ -27,7 +28,7 @@ export default function MessageList({ data, meta, showPagination }: MessageListP
                             </div>
                             <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-clay-dark">
                                 <span className="tabular-nums">{Render.renderSerialNo(item)}</span>
-                                <span className="break-all">{item.action_type}</span>
+                                <span className="break-all">{actionLabel(item.action_type)}</span>
                             </div>
                         </Link>
                     </li>
@@ -38,29 +39,26 @@ export default function MessageList({ data, meta, showPagination }: MessageListP
             <div className="hidden md:block">
                 <div className="table w-full border-collapse min-h-32 bg-white">
                     <div className="table-header-group">
-                        <div className="table-row uppercase text-left text-xs tracking-wide text-clay-dark bg-cream-white">
-                            <div className="table-cell px-1 py-1 xl:px-3 xl:py-3">Status</div>
-                            <div className="table-cell px-1 py-1 xl:px-3 xl:py-3">Serial No</div>
-                            <div className="table-cell px-1 py-1 xl:px-3 xl:py-3">Source Tx Hash</div>
-                            <div className="table-cell px-1 py-1 xl:px-3 xl:py-3">Destination Tx Hash</div>
-                            <div className="table-cell px-1 py-1 xl:px-3 xl:py-3">Action</div>
-                            <div className="table-cell px-1 py-1 xl:px-3 xl:py-3 text-right">Created</div>
+                        <div className="table-row uppercase text-left text-xs tracking-wide text-clay-dark bg-almost-white border-b border-cream-white">
+                            <div className="table-cell px-3 py-3 xl:px-4">Status</div>
+                            <div className="table-cell px-3 py-3 xl:px-4">ID / Type</div>
+                            <div className="table-cell px-3 py-3 xl:px-4 w-full">Route</div>
+                            <div className="table-cell px-3 py-3 xl:px-4">Action</div>
+                            <div className="table-cell px-3 py-3 xl:px-4 text-right">Created</div>
                         </div>
                     </div>
 
                     <div className="table-row-group">
                         {data?.map((item) => (
-                            <Link key={item.id} className="table-row bg-white hover:bg-almost-white border-b border-light-grey h-14" href={`/messages/${item.id}`}>
-                                <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">{Render.renderMessageStatus(item.status)}</div>
-                                <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3 tabular-nums">
-                                    {Render.renderSerialNo(item)}
+                            <Link key={item.id} className="group table-row bg-white hover:bg-almost-white border-b border-cream-white h-[52px]" href={`/messages/${item.id}`}>
+                                {/* Hover: cream bg (row) + cherry accent bar on the first cell's left edge. */}
+                                <div className="relative table-cell align-middle px-3 py-2 xl:px-4 before:absolute before:left-0 before:inset-y-0 before:w-[3px] before:bg-cherry-soda before:opacity-0 group-hover:before:opacity-100">
+                                    {Render.renderMessageStatus(item.status)}
                                 </div>
-                                <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">
-                                    {Render.renderSrcHashLink(item, meta)}
-                                </div>
-                                <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">{Render.renderDestHashLink(item, meta)}</div>
-                                <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">{item.action_type}</div>
-                                <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3 text-right tracking-tighter tabular-nums">{timeAgo(item.created_at * 1000)} ago</div>
+                                <div className="table-cell align-middle px-3 py-2 xl:px-4 tabular-nums">{Render.renderSerialNo(item)}</div>
+                                <div className="table-cell align-middle px-3 py-2 xl:px-4">{Render.renderRoute(item, meta)}</div>
+                                <div className="table-cell align-middle px-3 py-2 xl:px-4 whitespace-nowrap">{actionLabel(item.action_type)}</div>
+                                <div className="table-cell align-middle px-3 py-2 xl:px-4 text-right tabular-nums whitespace-nowrap text-clay-dark">{timeAgo(item.created_at * 1000)} ago</div>
                             </Link>
                         ))}
                     </div>

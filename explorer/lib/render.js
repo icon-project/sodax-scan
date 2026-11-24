@@ -128,6 +128,31 @@ function renderDestHashLink(item, meta) {
     )
 }
 
+// One end of the desktop Route cell: network name (small label) over the
+// existing icon + short tx hash link renderer, so no hash/link data is lost.
+// SolverMarketPlaceFills already render icon + name and carry no hash.
+function routeLeg(network, node, showName) {
+    const name = helper.REV_NETWORK_MAPPINGS[network]
+    return (
+        <div className="min-w-0">
+            {showName && name && <div className="text-sm font-medium capitalize text-espresso leading-5">{String(name)}</div>}
+            <div className="text-xs text-clay-dark leading-4">{node}</div>
+        </div>
+    )
+}
+
+// Route cell: source -> destination in one column.
+function renderRoute(item, meta) {
+    const named = !helper.isSolverMarketPlaceFill(item)
+    return (
+        <div className="flex items-center gap-2 xl:gap-3 min-w-0">
+            {routeLeg(item.src_network, renderSrcHashLink(item, meta), named)}
+            <span aria-hidden="true" className="text-clay shrink-0">&rarr;</span>
+            {routeLeg(item.dest_network, renderDestHashLink(item, meta), named)}
+        </div>
+    )
+}
+
 // Chains whose native tx hash has no 0x prefix: XRP (66), Cardano (1815).
 const BARE_HASH_NETWORKS = new Set(['66', '1815'])
 
@@ -182,6 +207,7 @@ export default {
     renderHashLink,
     renderSrcHashLink,
     renderDestHashLink,
+    renderRoute,
     renderSerialNo,
     renderChain
 }
