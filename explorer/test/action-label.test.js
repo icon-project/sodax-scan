@@ -18,7 +18,14 @@ describe('actionLabel', () => {
     it('falls back to sentence case for unknown camelCase / snake_case', () => {
         expect(actionLabel('SomeNewActionType')).toBe('Some new action type')
         expect(actionLabel('bridge_out')).toBe('Bridge out')
-        expect(actionLabel('ABCThing')).toBe('Abc thing')
+        expect(actionLabel('ABCThing')).toBe('ABC thing')
+    })
+
+    it('preserves runs of capitals as acronyms', () => {
+        expect(actionLabel('NFTMint')).toBe('NFT mint')
+        expect(actionLabel('MintNFT')).toBe('Mint NFT')
+        expect(actionLabel('SwapUSDCForETH')).toBe('Swap USDC for ETH')
+        expect(actionLabel('BRIDGE_OUT')).toBe('Bridge out')
     })
 
     it('returns an empty string for missing values', () => {

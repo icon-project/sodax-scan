@@ -15,12 +15,18 @@ export default function actionLabel(actionType) {
     const raw = String(actionType).trim()
     if (!raw) return ''
     if (ACTION_LABELS[raw]) return ACTION_LABELS[raw]
-    const words = raw
+    const spaced = raw
         .replace(/[_-]+/g, ' ')
         .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
         .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
         .replace(/\s+/g, ' ')
         .trim()
-        .toLowerCase()
+    // A fully upper-case value (BRIDGE_OUT) is shouting, not acronyms: lowercase it.
+    // Otherwise keep runs of 2+ capitals ("NFT", "ABC") as acronyms.
+    const shouting = spaced === spaced.toUpperCase()
+    const words = spaced
+        .split(' ')
+        .map((w) => (!shouting && /^[A-Z][A-Z0-9]+$/.test(w) ? w : w.toLowerCase()))
+        .join(' ')
     return words.charAt(0).toUpperCase() + words.slice(1)
 }
