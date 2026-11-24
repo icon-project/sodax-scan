@@ -82,7 +82,7 @@ export default function MessageList({ data, meta, showPagination, onReset, filte
                                     {Render.renderMessageStatus(item.status)}
                                 </div>
                                 <div className="table-cell align-middle px-3 py-2 xl:px-4 tabular-nums">{Render.renderSerialNo(item)}</div>
-                                <div className="table-cell align-middle px-3 py-2 xl:px-4">{Render.renderRoute(item, meta)}</div>
+                                <div className="table-cell align-middle px-3 py-2 xl:px-4">{Render.renderRoute(item)}</div>
                                 <div className="table-cell align-middle px-3 py-2 xl:px-4 whitespace-nowrap">{actionLabel(item.action_type)}</div>
                                 <div className="table-cell align-middle px-3 py-2 xl:px-4 text-right tabular-nums whitespace-nowrap text-clay-dark">{timeAgo(item.created_at * 1000)} ago</div>
                             </Link>
