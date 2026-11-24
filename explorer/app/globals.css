@@ -60,12 +60,12 @@
 
 /* Dark theme: warm charcoal / espresso / cherry axis (docs/design-audit/dark-mode-spec.md). */
 .dark {
-    --surface: 29 20 20; /* charcoal */
-    --header: 38 27 27;
-    --raised: 45 32 32;
-    --sunken: 34 24 24;
-    --subtle: 53 38 38;
-    --hover: 58 42 42;
+    --surface: 22 15 15; /* charcoal deepened toward black (#160F0F), still warm */
+    --header: 26 18 18;
+    --raised: 30 21 21;
+    --sunken: 24 17 17;
+    --subtle: 39 28 28;
+    --hover: 41 29 29;
     --selected: 82 48 46;
     --line: 66 47 47;
     --line-strong: 142 126 125; /* clay */
@@ -78,15 +78,15 @@
     --skeleton: 72 52 52; /* espresso */
     --trend-up: 109 214 150;
     --trend-down: 216 105 108;
-    --hero-from: 120 63 59; /* cherry-dark + 25% charcoal */
-    --hero-to: 90 49 46; /* cherry-dark + 50% charcoal */
-    --footer: 90 49 46;
+    --hero-from: 47 29 28; /* cherry-dark + 85% charcoal */
+    --hero-to: 36 24 23; /* cherry-dark + 94% charcoal */
+    --footer: 36 24 23;
     --st-executed: 23 56 33; --st-executed-fg: 206 240 220; --st-executed-dot: 109 214 150;
     --st-failed: 81 33 34; --st-failed-fg: 245 219 219; --st-failed-dot: 216 105 108;
     --st-rollbacked: 105 39 40; --st-rollbacked-fg: 245 219 219; --st-rollbacked-dot: 216 105 108;
     --st-delivered: 53 38 38; --st-delivered-fg: 237 230 230; --st-delivered-dot: 185 172 171;
     --st-attested: 71 40 38; --st-attested-fg: 227 190 187; --st-attested-dot: 204 158 154;
-    --st-pending: 38 27 27; --st-pending-fg: 185 172 171; --st-pending-border: 66 47 47;
+    --st-pending: 26 18 18; --st-pending-fg: 185 172 171; --st-pending-border: 66 47 47;
     --st-fallback: 53 38 38; --st-fallback-fg: 185 172 171; --st-fallback-dot: 185 172 171;
     --line-control: 66 47 47;
     --hash-hl-bg: 82 48 46;
@@ -95,7 +95,7 @@
     --icon-ring: rgb(255 255 255 / 0.15);
     --shadow-card: 0 0 0 1px rgb(var(--line)), inset 0 1px 0 rgb(255 255 255 / 0.04);
     --shadow-overlay: 0 0 0 1px rgb(var(--line)), 0 12px 32px rgb(0 0 0 / 0.45);
-    --picker-track: 29 20 20;
+    --picker-track: 22 15 15;
     --picker-track-border: 66 47 47;
     --picker-thumb: 72 52 52;
     --picker-thumb-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);

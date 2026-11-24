@@ -11,7 +11,7 @@ export const PREFS = ['light', 'dark', 'system']
 export const DARK_QUERY = '(prefers-color-scheme: dark)'
 export const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)'
 // Header band colours (the browser chrome tint), kept in sync with globals.css.
-export const THEME_COLORS = { light: '#F8F3F3', dark: '#261B1B' }
+export const THEME_COLORS = { light: '#F8F3F3', dark: '#1A1212' }
 // Cross-fade window for a user-initiated switch (3.10 of the spec).
 export const SWITCH_CLASS = 'theme-switching'
 export const SWITCH_MS = 220
