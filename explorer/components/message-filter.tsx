@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Dropdown, DropdownItem } from 'flowbite-react'
 import helper from '@/lib/helper'
 import Render from '@/lib/render'
-import Image from 'next/image'
+import NetworkIcon from '@/components/network-icon'
 
 interface Network {
     id: string
@@ -141,7 +141,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                                 onClick={(e) => e.stopPropagation()}
                                 className="cursor-pointer px-2 mr-1"
                             /> */}
-                            <Image className="relative inline-block mr-2 rounded-full bg-transparent" alt={network.name} src={network.logo} width={16} height={16} />
+                            <NetworkIcon className="mr-2" alt={network.name} src={network.logo} size={16} />
                             {helper.networkDisplayName(network.name)}
                         </DropdownItem>
                     )
@@ -188,7 +188,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                                 onClick={(e) => e.stopPropagation()}
                                 className="cursor-pointer px-2 mr-1"
                             /> */}
-                            <Image className="relative inline-block mr-2 rounded-full bg-transparent" alt={network.name} src={network.logo} width={16} height={16} />
+                            <NetworkIcon className="mr-2" alt={network.name} src={network.logo} size={16} />
                             {helper.networkDisplayName(network.name)}
                         </DropdownItem>
                     )

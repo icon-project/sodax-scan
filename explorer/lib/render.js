@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import Image from 'next/image'
+import NetworkIcon from '@/components/network-icon'
 import CopyButton from '@/components/copy-button'
 import helper from "./helper"
 
@@ -65,7 +65,7 @@ function renderChain(network) {
     if (!name) return <div>-</div>
     return (
         <div className="flex items-center gap-2">
-            <Image alt="" src={`/images/network-${name}.png`} width={24} height={24} className="rounded-full bg-transparent" />
+            <NetworkIcon alt="" src={`/images/network-${name}.png`} />
             <span className="capitalize">{helper.networkDisplayName(name)}</span>
         </div>
     )
@@ -111,7 +111,7 @@ function renderDestHashLink(item, meta) {
     if (name) {
         leg = shown ? (
             <div className="flex items-center gap-2">
-                <Image alt={helper.networkDisplayName(name)} src={`/images/network-${name}.png`} width={24} height={24} className="rounded-full bg-transparent" />
+                <NetworkIcon alt={helper.networkDisplayName(name)} src={`/images/network-${name}.png`} />
                 {hashEl}
             </div>
         ) : renderChain(item.dest_network)
@@ -163,7 +163,7 @@ function routeLeg(network, hash, extra = null) {
     }
     return (
         <div className="flex items-center gap-2 min-w-0">
-            <Image alt="" src={`/images/network-${name}.png`} width={24} height={24} className="rounded-full bg-transparent shrink-0" />
+            <NetworkIcon alt="" src={`/images/network-${name}.png`} />
             <div className="min-w-0">
                 <div className="text-sm font-medium capitalize text-fg leading-5">{helper.networkDisplayName(name)}</div>
                 {hashLine}
@@ -213,7 +213,7 @@ function renderHashLink(scanUrl, network, hash, isFull = false) {
     }
     // Bare-hash chains display (and copy) without the 0x prefix, matching the link.
     const dispHash = isBareHash && typeof hash === 'string' && hash.startsWith('0x') ? hash.slice(2) : hash
-    networkImg = <Image alt={helper.REV_NETWORK_MAPPINGS[network] || ""} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[network]}.png`} width={24} height={24} className="rounded-full bg-transparent" />
+    networkImg = <NetworkIcon alt={helper.REV_NETWORK_MAPPINGS[network] || ""} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[network]}.png`} />
     link = !isFull || isOdHash ? (
         <div className={linkClass}><span className="tx-hash" data-hash={dispHash}>{isFull ? dispHash : truncateHash(dispHash)}</span></div>
     ) : (

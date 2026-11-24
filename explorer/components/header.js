@@ -3,6 +3,7 @@ import { Dropdown } from 'flowbite-react'
 import SearchBar from '@/components/searchbar'
 import ThemePicker from '@/components/theme-picker'
 import Image from 'next/image'
+import NetworkIcon from '@/components/network-icon'
 
 export default function Header({ showSearchBar, assets }) {
     assets = Array.isArray(assets) ? assets : []
@@ -12,7 +13,7 @@ export default function Header({ showSearchBar, assets }) {
         .map((asset) => (
             <li key={asset.name}>
                 <div className="flex items-center gap-1 whitespace-nowrap">
-                    <Image src={asset.image} alt="" width={20} height={20} className="rounded-full h-[20px] w-[20px]" />
+                    <NetworkIcon src={asset.image} size={20} disc={false} />
                     <span className="sr-only">{asset.symbol}</span>
                     <span className="tabular-nums">${asset.current_price.toFixed(2)}</span>
                     <span className="tabular-nums text-fg">
@@ -30,7 +31,9 @@ export default function Header({ showSearchBar, assets }) {
         <header className="px-4 py-4 xl:px-24 2xl:px-48 w-full bg-header flex items-center md:items-stretch justify-between max-md:gap-3 border-b border-line">
             <div className="min-w-0">
                 <a className="block rounded-small" href="/" aria-label="SODAX Scan home">
-                    <img alt="" className="w-36 min-w-0 md:w-64 md:min-w-64 h-[32px] max-md:object-contain max-md:object-left" src="/images/new_logo.svg"></img>
+                    {/* Both logos are rendered and swapped by the html.dark class (CSS only: no flash, no JS). */}
+                    <img alt="" className="block dark:hidden w-36 min-w-0 md:w-64 md:min-w-64 h-[32px] max-md:object-contain max-md:object-left" src="/images/new_logo.svg"></img>
+                    <img alt="" className="hidden dark:block w-36 min-w-0 md:w-64 md:min-w-64 h-[32px] max-md:object-contain max-md:object-left" src="/images/new_logo-on-dark.svg"></img>
                 </a>
             </div>
 

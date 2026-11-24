@@ -31,6 +31,21 @@ module.exports = {
                 'yellow-dark': '#ECC100',
                 'yellow-soda': '#FFD92F',
                 'soda-on-soda': '#F6E799',
+                // Warm remap of Tailwind's cold slate `gray`: only flowbite-react's own
+                // classes use it (the app has none), so its menus follow the brand axis
+                // in both themes. 800 = espresso/charcoal midpoint.
+                gray: {
+                    50: '#F8F3F3', // almost-white
+                    100: '#F0EAEB', // light-cream
+                    200: '#EDE6E6', // cream-white
+                    300: '#D7CDCB', // cherry-grey
+                    400: '#B9ACAB', // clay-light
+                    500: '#8E7E7D', // clay
+                    600: '#6B5C5B', // clay-dark
+                    700: '#483434', // espresso
+                    800: '#322424',
+                    900: '#1D1414' // charcoal
+                },
                 // Light neutrals
                 'cream-cherry': '#E5D5D4',
                 'cream-white': '#EDE6E6',
