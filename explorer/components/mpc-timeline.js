@@ -1,8 +1,9 @@
 import timeAgo from '@/lib/time-ago'
 import Render from '@/lib/render'
 import helper from '@/lib/helper'
-import Script from 'next/script'
 import Link from 'next/link'
+import CopyButton from '@/components/copy-button'
+import { DetailCard, DetailGroup, DetailRow, DetailTime } from '@/components/detail-card'
 
 // MpcTimeline renders the kind-dependent MPC lifecycle stepper for a message row
 // on an MPC chain. Non-MPC rows never reach here — message-detail.js gates on
@@ -26,97 +27,58 @@ export default async function MpcTimeline({ msgData, meta }) {
     const { steps } = helper.deriveMpcSteps(msgData)
     const msgAction = msgData.action_detail || ''
 
-    const labelCell = 'block md:table-cell xl:w-96 px-3 pt-3 pb-0 md:py-2 xl:px-6 xl:py-4 max-md:text-sm max-md:text-clay-dark font-medium whitespace-normal xl:whitespace-nowrap'
-    const valueCell = 'block md:table-cell min-w-0 [overflow-wrap:anywhere] md:[overflow-wrap:normal] px-3 pt-1 pb-3 md:py-2 xl:px-6 xl:py-4'
-
     return (
         <div className="py-2 flex flex-col">
-            <div className="relative overflow-x-auto shadow-card rounded-regular">
-                <div className="block md:table border-collapse w-full text-base text-left text-espresso">
-                    <div className="xl:table-header-group hidden">
-                        <div className="table-row font-medium text-xl uppercase text-left text-espresso bg-cream-white">
-                            <div className="table-cell px-2 py-1 xl:px-6 xl:py-3">Message Detail</div>
-                            <div className="table-cell px-2 py-1 xl:px-6 xl:py-3"></div>
-                        </div>
-                    </div>
-                    <div className="block md:table-row-group">
-                        <div className="block md:table-row bg-white border-b">
-                            <div className={labelCell}>Status:</div>
-                            <div className={valueCell}>{Render.renderMessageStatus(msgData.status)}</div>
-                        </div>
-                        {msgData.mpc_id && (
-                            <div className="block md:table-row bg-white border-b">
-                                <div className={labelCell}>MPC ID:</div>
-                                <div className={valueCell}>{msgData.mpc_id}</div>
-                            </div>
-                        )}
-                        <div className="block md:table-row bg-white border-b">
-                            <div className={labelCell}>Serial No:</div>
-                            {/* MPC rows show the shared "MPC" badge (Render.renderSerialNo),
-                                the same marker used in the list Serial-No column. */}
-                            <div className={`${valueCell} tabular-nums`}>{Render.renderSerialNo(msgData)}</div>
-                        </div>
-                        <div className="block md:table-row bg-white border-b">
-                            <div className={labelCell}>Source transaction hash:</div>
-                            <div className={valueCell}>
-                                {Render.renderHashLink(meta.urls.tx[msgData.src_network], msgData.src_network, msgData.src_tx_hash, true)}
-                            </div>
-                        </div>
+            <DetailCard status={Render.renderMessageStatus(msgData.status)}>
+                <DetailGroup title="Identifiers">
+                    {msgData.mpc_id && <DetailRow label="MPC ID">{msgData.mpc_id}</DetailRow>}
+                    {/* MPC rows show the shared "MPC" badge (Render.renderSerialNo),
+                        the same marker used in the list Serial-No column. */}
+                    <DetailRow label="Serial no" tabular>{Render.renderSerialNo(msgData)}</DetailRow>
+                    {msgData.intent_tx_hash && (
+                        <DetailRow label="Intent hash">
+                            <span className="inline-flex items-center gap-1 max-w-full">
+                                <Link className="tx-hash hover:underline underline-offset-2 min-w-0 break-all" href={`/messages/search?value=${msgData.intent_tx_hash}`}>
+                                    {msgData.intent_tx_hash}
+                                </Link>
+                                <CopyButton value={msgData.intent_tx_hash} label="Copy intent hash" />
+                            </span>
+                        </DetailRow>
+                    )}
+                </DetailGroup>
 
-                        {steps.map((step) => (
-                            <div key={step.key} className="block md:table-row bg-white border-b">
-                                <div className={labelCell}>
-                                    <span>
-                                        {step.key === 'released'
-                                            ? 'Destination transaction hash:'
-                                            : `${step.label}${step.terminal ? ' (destination)' : ''}`}
-                                    </span>
-                                </div>
-                                <div className={valueCell}>
-                                    {step.reached
-                                        ? Render.renderHashLink(meta.urls.tx[step.network], step.network, step.hash, true)
-                                        : <span className="text-clay-dark">— pending</span>}
-                                </div>
-                            </div>
-                        ))}
+                <DetailGroup title="Route and hashes">
+                    <DetailRow label="Source transaction hash">
+                        {Render.renderHashLink(meta.urls.tx[msgData.src_network], msgData.src_network, msgData.src_tx_hash, true)}
+                    </DetailRow>
+                    {steps.map((step) => (
+                        <DetailRow
+                            key={step.key}
+                            label={step.key === 'released' ? 'Destination transaction hash' : `${step.label}${step.terminal ? ' (destination)' : ''}`}
+                        >
+                            {step.reached
+                                ? Render.renderHashLink(meta.urls.tx[step.network], step.network, step.hash, true)
+                                : <span className="text-clay-dark">— pending</span>}
+                        </DetailRow>
+                    ))}
+                </DetailGroup>
 
-                        {msgData.intent_tx_hash && (
-                            <div className="block md:table-row bg-white border-b">
-                                <div className={labelCell}>Intent Hash:</div>
-                                <div className={valueCell}>
-                                    <Link className="hover:underline underline-offset-2 inline-block" href={`/messages/search?value=${msgData.intent_tx_hash}`}>
-                                        {msgData.intent_tx_hash}
-                                    </Link>
-                                </div>
-                            </div>
-                        )}
+                <DetailGroup title="Action">
+                    <DetailRow label="Action">{msgAction || <span className="text-clay-dark">—</span>}</DetailRow>
+                </DetailGroup>
 
-                        <div className="block md:table-row bg-white border-b">
-                            <div className={labelCell}>Action:</div>
-                            <div className={valueCell}>{msgAction}</div>
-                        </div>
-
-                        <div className="block md:table-row bg-white border-b">
-                            <div className={labelCell}>Created:</div>
-                            <div className={`${valueCell} tabular-nums`}>{timeAgo(msgData.created_at * 1000)} ago ({new Date(msgData.created_at * 1000).toUTCString()})</div>
-                        </div>
-                        <div className="block md:table-row bg-white border-b">
-                            <div className={labelCell}>Last updated at:</div>
-                            <div className={valueCell}>
-                                {msgData.updated_at
-                                    ? `${timeAgo(msgData.updated_at * 1000)} ago (${new Date(msgData.updated_at * 1000).toUTCString()})`
-                                    : ''}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <Script>{`
-            for(var i=0;i<document.getElementsByClassName("copy-hash").length;i++){
-                document.getElementsByClassName("copy-hash")[i].onclick = function(){ navigator.clipboard.writeText(this.previousSibling.innerText); }
-            }
-            `}</Script>
+                <DetailGroup title="Timestamps">
+                    <DetailRow label="Created" tabular>
+                        <DetailTime relative={`${timeAgo(msgData.created_at * 1000)} ago`} utc={new Date(msgData.created_at * 1000).toUTCString()} />
+                    </DetailRow>
+                    <DetailRow label="Last updated" tabular>
+                        <DetailTime
+                            relative={msgData.updated_at ? `${timeAgo(msgData.updated_at * 1000)} ago` : ''}
+                            utc={msgData.updated_at ? new Date(msgData.updated_at * 1000).toUTCString() : ''}
+                        />
+                    </DetailRow>
+                </DetailGroup>
+            </DetailCard>
         </div>
     )
 }

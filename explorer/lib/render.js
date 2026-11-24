@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { ClipboardDocumentIcon } from '@heroicons/react/24/solid'
+import CopyButton from '@/components/copy-button'
 import helper from "./helper"
 
 // Shorten a hash for list display: first 7 + last 7 chars. The full value is
@@ -182,7 +182,6 @@ function renderHashLink(scanUrl, network, hash, isFull = false) {
     let networkImg
     let linkClass = 'hover:underline inline-block'
     let link = <div>-</div>
-    let copyButton = <ClipboardDocumentIcon width={20} height={20} className={'opacity-75 text-espresso copy-hash cursor-pointer ml-2'} />
 
     scanUrl = scanUrl ? scanUrl.replace(/\/+$/, '') : ''
     let href = `${scanUrl}/${hash}`
@@ -205,16 +204,16 @@ function renderHashLink(scanUrl, network, hash, isFull = false) {
     link = !isFull || isOdHash ? (
         <div className={linkClass}><span className="tx-hash" data-hash={dispHash}>{isFull ? dispHash : truncateHash(dispHash)}</span></div>
     ) : (
-        <div className="flex max-md:min-w-0">
+        <div className="flex items-center gap-1 max-md:min-w-0">
             <Link className={`${linkClass} max-md:min-w-0 max-md:break-all`} href={href} target="_blank">
                 <span className="tx-hash" data-hash={dispHash}>{dispHash}</span>
             </Link>
-            {copyButton}
+            <CopyButton value={dispHash} />
         </div>
     )
 
     return (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
             {networkImg}
             {link}
         </div>

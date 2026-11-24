@@ -157,18 +157,18 @@ export default function IntentSiblings({
 
     return (
         <div className="mt-8" ref={containerRef}>
-            <h2 className="px-2 xl:px-6 py-3 text-xl font-medium uppercase text-espresso bg-cream-white">
+            <h2 className="px-1 pb-3 text-lg font-bold text-espresso">
                 Related intent messages{siblings.length > 0 ? ` (${siblings.length})` : ''}
             </h2>
             {siblings.length > 0 ? (
                 <MessageList data={siblings} meta={meta} />
             ) : (
-                <div className="px-2 xl:px-6 py-6 bg-white border-b text-sm text-clay-dark">
+                <div className="px-4 py-6 md:px-6 bg-white rounded-regular shadow-card text-sm text-clay-dark">
                     No related intent messages yet.
                 </div>
             )}
             {isYoung && (
-                <div className="px-2 xl:px-6 py-2 text-xs text-clay-dark">
+                <div className="px-1 py-2 text-xs text-clay-dark tabular-nums">
                     {lastCheckedSecAgo !== null
                         ? `Last checked ${lastCheckedSecAgo}s ago`
                         : 'Watching for new siblings'}
