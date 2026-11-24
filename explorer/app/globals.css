@@ -22,6 +22,7 @@
     --fg: 72 52 52; /* espresso */
     --fg-muted: 107 92 91; /* clay-dark */
     --fg-subtle: 142 126 125; /* clay */
+    --fg-disabled: 185 172 171; /* clay-light */
     --accent: 165 92 85; /* cherry-soda */
     --focus: 165 92 85; /* cherry-soda */
     --tint: 229 213 212; /* cream-cherry */
@@ -72,6 +73,7 @@
     --fg: 248 243 243; /* almost-white */
     --fg-muted: 185 172 171; /* clay-light */
     --fg-subtle: 142 126 125; /* clay: decorative only, fails 4.5 on raised */
+    --fg-disabled: 105 88 87; /* disabled: 2.8:1 on charcoal, dimmer than fg-muted */
     --accent: 204 158 154; /* cherry-bright */
     --focus: 204 158 154;
     --tint: 82 48 46;
@@ -121,6 +123,7 @@
     --fg: 72 52 52; /* espresso */
     --fg-muted: 107 92 91; /* clay-dark */
     --fg-subtle: 142 126 125; /* clay */
+    --fg-disabled: 185 172 171; /* clay-light */
     --accent: 165 92 85; /* cherry-soda */
     --focus: 165 92 85; /* cherry-soda */
     --tint: 229 213 212; /* cream-cherry */

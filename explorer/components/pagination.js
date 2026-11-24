@@ -7,7 +7,7 @@ import { ChevronDoubleLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronDouble
 const BTN =
     'inline-flex items-center justify-center w-10 h-10 rounded-small border border-line-control bg-raised text-fg transition-colors duration-150 ' +
     'hover:bg-hover active:bg-subtle focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus'
-const BTN_DISABLED = 'inline-flex items-center justify-center w-10 h-10 rounded-small border border-line bg-header text-fg-subtle cursor-not-allowed'
+const BTN_DISABLED = 'inline-flex items-center justify-center w-10 h-10 rounded-small border border-line bg-header text-fg-disabled cursor-not-allowed'
 
 function PageControl({ label, icon: Icon, disabled, href, onClick }) {
     const icon = <Icon width={18} height={18} aria-hidden="true" />

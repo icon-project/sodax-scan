@@ -93,6 +93,7 @@ module.exports = {
                 fg: 'rgb(var(--fg) / <alpha-value>)',
                 'fg-muted': 'rgb(var(--fg-muted) / <alpha-value>)',
                 'fg-subtle': 'rgb(var(--fg-subtle) / <alpha-value>)',
+                'fg-disabled': 'rgb(var(--fg-disabled) / <alpha-value>)',
                 accent: 'rgb(var(--accent) / <alpha-value>)',
                 focus: 'rgb(var(--focus) / <alpha-value>)',
                 tint: 'rgb(var(--tint) / <alpha-value>)',
