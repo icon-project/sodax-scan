@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useMemo, useState } from 'react'
+import { Suspense, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import MessageList from '@/components/message-list'
 import MessageFilter from '@/components/message-filter'
 import FetchData from '@/lib/fetch-data'
@@ -45,6 +45,14 @@ export default function Home() {
     // With keepPreviousData the old rows stay up while a new query loads.
     // Not stale on error: never leave the old rows dimmed and inert after a failed fetch.
     const stale = Boolean(messagesRes.data) && dataKey !== queryKey && !messagesRes.error
+
+    // Hold the list wrapper's height while stale so a shorter next page can't pull
+    // the pagination nav up mid-swap; released as soon as fresh data lands.
+    const listRef = useRef<HTMLDivElement>(null)
+    const [heldHeight, setHeldHeight] = useState<number | undefined>(undefined)
+    useLayoutEffect(() => {
+        setHeldHeight(stale ? listRef.current?.offsetHeight : undefined)
+    }, [stale])
     const rowIds = useMemo(() => messagesRes.data?.data?.map((m: { id: string | number }) => m.id), [messagesRes.data])
     const freshIds = useFreshIds(rowIds, dataKey, queryKey, pageNumber)
     const totalMsgRes = useSWR('statistics/total_messages', () => FetchData.getTotalMessages(), {
@@ -141,7 +149,7 @@ export default function Home() {
             {messagesRes.isLoading && !messagesRes.data ? (
                 <SkeletonTable />
             ) : (
-                <div aria-busy={stale} className={`[overflow-anchor:none] transition-opacity duration-150 ease-out ${stale ? 'opacity-60 pointer-events-none' : ''}`}>
+                <div ref={listRef} aria-busy={stale} style={heldHeight ? { minHeight: heldHeight } : undefined} className={`[overflow-anchor:none] transition-opacity duration-150 ease-out ${stale ? 'opacity-60 pointer-events-none' : ''}`}>
                     <MessageList data={messagesRes.data?.data} meta={messagesRes.data?.meta} showPagination={false} onReset={resetFilters} filtersActive={filtersActive} freshIds={freshIds}></MessageList>
                 </div>
             )}
