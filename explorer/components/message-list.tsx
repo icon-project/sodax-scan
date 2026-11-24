@@ -1,6 +1,7 @@
 import timeAgo from '@/lib/time-ago'
 import Link from 'next/link'
 import Pagination from './pagination'
+import FlipContainer from './flip-container'
 import Render from '@/lib/render'
 import actionLabel from '@/lib/action-label'
 import type { MessageListProps } from '@/types'
@@ -35,11 +36,11 @@ export default function MessageList({ data, meta, showPagination, onReset, filte
     }
     return (
         <div className="py-2">
-          <div className="md:relative md:overflow-x-auto md:shadow-card md:rounded-regular">
+          <FlipContainer ids={data?.map((item) => String(item.id))} freshIds={freshIds} className="md:relative md:overflow-x-auto md:shadow-card md:rounded-regular">
             {/* Below md: one card per message. From md up: the table below, unchanged. */}
             <ul className="md:hidden flex flex-col gap-2 list-none p-0 m-0">
                 {data?.map((item) => (
-                    <li key={item.id} className={freshIds?.has(item.id) ? 'card-enter' : undefined}>
+                    <li key={item.id} data-flip-id={item.id} className={freshIds?.has(item.id) ? 'card-enter' : undefined}>
                         <Link
                             href={`/messages/${item.id}`}
                             className="block min-w-0 bg-white rounded-regular shadow-card p-4 active:bg-almost-white hover:bg-almost-white"
@@ -76,7 +77,7 @@ export default function MessageList({ data, meta, showPagination, onReset, filte
 
                     <div className="table-row-group">
                         {data?.map((item) => (
-                            <Link key={item.id} className={`group table-row bg-white hover:bg-almost-white border-b border-cream-white h-[52px]${freshIds?.has(item.id) ? ' row-enter' : ''}`} href={`/messages/${item.id}`}>
+                            <Link key={item.id} data-flip-id={item.id} className={`group table-row bg-white hover:bg-almost-white border-b border-cream-white h-[52px]${freshIds?.has(item.id) ? ' row-enter' : ''}`} href={`/messages/${item.id}`}>
                                 {/* Hover: cream bg (row) + cherry accent bar on the first cell's left edge. */}
                                 <div className="relative table-cell align-middle px-3 py-2 xl:px-4 before:absolute before:left-0 before:inset-y-0 before:w-[3px] before:bg-cherry-soda before:opacity-0 before:transition-opacity before:duration-150 before:ease-out group-hover:before:opacity-100">
                                     {Render.renderMessageStatus(item.status)}
@@ -99,7 +100,7 @@ export default function MessageList({ data, meta, showPagination, onReset, filte
                 )} */}
 
             {showPagination && meta && <Pagination totalPages={meta.pagination.total} pageNumber={meta.pagination.number} pageSize={meta.pagination.size} />}
-          </div>
+          </FlipContainer>
         </div>
     )
 }

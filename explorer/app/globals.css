@@ -66,31 +66,24 @@ a {
         background-color: theme('colors.white');
     }
 }
+/* Mobile card: no height animation. Rows below glide via FLIP
+   (components/flip-container.js), so the new card only fades in and keeps its
+   shadow (no overflow clipping). */
 @keyframes card-enter {
     from {
-        grid-template-rows: 0fr;
-        margin-bottom: -0.5rem;
         opacity: 0;
-        transform: translateY(-6px);
     }
     to {
-        grid-template-rows: 1fr;
-        margin-bottom: 0;
         opacity: 1;
-        transform: translateY(0);
     }
 }
 .row-enter {
     animation: row-enter 1200ms var(--ease-out) backwards;
 }
 .card-enter {
-    display: grid;
-    grid-template-rows: 1fr;
     animation: card-enter 280ms var(--ease-out) backwards;
 }
 .card-enter > a {
-    min-height: 0;
-    overflow: hidden;
     animation: row-tint 1200ms var(--ease-out) backwards;
 }
 
