@@ -76,18 +76,25 @@ function renderSrcHashLink(item, meta) {
     return renderHashLink(meta?.urls.tx[item.src_network], item.src_network, item.src_tx_hash)
 }
 
-// Rollback cue: the rollback tx lives on the SOURCE chain (the refund), so it is
-// never shown as the destination's hash. Instead a small source-chain icon marks
-// the row as rolled back (the old list overlaid the src icon on the dest icon).
-function rollbackMarker(item) {
+// Bare-hash chains (XRP, Cardano) display without 0x, as on the detail page.
+function displayHash(network, hash) {
+    return BARE_HASH_NETWORKS.has(String(network)) && typeof hash === 'string' && hash.startsWith('0x') ? hash.slice(2) : hash
+}
+
+// Rollback line: the rollback tx lives on the SOURCE chain (the refund), so it is
+// never shown as the destination's own hash. It is rendered as a quiet secondary
+// line ("↩ <hash>") under the destination leg, labelled as a source-chain rollback.
+function rollbackLine(item) {
     if (!item.rollback_tx_hash) return null
     const srcName = helper.REV_NETWORK_MAPPINGS[item.src_network]
     const title = `Rolled back on ${srcName || 'the source chain'}`
+    const shown = displayHash(item.src_network, item.rollback_tx_hash)
     return (
-        <span className="inline-flex items-center shrink-0" title={title}>
-            {srcName && <Image alt="" src={`/images/network-${srcName}.png`} width={14} height={14} className="rounded-full bg-white ring-1 ring-white" />}
-            <span className="sr-only">{title}</span>
-        </span>
+        <div className="text-xs text-clay-dark leading-4 flex items-center gap-1" title={title}>
+            <span aria-hidden="true">&#8617;</span>
+            <span className="sr-only">{title}:</span>
+            <span className="tx-hash" data-hash={shown}>{truncateHash(shown)}</span>
+        </div>
     )
 }
 
@@ -98,24 +105,29 @@ function renderDestHashLink(item, meta) {
     if (helper.isSolverMarketPlaceFill(item)) return renderChain(item.dest_network)
 
     const name = helper.REV_NETWORK_MAPPINGS[item.dest_network]
-    const marker = rollbackMarker(item)
+    const shown = displayHash(item.dest_network, item.dest_tx_hash)
+    const hashEl = shown && <div className="hover:underline inline-block"><span className="tx-hash" data-hash={shown}>{truncateHash(shown)}</span></div>
     let leg
-    if (item.dest_tx_hash && name) {
-        leg = (
+    if (name) {
+        leg = shown ? (
             <div className="flex items-center gap-2">
                 <Image alt={String(name)} src={`/images/network-${name}.png`} width={24} height={24} className="rounded-full bg-transparent" />
-                <div className="hover:underline inline-block"><span className="tx-hash" data-hash={item.dest_tx_hash}>{truncateHash(item.dest_tx_hash)}</span></div>
+                {hashEl}
+            </div>
+        ) : renderChain(item.dest_network)
+    } else if (item.dest_network != null) {
+        leg = (
+            <div className="flex items-center gap-2">
+                <span className="text-espresso">{`Chain ${item.dest_network}`}</span>
+                {hashEl}
             </div>
         )
-    } else if (item.dest_tx_hash) {
-        leg = <div className="hover:underline inline-block"><span className="tx-hash" data-hash={item.dest_tx_hash}>{truncateHash(item.dest_tx_hash)}</span></div>
-    } else if (name) {
-        leg = renderChain(item.dest_network)
     } else {
-        leg = <div className="text-clay-dark">-</div>
+        leg = hashEl || <div className="text-clay-dark">-</div>
     }
-    if (!marker) return leg
-    return <div className="flex items-center gap-1">{leg}{marker}</div>
+    const rb = rollbackLine(item)
+    if (!rb) return leg
+    return <div className="flex flex-col gap-0.5">{leg}{rb}</div>
 }
 
 // Hash shown under the destination network in the Route cell (null when none).
@@ -130,10 +142,9 @@ function routeDestHash(item) {
 // One end of the desktop Route cell: network icon, then network name (same size
 // and weight whether or not a hash exists) with the short hash as a quieter
 // second line only when present. Always vertically centred.
-function routeLeg(network, hash, marker = null) {
+function routeLeg(network, hash, extra = null) {
     const name = helper.REV_NETWORK_MAPPINGS[network]
-    // Bare-hash chains (XRP, Cardano) display without 0x, as on the detail page.
-    const shown = BARE_HASH_NETWORKS.has(String(network)) && typeof hash === 'string' && hash.startsWith('0x') ? hash.slice(2) : hash
+    const shown = displayHash(network, hash)
     const hashLine = shown && (
         <div className="text-xs text-clay-dark leading-4">
             <span className="tx-hash" data-hash={shown}>{truncateHash(shown)}</span>
@@ -141,11 +152,12 @@ function routeLeg(network, hash, marker = null) {
     )
     if (!name) {
         // Unknown network: still show the hash (it is this leg's own), labelled generically.
-        if (!hashLine && network == null) return <div className="text-sm text-clay-dark">-</div>
+        if (!hashLine && !extra && network == null) return <div className="text-sm text-clay-dark">-</div>
         return (
             <div className="min-w-0">
                 <div className="text-sm font-medium text-espresso leading-5">{network == null ? 'Unknown chain' : `Chain ${network}`}</div>
                 {hashLine}
+                {extra}
             </div>
         )
     }
@@ -153,8 +165,9 @@ function routeLeg(network, hash, marker = null) {
         <div className="flex items-center gap-2 min-w-0">
             <Image alt="" src={`/images/network-${name}.png`} width={24} height={24} className="rounded-full bg-transparent shrink-0" />
             <div className="min-w-0">
-                <div className="text-sm font-medium capitalize text-espresso leading-5 flex items-center gap-1">{String(name)}{marker}</div>
+                <div className="text-sm font-medium capitalize text-espresso leading-5">{String(name)}</div>
                 {hashLine}
+                {extra}
             </div>
         </div>
     )
@@ -167,7 +180,7 @@ function renderRoute(item) {
         <div className="flex items-center gap-2 xl:gap-3 min-w-0">
             {routeLeg(item.src_network, fill ? null : item.src_tx_hash)}
             <span aria-hidden="true" className="text-clay-dark shrink-0 leading-none">&rarr;</span>
-            {routeLeg(item.dest_network, routeDestHash(item), rollbackMarker(item))}
+            {routeLeg(item.dest_network, routeDestHash(item), rollbackLine(item))}
         </div>
     )
 }

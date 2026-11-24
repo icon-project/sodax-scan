@@ -178,12 +178,23 @@ describe('route destination hash attribution', () => {
         expect(out.match(/data-hash="0xmpcsrc"/g)).toHaveLength(1)
     })
 
-    it('rollback hash is not attributed to the destination chain; row carries a cue', async () => {
+    it('rollback hash is still shown, but labelled as a source-chain rollback, never as the dest hash', async () => {
         const rb = { ...legacyNonMpc, rollback_tx_hash: '0xrollback', dest_tx_hash: null }
         expect(Render.routeDestHash(rb)).toBeNull()
         const out = await html(Render.renderRoute(rb, meta))
-        expect(out).not.toContain('0xrollback')
-        expect(out).toContain('Rolled back on')
+        expect(out.match(/data-hash="0xrollback"/g)).toHaveLength(1)
+        expect(out).toMatch(/Rolled back on[^<]*:<\/span><span class="tx-hash" data-hash="0xrollback"/)
+        const mobile = await html(Render.renderDestHashLink(rb, meta))
+        expect(mobile.match(/data-hash="0xrollback"/g)).toHaveLength(1)
+        expect(mobile).toContain('Rolled back on')
+    })
+
+    it('mobile dest leg strips 0x for bare-hash chains and labels unknown chains', async () => {
+        const xrp = { ...legacyNonMpc, dest_network: '66', dest_tx_hash: '0xABCDEF0123456789ABCDEF' }
+        const out = await html(Render.renderDestHashLink(xrp, meta))
+        expect(out).toContain('data-hash="ABCDEF0123456789ABCDEF"')
+        const unk = { ...legacyNonMpc, dest_network: '999999', dest_tx_hash: null }
+        expect(await html(Render.renderDestHashLink(unk, meta))).toContain('Chain 999999')
     })
 
     it('unknown dest network still renders a leg, and keeps its own hash', async () => {
