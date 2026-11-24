@@ -32,12 +32,16 @@ export default function CopyButton({ value, label = 'Copy hash' }) {
             >
                 {copied ? <CheckIcon width={18} height={18} className="icon-pop text-success-dark" aria-hidden="true" /> : <ClipboardDocumentIcon width={18} height={18} aria-hidden="true" />}
             </button>
-            {/* Out of flow (absolute) so showing it never moves the button or re-wraps the hash. */}
+            {/* Out of flow (absolute) so showing it never moves the button or re-wraps the hash.
+                Stays mounted and fades out on revert (150ms). Visual only; the sr-only
+                live region below carries the announcement. */}
             <span
-                role="status"
-                aria-live="polite"
-                className={copied ? 'absolute right-0 bottom-full mb-1 z-10 rounded-small bg-espresso px-2 py-1 text-xs text-white whitespace-nowrap pointer-events-none copied-fade' : 'sr-only'}
+                aria-hidden="true"
+                className={`absolute right-0 bottom-full mb-1 z-10 rounded-small bg-espresso px-2 py-1 text-xs text-white whitespace-nowrap pointer-events-none transition-opacity duration-150 ease-out ${copied ? 'opacity-100' : 'opacity-0'}`}
             >
+                Copied
+            </span>
+            <span role="status" aria-live="polite" className="sr-only">
                 {copied ? 'Copied' : ''}
             </span>
         </span>

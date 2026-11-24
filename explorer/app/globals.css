@@ -113,9 +113,6 @@ a {
         transform: scale(1);
     }
 }
-.copied-fade {
-    animation: fadeInAnimation ease-out 150ms;
-}
 
 .hero {
     /* Brand cherry-soda impact surface. Deep enough for white body text and
