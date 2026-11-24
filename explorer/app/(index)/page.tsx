@@ -38,9 +38,11 @@ export default function Home() {
             if (res && typeof res === 'object') dataKeys.set(res, queryKey)
             return res
         },
-        { refreshInterval: 2000 }
+        { refreshInterval: 2000, keepPreviousData: true }
     )
     const dataKey = messagesRes.data ? dataKeys.get(messagesRes.data) : undefined
+    // With keepPreviousData the old rows stay up while a new query loads.
+    const stale = Boolean(messagesRes.data) && dataKey !== queryKey
     const freshIds = useFreshIds(messagesRes.data?.data?.map((m: { id: string | number }) => m.id), dataKey, queryKey, pageNumber)
     const totalMsgRes = useSWR('statistics/total_messages', () => FetchData.getTotalMessages(), {
         refreshInterval: 2000
@@ -131,10 +133,16 @@ export default function Home() {
 
             <HeroOverlap>
             {/* Message List */}
-            {messagesRes.isLoading ? <SkeletonTable /> : <MessageList data={messagesRes.data?.data} meta={messagesRes.data?.meta} showPagination={false} onReset={resetFilters} filtersActive={filtersActive} freshIds={freshIds}></MessageList>}
+            {messagesRes.isLoading ? (
+                <SkeletonTable />
+            ) : (
+                <div aria-busy={stale} className={`transition-opacity duration-150 ease-out ${stale ? 'opacity-60 pointer-events-none' : ''}`}>
+                    <MessageList data={messagesRes.data?.data} meta={messagesRes.data?.meta} showPagination={false} onReset={resetFilters} filtersActive={filtersActive} freshIds={freshIds}></MessageList>
+                </div>
+            )}
 
-            {/* Paging */}
-            {!messagesRes.isLoading && (
+            {/* Paging stays mounted while a new query loads */}
+            {messagesRes.data && (
                 <MessagePagination
                     totalPages={messagesRes.data?.meta.pagination.total}
                     pageSize={pageSize}
