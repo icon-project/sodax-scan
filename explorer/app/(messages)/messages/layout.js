@@ -2,6 +2,7 @@
 import '../../globals.css'
 import { inter, inriaSerif, shrikhand } from '../../fonts'
 import Favicon from '../../favicon.ico';
+import ThemeHead from '@/components/theme-head'
 import Header from '@/components/header'
 import AdminBar from '@/components/admin-bar'
 import Footer from '@/components/footer'
@@ -36,7 +37,10 @@ export const metadata = {
 
 export default function MessageLayout({ children }) {
     return (
-        <html lang="en" className={`${inter.variable} ${inriaSerif.variable} ${shrikhand.variable}`}>
+        <html lang="en" suppressHydrationWarning className={`${inter.variable} ${inriaSerif.variable} ${shrikhand.variable}`}>
+            <head>
+                <ThemeHead />
+            </head>
             <body className="font-sans text-fg min-h-screen bg-surface">
                 <Header showSearchBar={true} />
                 <AdminBar />

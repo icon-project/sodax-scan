@@ -339,3 +339,16 @@ input,
 .dark [data-testid='flowbite-tooltip'] {
     box-shadow: var(--shadow-overlay);
 }
+
+/* ---- Theme switch ----
+   Added to <html> only for a user-initiated switch (picker click, or the OS
+   flipping while the preference is System): a short colour cross-fade. Never on
+   load or navigation, never under reduced motion (lib/theme.js, theme-picker).
+   Only colour properties transition, so animations (ticker, FLIP, row-enter)
+   keep running. */
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+    transition: background-color 200ms ease-out, color 200ms ease-out, border-color 200ms ease-out, fill 200ms ease-out, stroke 200ms ease-out, box-shadow 200ms ease-out,
+        outline-color 200ms ease-out !important;
+}
