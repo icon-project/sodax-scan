@@ -37,20 +37,20 @@ export default function DebugLogin() {
 
     return (
         <div className="flex justify-center">
-            <form onSubmit={onSubmit} className="w-full max-w-sm bg-white rounded-regular shadow-card p-8">
-                <h2 className="text-2xl text-espresso tracking-tight pb-1">
-                    <span className="font-display italic text-cherry">Restricted</span> area
+            <form onSubmit={onSubmit} className="w-full max-w-sm bg-raised rounded-regular shadow-card p-8">
+                <h2 className="text-2xl text-fg tracking-tight pb-1">
+                    <span className="font-display italic text-accent">Restricted</span> area
                 </h2>
-                <p className="text-sm text-clay-dark mb-6">Enter the admin password to continue.</p>
+                <p className="text-sm text-fg-muted mb-6">Enter the admin password to continue.</p>
                 <input
                     type="password"
                     autoFocus
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Password"
-                    className="block w-full p-3 text-sm border border-clay-light rounded-lg focus:outline-none focus:border-cherry focus:ring-1 focus:ring-cherry"
+                    className="block w-full p-3 text-sm bg-raised text-fg dark:placeholder:text-fg-muted border border-line-strong rounded-lg focus:outline-none focus:border-focus focus:ring-1 focus:ring-focus"
                 />
-                {error ? <div className="text-sm text-cherry mt-3">{error}</div> : null}
+                {error ? <div className="text-sm text-accent mt-3">{error}</div> : null}
                 <button
                     type="submit"
                     disabled={loading}

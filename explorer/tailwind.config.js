@@ -31,6 +31,21 @@ module.exports = {
                 'yellow-dark': '#ECC100',
                 'yellow-soda': '#FFD92F',
                 'soda-on-soda': '#F6E799',
+                // Warm remap of Tailwind's cold slate `gray`: only flowbite-react's own
+                // classes use it (the app has none), so its menus follow the brand axis
+                // in both themes. 800 = espresso/charcoal midpoint.
+                gray: {
+                    50: '#F8F3F3', // almost-white
+                    100: '#F0EAEB', // light-cream
+                    200: '#EDE6E6', // cream-white
+                    300: '#D7CDCB', // cherry-grey
+                    400: '#B9ACAB', // clay-light
+                    500: '#8E7E7D', // clay
+                    600: '#6B5C5B', // clay-dark
+                    700: '#483434', // espresso
+                    800: '#322424',
+                    900: '#1D1414' // charcoal
+                },
                 // Light neutrals
                 'cream-cherry': '#E5D5D4',
                 'cream-white': '#EDE6E6',
@@ -64,6 +79,51 @@ module.exports = {
                     dark: '#089541'
                 },
 
+                // ---- Semantic theme tokens (values live in app/globals.css: :root = light, .dark = dark) ----
+                surface: 'rgb(var(--surface) / <alpha-value>)',
+                header: 'rgb(var(--header) / <alpha-value>)',
+                raised: 'rgb(var(--raised) / <alpha-value>)',
+                sunken: 'rgb(var(--sunken) / <alpha-value>)',
+                subtle: 'rgb(var(--subtle) / <alpha-value>)',
+                hover: 'rgb(var(--hover) / <alpha-value>)',
+                selected: 'rgb(var(--selected) / <alpha-value>)',
+                'menu-selected': 'rgb(var(--menu-selected) / <alpha-value>)',
+                line: 'rgb(var(--line) / <alpha-value>)',
+                'line-control': 'rgb(var(--line-control) / <alpha-value>)',
+                'line-strong': 'rgb(var(--line-strong) / <alpha-value>)',
+                fg: 'rgb(var(--fg) / <alpha-value>)',
+                'fg-muted': 'rgb(var(--fg-muted) / <alpha-value>)',
+                'fg-subtle': 'rgb(var(--fg-subtle) / <alpha-value>)',
+                'fg-disabled': 'rgb(var(--fg-disabled) / <alpha-value>)',
+                accent: 'rgb(var(--accent) / <alpha-value>)',
+                focus: 'rgb(var(--focus) / <alpha-value>)',
+                tint: 'rgb(var(--tint) / <alpha-value>)',
+                skeleton: 'rgb(var(--skeleton) / <alpha-value>)',
+                footer: 'rgb(var(--footer) / <alpha-value>)',
+                'trend-up': 'rgb(var(--trend-up) / <alpha-value>)',
+                'trend-down': 'rgb(var(--trend-down) / <alpha-value>)',
+                'st-executed': 'rgb(var(--st-executed) / <alpha-value>)',
+                'st-executed-fg': 'rgb(var(--st-executed-fg) / <alpha-value>)',
+                'st-executed-dot': 'rgb(var(--st-executed-dot) / <alpha-value>)',
+                'st-failed': 'rgb(var(--st-failed) / <alpha-value>)',
+                'st-failed-fg': 'rgb(var(--st-failed-fg) / <alpha-value>)',
+                'st-failed-dot': 'rgb(var(--st-failed-dot) / <alpha-value>)',
+                'st-rollbacked': 'rgb(var(--st-rollbacked) / <alpha-value>)',
+                'st-rollbacked-fg': 'rgb(var(--st-rollbacked-fg) / <alpha-value>)',
+                'st-rollbacked-dot': 'rgb(var(--st-rollbacked-dot) / <alpha-value>)',
+                'st-delivered': 'rgb(var(--st-delivered) / <alpha-value>)',
+                'st-delivered-fg': 'rgb(var(--st-delivered-fg) / <alpha-value>)',
+                'st-delivered-dot': 'rgb(var(--st-delivered-dot) / <alpha-value>)',
+                'st-attested': 'rgb(var(--st-attested) / <alpha-value>)',
+                'st-attested-fg': 'rgb(var(--st-attested-fg) / <alpha-value>)',
+                'st-attested-dot': 'rgb(var(--st-attested-dot) / <alpha-value>)',
+                'st-fallback': 'rgb(var(--st-fallback) / <alpha-value>)',
+                'st-fallback-fg': 'rgb(var(--st-fallback-fg) / <alpha-value>)',
+                'st-fallback-dot': 'rgb(var(--st-fallback-dot) / <alpha-value>)',
+                'st-pending': 'rgb(var(--st-pending) / <alpha-value>)',
+                'st-pending-fg': 'rgb(var(--st-pending-fg) / <alpha-value>)',
+                'st-pending-border': 'rgb(var(--st-pending-border) / <alpha-value>)',
+
                 // ---- DEPRECATED aliases: kept so existing classes keep working. ----
                 // Migrate to the design-system ids above, then delete.
                 cherry: {
@@ -93,8 +153,9 @@ module.exports = {
                 xlarge: '32px'
             },
             boxShadow: {
-                // Warm espresso-tinted card shadow (espresso #483434)
-                card: '0 1px 2px rgba(72, 52, 52, 0.06), 0 4px 16px rgba(72, 52, 52, 0.08)'
+                // Themed: warm espresso-tinted drop shadow in light, 1px hairline ring in dark (see globals.css)
+                card: 'var(--shadow-card)',
+                overlay: 'var(--shadow-overlay)'
             },
             animation: {
                 'infinite-scroll': 'infinite-scroll 25s linear infinite'

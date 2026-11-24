@@ -58,13 +58,13 @@ export default async function MpcTimeline({ msgData, meta }) {
                         >
                             {step.reached
                                 ? Render.renderHashLink(meta.urls.tx[step.network], step.network, step.hash, true)
-                                : <span className="text-clay-dark">— pending</span>}
+                                : <span className="text-fg-muted">— pending</span>}
                         </DetailRow>
                     ))}
                 </DetailGroup>
 
                 <DetailGroup title="Action">
-                    <DetailRow label="Action">{msgAction || <span className="text-clay-dark">—</span>}</DetailRow>
+                    <DetailRow label="Action">{msgAction || <span className="text-fg-muted">—</span>}</DetailRow>
                 </DetailGroup>
 
                 <DetailGroup title="Timestamps">

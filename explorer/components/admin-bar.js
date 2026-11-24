@@ -7,7 +7,7 @@ import DebugLogout from './debug-logout'
 export default function AdminBar() {
     if (!isAdmin()) return null
     return (
-        <div className="w-full bg-espresso text-cream-white text-sm">
+        <div className="w-full bg-espresso text-cream-white text-sm dark:border-b dark:border-line">
             <div className="px-4 py-2 xl:px-24 2xl:px-48 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <span className="inline-block w-2 h-2 rounded-full bg-soda-bright animate-pulse" />

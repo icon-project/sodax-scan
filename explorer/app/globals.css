@@ -8,8 +8,164 @@
     --color-espresso: theme('colors.espresso');
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
+    /* ---- Semantic theme tokens (RGB channels, used as rgb(var(--x) / <alpha-value>)).
+       Light values are byte-identical to the previous brand-token colours. ---- */
+    --surface: 249 247 245; /* vibrant-white */
+    --header: 248 243 243; /* almost-white */
+    --raised: 255 255 255; /* white */
+    --sunken: 251 251 251; /* chalk */
+    --subtle: 237 230 230; /* cream-white */
+    --hover: 248 243 243; /* almost-white */
+    --selected: 246 231 153; /* soda-on-soda */
+    --menu-selected: 246 231 153; /* soda-on-soda */
+    --line: 237 230 230; /* cream-white */
+    --line-strong: 185 172 171; /* clay-light */
+    --fg: 72 52 52; /* espresso */
+    --fg-muted: 107 92 91; /* clay-dark */
+    --fg-subtle: 142 126 125; /* clay */
+    --fg-disabled: 185 172 171; /* clay-light */
+    --accent: 165 92 85; /* cherry-soda */
+    --focus: 165 92 85; /* cherry-soda */
+    --tint: 229 213 212; /* cream-cherry */
+    --skeleton: 237 230 230; /* cream-white */
+    --trend-up: 8 149 65; /* success-dark */
+    --trend-down: 167 54 57; /* error-dark */
+    --hero-from: 165 92 85; /* cherry-soda */
+    --hero-to: 150 77 72; /* cherry-dark */
+    --footer: 150 77 72; /* cherry-dark */
+    --st-executed: 230 248 236; --st-executed-fg: 72 52 52; --st-executed-dot: 10 186 81;
+    --st-failed: 250 236 236; --st-failed-fg: 167 54 57; --st-failed-dot: 206 68 70;
+    --st-rollbacked: 245 219 219; --st-rollbacked-fg: 167 54 57; --st-rollbacked-dot: 167 54 57;
+    --st-delivered: 240 234 235; --st-delivered-fg: 72 52 52; --st-delivered-dot: 72 52 52;
+    --st-attested: 229 213 212; --st-attested-fg: 72 52 52; --st-attested-dot: 165 92 85;
+    --st-pending: 248 243 243; --st-pending-fg: 107 92 91; --st-pending-border: 215 205 203;
+    --st-fallback: 237 230 230; --st-fallback-fg: 107 92 91; --st-fallback-dot: 185 172 171;
+    --line-control: 215 205 203; /* cherry-grey */
+    --hash-hl-bg: 246 231 153; /* soda-on-soda: sibling-hash hover highlight */
+    --hash-hl-fg: 72 52 52; /* espresso */
+    --icon-disc: transparent;
+    --icon-ring: transparent;
+    --shadow-card: 0 1px 2px rgba(72, 52, 52, 0.06), 0 4px 16px rgba(72, 52, 52, 0.08);
+    --shadow-overlay: 0 1px 3px rgba(72, 52, 52, 0.1), 0 4px 12px rgba(72, 52, 52, 0.08);
+    --picker-track: 237 230 230;
+    --picker-track-border: 237 230 230;
+    --picker-thumb: 255 255 255;
+    --picker-thumb-shadow: 0 1px 2px rgb(72 52 52 / 0.12);
+    --picker-icon: 107 92 91;
+    --picker-icon-active: 72 52 52;
+    --picker-icon-hover: 72 52 52;
+    color-scheme: light;
+
     --font-mono: ui-monospace, Menlo, Monaco, 'Cascadia Mono', 'Segoe UI Mono', 'Roboto Mono', 'Oxygen Mono', 'Ubuntu Monospace', 'Source Code Pro', 'Fira Mono', 'Droid Sans Mono',
         'Courier New', monospace;
+}
+
+/* Dark theme: warm charcoal / espresso / cherry axis (docs/design-audit/dark-mode-spec.md). */
+.dark {
+    --surface: 22 15 15; /* charcoal deepened toward black (#160F0F), still warm */
+    --header: 26 18 18;
+    --raised: 30 21 21;
+    --sunken: 24 17 17;
+    --subtle: 39 28 28;
+    --hover: 41 29 29;
+    --selected: 82 48 46;
+    --menu-selected: 125 80 76; /* 1.7:1 vs flowbite dark menu #483434; text 6.1:1 */
+    --line: 66 47 47;
+    --line-strong: 142 126 125; /* clay */
+    --fg: 248 243 243; /* almost-white */
+    --fg-muted: 185 172 171; /* clay-light */
+    --fg-subtle: 142 126 125; /* clay: decorative only, fails 4.5 on raised */
+    --fg-disabled: 105 88 87; /* disabled: 2.8:1 on charcoal, dimmer than fg-muted */
+    --accent: 204 158 154; /* cherry-bright */
+    --focus: 204 158 154;
+    --tint: 82 48 46;
+    --skeleton: 72 52 52; /* espresso */
+    --trend-up: 109 214 150;
+    --trend-down: 216 105 108;
+    --hero-from: 47 29 28; /* cherry-dark + 85% charcoal */
+    --hero-to: 36 24 23; /* cherry-dark + 94% charcoal */
+    --footer: 36 24 23;
+    --st-executed: 23 56 33; --st-executed-fg: 206 240 220; --st-executed-dot: 109 214 150;
+    --st-failed: 81 33 34; --st-failed-fg: 245 219 219; --st-failed-dot: 216 105 108;
+    --st-rollbacked: 105 39 40; --st-rollbacked-fg: 245 219 219; --st-rollbacked-dot: 216 105 108;
+    --st-delivered: 53 38 38; --st-delivered-fg: 237 230 230; --st-delivered-dot: 185 172 171;
+    --st-attested: 71 40 38; --st-attested-fg: 227 190 187; --st-attested-dot: 204 158 154;
+    --st-pending: 26 18 18; --st-pending-fg: 185 172 171; --st-pending-border: 66 47 47;
+    --st-fallback: 53 38 38; --st-fallback-fg: 185 172 171; --st-fallback-dot: 185 172 171;
+    --line-control: 66 47 47;
+    --hash-hl-bg: 82 48 46;
+    --hash-hl-fg: 248 243 243;
+    --icon-disc: #ede6e6; /* cream-white */
+    --icon-ring: rgb(255 255 255 / 0.15);
+    --shadow-card: 0 0 0 1px rgb(var(--line)), inset 0 1px 0 rgb(255 255 255 / 0.04);
+    --shadow-overlay: 0 0 0 1px rgb(var(--line)), 0 12px 32px rgb(0 0 0 / 0.45);
+    --picker-track: 22 15 15;
+    --picker-track-border: 66 47 47;
+    --picker-thumb: 72 52 52;
+    --picker-thumb-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+    --picker-icon: 185 172 171;
+    --picker-icon-active: 248 243 243;
+    --picker-icon-hover: 248 243 243;
+    color-scheme: dark;
+}
+
+/* Never print dark. */
+@media print {
+    :root,
+    .dark {
+    --surface: 249 247 245; /* vibrant-white */
+    --header: 248 243 243; /* almost-white */
+    --raised: 255 255 255; /* white */
+    --sunken: 251 251 251; /* chalk */
+    --subtle: 237 230 230; /* cream-white */
+    --hover: 248 243 243; /* almost-white */
+    --selected: 246 231 153; /* soda-on-soda */
+    --menu-selected: 246 231 153; /* soda-on-soda */
+    --line: 237 230 230; /* cream-white */
+    --line-strong: 185 172 171; /* clay-light */
+    --fg: 72 52 52; /* espresso */
+    --fg-muted: 107 92 91; /* clay-dark */
+    --fg-subtle: 142 126 125; /* clay */
+    --fg-disabled: 185 172 171; /* clay-light */
+    --accent: 165 92 85; /* cherry-soda */
+    --focus: 165 92 85; /* cherry-soda */
+    --tint: 229 213 212; /* cream-cherry */
+    --skeleton: 237 230 230; /* cream-white */
+    --trend-up: 8 149 65; /* success-dark */
+    --trend-down: 167 54 57; /* error-dark */
+    --hero-from: 165 92 85; /* cherry-soda */
+    --hero-to: 150 77 72; /* cherry-dark */
+    --footer: 150 77 72; /* cherry-dark */
+    --st-executed: 230 248 236; --st-executed-fg: 72 52 52; --st-executed-dot: 10 186 81;
+    --st-failed: 250 236 236; --st-failed-fg: 167 54 57; --st-failed-dot: 206 68 70;
+    --st-rollbacked: 245 219 219; --st-rollbacked-fg: 167 54 57; --st-rollbacked-dot: 167 54 57;
+    --st-delivered: 240 234 235; --st-delivered-fg: 72 52 52; --st-delivered-dot: 72 52 52;
+    --st-attested: 229 213 212; --st-attested-fg: 72 52 52; --st-attested-dot: 165 92 85;
+    --st-pending: 248 243 243; --st-pending-fg: 107 92 91; --st-pending-border: 215 205 203;
+    --st-fallback: 237 230 230; --st-fallback-fg: 107 92 91; --st-fallback-dot: 185 172 171;
+    --icon-disc: transparent;
+    --icon-ring: transparent;
+    --shadow-card: 0 1px 2px rgba(72, 52, 52, 0.06), 0 4px 16px rgba(72, 52, 52, 0.08);
+    --shadow-overlay: 0 1px 3px rgba(72, 52, 52, 0.1), 0 4px 12px rgba(72, 52, 52, 0.08);
+    --picker-track: 237 230 230;
+    --picker-track-border: 237 230 230;
+    --picker-thumb: 255 255 255;
+    --picker-thumb-shadow: 0 1px 2px rgb(72 52 52 / 0.12);
+    --picker-icon: 107 92 91;
+    --picker-icon-active: 72 52 52;
+    --picker-icon-hover: 72 52 52;
+    --line-control: 215 205 203; /* cherry-grey */
+    --hash-hl-bg: 246 231 153; /* soda-on-soda */
+    --hash-hl-fg: 72 52 52; /* espresso */
+    color-scheme: light;
+    }
+    /* Logo swap keys off html.dark: show the light logo on paper. */
+    .dark img[src$='new_logo-on-dark.svg'] {
+        display: none !important;
+    }
+    .dark img[src$='/new_logo.svg'] {
+        display: inline !important;
+    }
 }
 
 * {
@@ -55,10 +211,10 @@ a {
 }
 @keyframes row-tint {
     from {
-        background-color: theme('colors.cream-cherry');
+        background-color: rgb(var(--tint));
     }
     to {
-        background-color: theme('colors.white');
+        background-color: rgb(var(--raised));
     }
 }
 /* Mobile card: no height animation. Rows below glide via FLIP
@@ -117,8 +273,8 @@ a {
 .hero {
     /* Brand cherry-soda impact surface. Deep enough for white body text and
        the yellow-soda hero stat to read with real contrast. */
-    background-color: theme('colors.cherry-soda');
-    background-image: linear-gradient(180deg, theme('colors.cherry-soda') 0%, theme('colors.cherry-dark') 100%);
+    background-color: rgb(var(--hero-from));
+    background-image: linear-gradient(180deg, rgb(var(--hero-from)) 0%, rgb(var(--hero-to)) 100%);
 }
 
 /* Body is now Inter (font-sans). Keep hashes/addresses monospace so they stay
@@ -134,7 +290,7 @@ a {
 /* Global keyboard focus ring: cherry-soda on light surfaces, yellow-soda over
    the cherry hero / dark footer. Mouse clicks never show it (focus-visible). */
 :focus-visible {
-    outline: 2px solid theme('colors.cherry-soda');
+    outline: 2px solid rgb(var(--focus));
     outline-offset: 2px;
 }
 .hero :focus-visible,
@@ -193,4 +349,147 @@ input,
         animation-duration: 1.5s !important;
         animation-iteration-count: infinite !important;
     }
+}
+
+/* Flowbite dropdown menu floats over content: in dark it needs real separation
+   (hairline + deep shadow). Light keeps flowbite's own `shadow`. */
+.dark [data-testid='flowbite-tooltip'] {
+    box-shadow: var(--shadow-overlay);
+}
+
+/* ---- Theme switch ----
+   Added to <html> only for a user-initiated switch (picker click, or the OS
+   flipping while the preference is System): a short colour cross-fade. Never on
+   load or navigation, never under reduced motion (lib/theme.js, theme-picker).
+   Only colour properties transition, so animations (ticker, FLIP, row-enter)
+   keep running. */
+html.theme-switching *:not(.tp-thumb),
+html.theme-switching *::before,
+html.theme-switching *::after {
+    transition: background-color 200ms ease-out, color 200ms ease-out, border-color 200ms ease-out, fill 200ms ease-out, stroke 200ms ease-out, box-shadow 200ms ease-out,
+        outline-color 200ms ease-out !important;
+}
+
+/* ---- Theme picker (components/theme-picker.js) ----
+   Desktop 88x32 track / 28px segments; below md 116x40 / 36px segments (hit area
+   extended to 44px tall). Thumb and active-icon colour key off
+   html[data-theme-pref] so they are correct before hydration. */
+.tp-root {
+    --seg: 28px;
+    --gap: 0px;
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    gap: var(--gap);
+    padding: 2px;
+    width: calc(3 * var(--seg) + 2 * var(--gap) + 4px);
+    border-radius: 9999px;
+    background-color: rgb(var(--picker-track));
+    box-shadow: inset 0 0 0 1px rgb(var(--picker-track-border));
+}
+.tp-thumb {
+    --i: 2; /* System: also the no-JS default */
+    --s: 1;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: var(--seg);
+    height: var(--seg);
+    border-radius: 9999px;
+    background-color: rgb(var(--picker-thumb));
+    box-shadow: var(--picker-thumb-shadow);
+    transform: translateX(calc(var(--i) * (var(--seg) + var(--gap)))) scale(var(--s));
+    transition: transform 240ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+html[data-theme-pref='light'] .tp-thumb {
+    --i: 0;
+}
+html[data-theme-pref='dark'] .tp-thumb {
+    --i: 1;
+}
+.tp-root:has(.tp-seg:active) .tp-thumb {
+    --s: 0.94;
+    transition-duration: 100ms;
+}
+.tp-seg {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: var(--seg);
+    height: var(--seg);
+    border-radius: 9999px;
+    cursor: pointer;
+    color: rgb(var(--picker-icon));
+}
+.tp-seg:hover {
+    color: rgb(var(--picker-icon-hover));
+}
+html[data-theme-pref='light'] .tp-seg[data-value='light'],
+html[data-theme-pref='dark'] .tp-seg[data-value='dark'],
+html[data-theme-pref='system'] .tp-seg[data-value='system'],
+html:not([data-theme-pref]) .tp-seg[data-value='system'] {
+    color: rgb(var(--picker-icon-active));
+}
+.tp-icon {
+    width: 16px;
+    height: 16px;
+}
+.tp-moon-in {
+    animation: icon-pop 160ms var(--ease-out) backwards, tp-moon-in 120ms ease-out backwards;
+}
+@keyframes tp-moon-in {
+    from {
+        rotate: -12deg;
+    }
+    to {
+        rotate: 0deg;
+    }
+}
+@media (max-width: 767px) {
+    .tp-root {
+        --seg: 36px;
+        --gap: 2px;
+    }
+    .tp-icon {
+        width: 18px;
+        height: 18px;
+    }
+    /* 44px-tall hit area; vertical only so neighbouring segments never overlap. */
+    .tp-seg::before {
+        content: '';
+        position: absolute;
+        inset: -4px 0;
+    }
+}
+@media print {
+    .tp-root {
+        display: none;
+    }
+}
+
+/* ---- Network icon disc (components/network-icon.js) ---- */
+.net-icon {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    border-radius: 9999px;
+    overflow: hidden;
+    background-color: var(--icon-disc);
+}
+.net-icon-nodisc {
+    background-color: transparent;
+}
+.net-icon img {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+.net-icon::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px var(--icon-ring);
+    pointer-events: none;
 }

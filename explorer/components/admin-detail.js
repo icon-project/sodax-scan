@@ -95,11 +95,11 @@ export function ResubmitBanner() {
     const exhausted = attempts >= maxAttempts && phase === 'idle'
 
     return (
-        <div className="mb-3 flex items-center justify-between gap-4 bg-soda-clicked border border-soda rounded-xl px-4 py-3">
-            <div className="text-sm text-espresso">
+        <div className="mb-3 flex items-center justify-between gap-4 bg-selected border border-soda rounded-xl px-4 py-3">
+            <div className="text-sm text-fg">
                 <span className="font-semibold">This message is pending.</span>{' '}
                 {exhausted ? 'Still pending after several checks — you can re-submit again.' : 'Re-submit its source transaction to the relay.'}
-                {error ? <span className="block text-cherry mt-1">{error}</span> : null}
+                {error ? <span className="block text-accent mt-1">{error}</span> : null}
             </div>
             <button
                 onClick={startResubmit}
@@ -121,9 +121,9 @@ export function DetailStatus() {
     return (
         <div>
             {Render.renderMessageStatus(status)}
-            {phase === 'submitting' && <div className="text-xs text-clay-dark mt-1">Submitting to relay…</div>}
-            {phase === 'countdown' && <div className="text-xs text-clay-dark mt-1">Re-checking on-chain status in {secondsLeft}s…</div>}
-            {phase === 'checking' && <div className="text-xs text-clay-dark mt-1">Checking on-chain status…</div>}
+            {phase === 'submitting' && <div className="text-xs text-fg-muted mt-1">Submitting to relay…</div>}
+            {phase === 'countdown' && <div className="text-xs text-fg-muted mt-1">Re-checking on-chain status in {secondsLeft}s…</div>}
+            {phase === 'checking' && <div className="text-xs text-fg-muted mt-1">Checking on-chain status…</div>}
         </div>
     )
 }

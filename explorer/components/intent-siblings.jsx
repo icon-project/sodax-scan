@@ -63,12 +63,12 @@ export default function IntentSiblings({
             if (matches.length < 2) return // single occurrence — nothing to twin
             clearActive()
             for (const m of matches) {
-                m.style.backgroundColor = 'var(--color-soda-on-soda)'
-                m.style.color = 'var(--color-espresso)'
+                m.style.backgroundColor = 'rgb(var(--hash-hl-bg))'
+                m.style.color = 'rgb(var(--hash-hl-fg))'
                 m.style.borderRadius = '2px'
                 // Halo via box-shadow (not padding) so the highlight reads as a
                 // padded pill without changing the box size — no layout shift.
-                m.style.boxShadow = '0 0 0 2px var(--color-soda-on-soda)'
+                m.style.boxShadow = '0 0 0 2px rgb(var(--hash-hl-bg))'
                 active.push(m)
             }
         }
@@ -157,18 +157,18 @@ export default function IntentSiblings({
 
     return (
         <div className="mt-8" ref={containerRef}>
-            <h2 className="px-1 pb-3 text-lg font-bold text-espresso">
+            <h2 className="px-1 pb-3 text-lg font-bold text-fg">
                 Related intent messages{siblings.length > 0 ? ` (${siblings.length})` : ''}
             </h2>
             {siblings.length > 0 ? (
                 <MessageList data={siblings} meta={meta} />
             ) : (
-                <div className="px-4 py-6 md:px-6 bg-white rounded-regular shadow-card text-sm text-clay-dark">
+                <div className="px-4 py-6 md:px-6 bg-raised rounded-regular shadow-card text-sm text-fg-muted">
                     No related intent messages yet.
                 </div>
             )}
             {isYoung && (
-                <div className="px-1 py-2 text-xs text-clay-dark tabular-nums">
+                <div className="px-1 py-2 text-xs text-fg-muted tabular-nums">
                     {lastCheckedSecAgo !== null
                         ? `Last checked ${lastCheckedSecAgo}s ago`
                         : 'Watching for new siblings'}

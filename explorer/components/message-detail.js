@@ -66,7 +66,7 @@ export default async function MessageDetail({ msgData, meta, isAdmin = false }) 
                 </DetailGroup>
 
                 <DetailGroup title="Action and fee">
-                    <DetailRow label="Action">{msgAction || <span className="text-clay-dark">—</span>}</DetailRow>
+                    <DetailRow label="Action">{msgAction || <span className="text-fg-muted">—</span>}</DetailRow>
                     {msgData.fee && <DetailRow label="Transaction fee" tabular>{msgData.fee}</DetailRow>}
                     {msgData.slippage && <DetailRow label="Slippage" tabular>{msgData.slippage}</DetailRow>}
                 </DetailGroup>

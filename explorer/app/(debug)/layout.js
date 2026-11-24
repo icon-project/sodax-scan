@@ -1,5 +1,6 @@
 import '../globals.css'
 import { inter, inriaSerif, shrikhand } from '../fonts'
+import ThemeHead from '@/components/theme-head'
 import Header from '@/components/header'
 import Footer from '@/components/footer'
 import { Hero, HeroOverlap } from '@/components/hero'
@@ -13,8 +14,11 @@ export const metadata = {
 
 export default function DebugLayout({ children }) {
     return (
-        <html lang="en" className={`${inter.variable} ${inriaSerif.variable} ${shrikhand.variable}`}>
-            <body className="font-sans text-espresso min-h-screen bg-vibrant-white">
+        <html lang="en" suppressHydrationWarning className={`${inter.variable} ${inriaSerif.variable} ${shrikhand.variable}`}>
+            <head>
+                <ThemeHead />
+            </head>
+            <body className="font-sans text-fg min-h-screen bg-surface">
                 <Header showSearchBar={false} />
                 <main className="px-4 mb-2 xl:px-24 xl:mb-12 2xl:px-48">
                     <div className="min-h-[34rem] 2xl:min-h-[46rem]">
