@@ -24,7 +24,7 @@ export default function MessageList({ data, meta, showPagination }: MessageListP
                         {data?.map((item) => (
                             <Link key={item.id} className="table-row bg-white hover:bg-almost-white border-b border-light-grey h-14" href={`/messages/${item.id}`}>
                                 <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">{Render.renderMessageStatus(item.status)}</div>
-                                <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">
+                                <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3 tabular-nums">
                                     {Render.renderSerialNo(item)}
                                 </div>
                                 <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">
@@ -32,7 +32,7 @@ export default function MessageList({ data, meta, showPagination }: MessageListP
                                 </div>
                                 <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">{Render.renderDestHashLink(item, meta)}</div>
                                 <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3">{item.action_type}</div>
-                                <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3 text-right tracking-tighter">{timeAgo(item.created_at * 1000)} ago</div>
+                                <div className="table-cell align-middle px-1 py-1 xl:px-3 xl:py-3 text-right tracking-tighter tabular-nums">{timeAgo(item.created_at * 1000)} ago</div>
                             </Link>
                         ))}
                     </div>

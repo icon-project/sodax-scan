@@ -46,7 +46,7 @@ export default async function MessageDetail({ msgData, meta, isAdmin = false }) 
                         </div>
                         <div className="table-row bg-white border-b">
                             <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Serial No:</div>
-                            <div className="table-cell px-3 py-2 xl:px-6 xl:py-4 ">
+                            <div className="table-cell px-3 py-2 xl:px-6 xl:py-4 tabular-nums">
                                 {/* Same badges as the messages list: SolverMarketPlaceFill, then hub-only (sn == null). */}
                                 {helper.isSolverMarketPlaceFill(msgData)
                                     ? <span className="uppercase text-xs rounded-full px-2 py-0.5 bg-cream-white text-clay-dark tracking-wide">SOLVER MARKETPLACE FILL</span>
@@ -110,7 +110,7 @@ export default async function MessageDetail({ msgData, meta, isAdmin = false }) 
 
                         <div className="table-row bg-white border-b">
                             <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Created:</div>
-                            <div className="table-cell px-3 py-2 xl:px-6 xl:py-4">{timeAgo(msgData.created_at * 1000)} ago ({new Date(msgData.created_at * 1000).toUTCString()})</div>
+                            <div className="table-cell px-3 py-2 xl:px-6 xl:py-4 tabular-nums">{timeAgo(msgData.created_at * 1000)} ago ({new Date(msgData.created_at * 1000).toUTCString()})</div>
                         </div>
                         <div className="table-row bg-white border-b">
                             <div className="table-cell xl:w-96 px-3 py-2 xl:px-6 xl:py-4 font-medium whitespace-normal xl:whitespace-nowrap">Last updated at:</div>

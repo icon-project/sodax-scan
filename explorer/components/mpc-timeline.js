@@ -54,7 +54,7 @@ export default async function MpcTimeline({ msgData, meta }) {
                             <div className={labelCell}>Serial No:</div>
                             {/* MPC rows show the shared "MPC" badge (Render.renderSerialNo),
                                 the same marker used in the list Serial-No column. */}
-                            <div className={valueCell}>{Render.renderSerialNo(msgData)}</div>
+                            <div className={`${valueCell} tabular-nums`}>{Render.renderSerialNo(msgData)}</div>
                         </div>
                         <div className="table-row bg-white border-b">
                             <div className={labelCell}>Source transaction hash:</div>
@@ -98,7 +98,7 @@ export default async function MpcTimeline({ msgData, meta }) {
 
                         <div className="table-row bg-white border-b">
                             <div className={labelCell}>Created:</div>
-                            <div className={valueCell}>{timeAgo(msgData.created_at * 1000)} ago ({new Date(msgData.created_at * 1000).toUTCString()})</div>
+                            <div className={`${valueCell} tabular-nums`}>{timeAgo(msgData.created_at * 1000)} ago ({new Date(msgData.created_at * 1000).toUTCString()})</div>
                         </div>
                         <div className="table-row bg-white border-b">
                             <div className={labelCell}>Last updated at:</div>

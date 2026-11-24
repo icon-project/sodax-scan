@@ -53,7 +53,7 @@ const Pagination = ({ totalPages, pageSize, pageNumber }) => {
                 <Link className="ml-1 border border-cherry-grey rounded-md  px-2 py-1 hover:bg-cream-white" href={`/messages?ps=${pageSize}&p=${pageNumber - 1}`}>
                     &lt;
                 </Link>
-                <div className="ml-1 border border-cherry-grey rounded-md px-2 py-1">
+                <div className="ml-1 border border-cherry-grey rounded-md px-2 py-1 tabular-nums">
                     <span  className='hidden xl:inline-block'>Page</span> {pageNumber} <span className='xl:hidden inline-block'>/</span><span className='hidden xl:inline-block'>of</span> {totalPages}
                 </div>
                 <Link className="ml-1 border border-cherry-grey rounded-md px-2 py-1 hover:bg-cream-white" href={`/messages?ps=${pageSize}&p=${pageNumber + 1}`}>
