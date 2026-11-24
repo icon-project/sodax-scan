@@ -32,7 +32,7 @@ export default function CopyButton({ value, label = 'Copy hash' }) {
             >
                 {copied ? <CheckIcon width={18} height={18} className="text-success-dark" aria-hidden="true" /> : <ClipboardDocumentIcon width={18} height={18} aria-hidden="true" />}
             </button>
-            <span role="status" aria-live="polite" className={copied ? 'text-xs text-success-dark ml-1' : 'sr-only'}>
+            <span role="status" aria-live="polite" className={copied ? 'text-xs text-espresso ml-1' : 'sr-only'}>
                 {copied ? 'Copied' : ''}
             </span>
         </span>
