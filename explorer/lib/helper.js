@@ -316,10 +316,43 @@ const CHAIN_MODE = {
 
 // Human-facing chain names where the internal key (also used for icon file
 // names, e.g. network-bsc.png) is not what users call the chain.
+// Names follow the SODAX Marketing MCP network list (sodax_get_networks, 2026-11-25)
+// where it has one; 'BNB Chain' is a deliberate choice over its 'BNB Smart Chain'.
+// The rest use each network's own standard name. Network names, not token tickers
+// (Avalanche, not AVAX; Sui, not SUI).
 const NETWORK_DISPLAY_NAMES = {
-    bsc: 'BNB Chain'
+    avax: 'Avalanche',
+    sui: 'Sui',
+    near: 'NEAR',
+    sonic: 'Sonic',
+    icon: 'ICON',
+    injective: 'Injective',
+    stellar: 'Stellar',
+    solana: 'Solana',
+    stacks: 'Stacks',
+    base: 'Base',
+    arbitrum: 'Arbitrum',
+    polygon: 'Polygon',
+    optimism: 'Optimism',
+    bsc: 'BNB Chain',
+    nibiru: 'Nibiru',
+    hyperliquid: 'HyperEVM',
+    lightlink: 'LightLink',
+    ethereum: 'Ethereum',
+    redbelly: 'Redbelly',
+    kaia: 'Kaia',
+    bitcoin: 'Bitcoin',
+    aleo: 'Aleo',
+    hedera: 'Hedera',
+    robinhood: 'Robinhood Chain',
+    monad: 'Monad',
+    xrp: 'XRP Ledger',
+    zcash: 'Zcash',
+    ton: 'TON',
+    tron: 'TRON',
+    cardano: 'Cardano'
 }
-const networkDisplayName = (name) => (name == null ? name : NETWORK_DISPLAY_NAMES[String(name)] ?? String(name))
+const networkDisplayName = (name) => (name == null ? name : NETWORK_DISPLAY_NAMES[String(name).toLowerCase()] ?? String(name))
 
 // Resolve a numeric chain id (as stored in *_network) to its lifecycle mode.
 // Returns 'sweep' | 'memo' | undefined (chain not in the map).
