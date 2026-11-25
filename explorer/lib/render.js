@@ -67,7 +67,7 @@ function renderChain(network) {
     return (
         <div className="flex items-center gap-2 min-w-0">
             <NetworkIcon alt="" src={`/images/network-${name}.png`} />
-            <span className="capitalize truncate">{helper.networkDisplayName(name)}</span>
+            <span className="capitalize truncate" title={helper.networkDisplayName(name)}>{helper.networkDisplayName(name)}</span>
         </div>
     )
 }
@@ -166,7 +166,7 @@ function routeLeg(network, hash, extra = null) {
         <div className="flex items-center gap-2 min-w-0">
             <NetworkIcon alt="" src={`/images/network-${name}.png`} />
             <div className="min-w-0">
-                <div className="text-sm font-medium capitalize text-fg leading-5 truncate">{helper.networkDisplayName(name)}</div>
+                <div className="text-sm font-medium capitalize text-fg leading-5 truncate" title={helper.networkDisplayName(name)}>{helper.networkDisplayName(name)}</div>
                 {hashLine}
                 {extra}
             </div>
@@ -214,7 +214,7 @@ function renderHashLink(scanUrl, network, hash, isFull = false) {
     }
     // Bare-hash chains display (and copy) without the 0x prefix, matching the link.
     const dispHash = isBareHash && typeof hash === 'string' && hash.startsWith('0x') ? hash.slice(2) : hash
-    networkImg = <NetworkIcon alt={helper.REV_NETWORK_MAPPINGS[network] || ""} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[network]}.png`} />
+    networkImg = <NetworkIcon alt={helper.REV_NETWORK_MAPPINGS[network] ? helper.networkDisplayName(helper.REV_NETWORK_MAPPINGS[network]) : ""} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[network]}.png`} />
     link = !isFull || isOdHash ? (
         <div className={linkClass}><span className="tx-hash" data-hash={dispHash}>{isFull ? dispHash : truncateHash(dispHash)}</span></div>
     ) : (
