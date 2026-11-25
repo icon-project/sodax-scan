@@ -493,3 +493,13 @@ html:not([data-theme-pref]) .tp-seg[data-value='system'] {
     box-shadow: inset 0 0 0 1px var(--icon-ring);
     pointer-events: none;
 }
+
+/* Mobile filter panel: subtle fade, no height animation (menus must not clip). */
+@keyframes filter-panel-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.filter-panel-in { animation: filter-panel-in 150ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+    .filter-panel-in { animation: none; }
+}

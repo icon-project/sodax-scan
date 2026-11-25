@@ -49,9 +49,10 @@ export default function MessageList({ data, meta, showPagination, onReset, filte
                                 {Render.renderMessageStatus(item.status)}
                                 <span className="text-xs text-fg-muted tabular-nums whitespace-nowrap">{timeAgo(item.created_at * 1000)} ago</span>
                             </div>
-                            <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-2 text-sm min-w-0">
+                            {/* Fixed-width source column so arrows and destinations line up card to card. */}
+                            <div className="mt-3 grid grid-cols-[8rem_minmax(1.5rem,1fr)_minmax(8rem,1fr)] items-center gap-x-2 text-sm min-w-0">
                                 <div className="min-w-0">{Render.renderSrcHashLink(item, meta)}</div>
-                                <span aria-hidden="true" className="text-fg-muted">&rarr;</span>
+                                <span aria-hidden="true" className="text-fg-muted text-center">&rarr;</span>
                                 <div className="min-w-0">{Render.renderDestHashLink(item, meta)}</div>
                             </div>
                             <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-fg-muted">
@@ -69,7 +70,7 @@ export default function MessageList({ data, meta, showPagination, onReset, filte
                         <div className="table-row uppercase text-left text-xs tracking-wide text-fg-muted bg-header border-b border-line">
                             <div className="table-cell px-3 py-3 xl:px-4">Status</div>
                             <div className="table-cell px-3 py-3 xl:px-4">ID / Type</div>
-                            <div className="table-cell px-3 py-3 xl:px-4 w-full">Route</div>
+                            <div className="table-cell px-3 py-3 xl:px-4">Route</div>
                             <div className="table-cell px-3 py-3 xl:px-4">Action</div>
                             <div className="table-cell px-3 py-3 xl:px-4 text-right">Created</div>
                         </div>

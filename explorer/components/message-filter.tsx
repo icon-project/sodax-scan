@@ -25,6 +25,9 @@ interface MessageFilterProps {
     statusChanged: (value: string) => void
     kindChanged: (value: string) => void
     resetClicked: () => void
+    // Mobile panel variant: smaller h-9 chips, quiet Reset; className replaces nothing, it is appended to the root.
+    compact?: boolean
+    className?: string
 }
 
 const MessageFilter = (props: MessageFilterProps) => {
@@ -34,7 +37,7 @@ const MessageFilter = (props: MessageFilterProps) => {
     // Filter triggers are pills over the cherry hero. Inactive: outlined; active
     // (a filter is set): solid white pill, so a filtered list is obvious at a glance.
     const chipTheme = (active: boolean) => ({
-        inlineWrapper: `flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm transition-colors max-md:min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soda-bright ${
+        inlineWrapper: `flex items-center gap-1 rounded-full border px-3 text-sm transition-colors ${props.compact ? 'h-9' : 'py-1.5 max-md:min-h-11'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soda-bright ${
             active
                 ? 'bg-white border-white text-cherry-dark font-medium hover:bg-almost-white'
                 : 'border-cherry-bright/60 dark:border-cherry-brighter/80 text-white hover:bg-cherry-dark hover:border-cherry-brighter'
@@ -51,7 +54,7 @@ const MessageFilter = (props: MessageFilterProps) => {
 
     // Wrapping row on mobile (a scroll strip would clip the dropdown menus), Route first and Reset last, 44px targets. md+: unchanged.
     return (
-        <div className="flex flex-wrap items-center md:flex-nowrap md:justify-end gap-2 text-white p-1 rounded-md">
+        <div className={`flex flex-wrap items-center ${props.compact ? '' : 'md:flex-nowrap md:justify-end p-1'} gap-2 text-white rounded-md ${props.className ?? ''}`}>
             <Dropdown label="Route" inline className="rounded-md" theme={chipTheme(props.kind !== '')}>
                 <DropdownItem
                     className={`min-w-32 ${props.kind == '' ? 'bg-hover' : ''}`}
@@ -230,7 +233,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                 })}
             </Dropdown>
 
-            <button className="rounded-full px-3 py-1.5 text-sm text-white underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soda-bright max-md:min-h-11" onClick={() => props.resetClicked()}>
+            <button className={`rounded-full px-3 text-sm text-white underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soda-bright ${props.compact ? 'h-9' : 'py-1.5 max-md:min-h-11'}`} onClick={() => props.resetClicked()}>
                 Reset
             </button>
         </div>

@@ -68,18 +68,44 @@ export default function Home() {
         setKind('')
     }
     const filtersActive = Boolean(srcNetwork || destNetwork || actionType || status || kind)
+    const activeFilterCount = [srcNetwork, destNetwork, actionType, status, kind].filter(Boolean).length
+    const [filtersOpen, setFiltersOpen] = useState(false)
+
+    const toggleCsv = (prev: string, id: string) => {
+        const values = prev ? prev.split(",") : [];
+        if (values.includes(id)) return values.filter((v) => v !== id).join(",");
+        return [...values, id].join(",");
+    }
+    // Shared by the desktop row and the mobile panel so both bind to the same state.
+    const filterProps = {
+        srcNetwork,
+        destNetwork,
+        actionType,
+        status,
+        kind,
+        srcNetworkChanged: (value: string) => {
+            const networkId = helper.NETWORK_MAPPINGS[value]
+            setSrcNetwork((prev) => (networkId ? toggleCsv(prev, String(networkId)) : ''))
+        },
+        destNetworkChanged: (value: string) => {
+            const networkId = helper.NETWORK_MAPPINGS[value]
+            setDestNetwork((prev) => (networkId ? toggleCsv(prev, String(networkId)) : ''))
+        },
+        actionTypeChanged: (value: string) => {
+            setActionType((prev) => (value ? toggleCsv(prev, value) : ''))
+        },
+        statusChanged: (value: string) => setStatus(value),
+        kindChanged: (value: string) => setKind(value),
+        resetClicked: resetFilters
+    }
 
     return (
         <div>
-            <Hero>
+            <Hero tightMobile>
             <div className="py-2 xl:py-6 xl:flex xl:items-end xl:justify-between w-full">
                 <div className="xl:basis-8/12">
                     <Headline before="Explore" accent="all" after="messages" className="pb-3" />
                     <SearchBar showFull={true} />
-                </div>
-                <div className="md:hidden flex items-baseline gap-2 pt-3 text-white">
-                    <span className="text-xs uppercase tracking-wider text-white">Total Messages</span>
-                    <span className="text-2xl text-soda-bright leading-none tabular-nums"><TotalCounter value={totalMsgRes.data?.data.total} /></span>
                 </div>
                 <div className="mt-4 xl:mt-0 xl:basis-4/12 hidden md:flex flex-row-reverse items-end">
                     <div className="px-4 text-right hidden md:block">
@@ -89,56 +115,39 @@ export default function Home() {
                 </div>
             </div>
 
+            {/* Mobile (< md): Filters toggle + total on one row, inline panel below */}
+            <div className="md:hidden flex items-center justify-between gap-3 pt-2 text-white">
+                <button
+                    type="button"
+                    aria-expanded={filtersOpen}
+                    aria-controls={filtersOpen ? "mobile-filters-panel" : undefined}
+                    onClick={() => setFiltersOpen((o) => !o)}
+                    className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soda-bright ${
+                        activeFilterCount > 0
+                            ? 'bg-white border-white text-cherry-dark font-medium hover:bg-almost-white'
+                            : 'border-cherry-bright/60 dark:border-cherry-brighter/80 text-white hover:bg-cherry-dark hover:border-cherry-brighter'
+                    }`}
+                >
+                    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="w-4 h-4 shrink-0">
+                        <path d="M3 5.5h8M15 5.5h2M3 14.5h2M9 14.5h8" />
+                        <circle cx="13" cy="5.5" r="1.8" />
+                        <circle cx="7" cy="14.5" r="1.8" />
+                    </svg>
+                    {activeFilterCount > 0 ? `Filters · ${activeFilterCount}` : 'Filters'}
+                </button>
+                <div className="flex items-baseline gap-1.5">
+                    <span className="text-xl text-soda-bright leading-none tabular-nums"><TotalCounter value={totalMsgRes.data?.data.total} /></span>
+                    <span className="text-xs uppercase tracking-wider text-cherry-brighter">messages</span>
+                </div>
+            </div>
+            {filtersOpen && (
+                <div id="mobile-filters-panel" className="md:hidden filter-panel-in pt-3">
+                    <MessageFilter compact {...filterProps} />
+                </div>
+            )}
+
             {/* Filters */}
-            <MessageFilter
-                srcNetwork={srcNetwork}
-                destNetwork={destNetwork}
-                actionType={actionType}
-                status={status}
-                kind={kind}
-                srcNetworkChanged={(value) => {
-                    const networkId = helper.NETWORK_MAPPINGS[value]
-                    setSrcNetwork((prev) => {
-                        if (!networkId) return '';
-                        const networkIdStr = String(networkId);
-                        const values = prev ? prev.split(",") : [];
-                        if (values.includes(networkIdStr)) {
-                            return values.filter((v) => v !== networkIdStr).join(",");
-                        }
-                        return [...values, networkIdStr].join(",");
-                    })
-                }}
-                destNetworkChanged={(value) => {
-                    const networkId = helper.NETWORK_MAPPINGS[value]
-                    console.log("destNetworkChanged", value, networkId)
-                    setDestNetwork((prev) => {
-                        if (!networkId) return '';
-                        const networkIdStr = String(networkId);
-                        const values = prev ? prev.split(",") : [];
-                        if (values.includes(networkIdStr)) {
-                            return values.filter((v) => v !== networkIdStr).join(",");
-                        }
-                        return [...values, networkIdStr].join(",");
-                    })
-                }}
-                actionTypeChanged={(value) => {
-                    setActionType((prev) => {
-                        if (!value) return '';
-                        const values = prev ? prev.split(",") : [];
-                        if (values.includes(value)) {
-                            return values.filter((v) => v !== value).join(",");
-                        }
-                        return [...values, value].join(",");
-                    });
-                }}
-                statusChanged={(value) => {
-                    setStatus(value)
-                }}
-                kindChanged={(value) => {
-                    setKind(value)
-                }}
-                resetClicked={resetFilters}
-            />
+            <MessageFilter className="hidden md:flex" {...filterProps} />
 
             </Hero>
 

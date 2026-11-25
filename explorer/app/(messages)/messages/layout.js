@@ -6,6 +6,7 @@ import ThemeHead from '@/components/theme-head'
 import Header from '@/components/header'
 import AdminBar from '@/components/admin-bar'
 import Footer from '@/components/footer'
+import ApiBanner from '@/components/api-banner'
 
 export const metadata = {
     title: `SODAX Scan · Fast and reliable message tracking`,
@@ -47,6 +48,7 @@ export default function MessageLayout({ children }) {
                 <main className="px-4 mb-2 xl:px-24 xl:mb-12 2xl:px-48">
                     <div className="min-h-[34rem] 2xl:min-h-[46rem]">{children}</div>
                 </main>
+                <ApiBanner />
                 <Footer />
             </body>
         </html>

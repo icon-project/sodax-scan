@@ -116,10 +116,10 @@ describe('SolverMarketPlaceFill rows', () => {
         const meta = { urls: { tx: {} } }
         const [srcImg, srcName] = Render.renderSrcHashLink(fill, meta).props.children
         expect(srcImg.props.alt).toBe('')
-        expect(srcName.props.children).toBe('near')
+        expect(srcName.props.children).toBe('NEAR')
         const [destImg, destName] = Render.renderDestHashLink(fill, meta).props.children
         expect(destImg.props.alt).toBe('')
-        expect(destName.props.children).toBe('tron')
+        expect(destName.props.children).toBe('TRON')
     })
 
     it('non-fill rows keep the tx-hash source cell', () => {

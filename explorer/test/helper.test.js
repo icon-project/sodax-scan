@@ -258,9 +258,13 @@ describe('resolveIntentTxHash', () => {
 })
 
 describe('networkDisplayName', () => {
-    it('shows BNB Chain for the bsc key and passes other names through', () => {
+    it('maps network keys to proper network names and passes unknown names through', () => {
         expect(helper.networkDisplayName('bsc')).toBe('BNB Chain')
-        expect(helper.networkDisplayName('solana')).toBe('solana')
+        expect(helper.networkDisplayName('solana')).toBe('Solana')
+        expect(helper.networkDisplayName('avax')).toBe('Avalanche')
+        expect(helper.networkDisplayName('Avax')).toBe('Avalanche')
+        expect(helper.networkDisplayName('icon')).toBe('ICON')
+        expect(helper.networkDisplayName('unknown-chain')).toBe('unknown-chain')
         expect(helper.networkDisplayName(undefined)).toBeUndefined()
     })
 })
