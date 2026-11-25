@@ -5,6 +5,7 @@ import ThemeHead from '@/components/theme-head'
 import Header from '@/components/header'
 import AdminBar from '@/components/admin-bar'
 import Footer from '@/components/footer'
+import ApiBanner from '@/components/api-banner'
 import fetchData from '@/lib/fetch-data'
 
 export const metadata = {
@@ -58,6 +59,7 @@ export default async function RootLayout({ children }) {
                 <main className="px-4 mb-2 xl:px-24 xl:mb-12 2xl:px-48">
                     <div className="min-h-[34rem] 2xl:min-h-[46rem]">{children}</div>
                 </main>
+                <ApiBanner />
                 <Footer />
             </body>
         </html>
