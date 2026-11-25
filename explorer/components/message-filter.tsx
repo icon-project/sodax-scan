@@ -37,7 +37,7 @@ const MessageFilter = (props: MessageFilterProps) => {
     // Filter triggers are pills over the cherry hero. Inactive: outlined; active
     // (a filter is set): solid white pill, so a filtered list is obvious at a glance.
     const chipTheme = (active: boolean) => ({
-        inlineWrapper: `flex items-center gap-1 rounded-full border px-3 text-sm transition-colors ${props.compact ? 'h-9' : 'py-1.5 max-md:min-h-11'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soda-bright ${
+        inlineWrapper: `flex items-center gap-1 rounded-full border px-3 text-sm transition-colors ${props.compact ? 'h-9' : 'py-1.5'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soda-bright ${
             active
                 ? 'bg-white border-white text-cherry-dark font-medium hover:bg-almost-white'
                 : 'border-cherry-bright/60 dark:border-cherry-brighter/80 text-white hover:bg-cherry-dark hover:border-cherry-brighter'
@@ -52,7 +52,8 @@ const MessageFilter = (props: MessageFilterProps) => {
         )
     }
 
-    // Wrapping row on mobile (a scroll strip would clip the dropdown menus), Route first and Reset last, 44px targets. md+: unchanged.
+    // Desktop (md+): one right-aligned row. Compact (phone panel): a wrapping row of h-9 chips,
+    // since a scroll strip would clip the dropdown menus. Route first, Reset last.
     return (
         <div className={`flex flex-wrap items-center ${props.compact ? '' : 'md:flex-nowrap md:justify-end p-1'} gap-2 text-white rounded-md ${props.className ?? ''}`}>
             <Dropdown label="Route" inline className="rounded-md" theme={chipTheme(props.kind !== '')}>
@@ -144,7 +145,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                                 onClick={(e) => e.stopPropagation()}
                                 className="cursor-pointer px-2 mr-1"
                             /> */}
-                            <NetworkIcon className="mr-2" alt={network.name} src={network.logo} size={16} />
+                            <NetworkIcon className="mr-2" alt="" src={network.logo} size={16} />
                             {helper.networkDisplayName(network.name)}
                             {props.srcNetwork?.split(',').map(v => v.trim()).includes(String(networkId)) ? <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="hidden dark:block w-4 h-4 ml-auto pl-2 box-content shrink-0"><path fillRule="evenodd" clipRule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 111.4-1.4l3.8 3.8 6.8-6.8a1 1 0 011.4 0z" /></svg> : null}
                         </DropdownItem>
@@ -192,7 +193,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                                 onClick={(e) => e.stopPropagation()}
                                 className="cursor-pointer px-2 mr-1"
                             /> */}
-                            <NetworkIcon className="mr-2" alt={network.name} src={network.logo} size={16} />
+                            <NetworkIcon className="mr-2" alt="" src={network.logo} size={16} />
                             {helper.networkDisplayName(network.name)}
                             {props.destNetwork?.split(',').map(v => v.trim()).includes(String(networkId)) ? <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="hidden dark:block w-4 h-4 ml-auto pl-2 box-content shrink-0"><path fillRule="evenodd" clipRule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 111.4-1.4l3.8 3.8 6.8-6.8a1 1 0 011.4 0z" /></svg> : null}
                         </DropdownItem>
@@ -233,7 +234,7 @@ const MessageFilter = (props: MessageFilterProps) => {
                 })}
             </Dropdown>
 
-            <button className={`rounded-full px-3 text-sm text-white underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soda-bright ${props.compact ? 'h-9' : 'py-1.5 max-md:min-h-11'}`} onClick={() => props.resetClicked()}>
+            <button className={`rounded-full px-3 text-sm text-white underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soda-bright ${props.compact ? 'h-9' : 'py-1.5'}`} onClick={() => props.resetClicked()}>
                 Reset
             </button>
         </div>

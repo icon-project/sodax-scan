@@ -1,4 +1,5 @@
 import timeAgo from '@/lib/time-ago'
+import { ROUTE_GRID_CARD } from '@/lib/route-grid'
 import Link from 'next/link'
 import Pagination from './pagination'
 import FlipContainer from './flip-container'
@@ -49,8 +50,8 @@ export default function MessageList({ data, meta, showPagination, onReset, filte
                                 {Render.renderMessageStatus(item.status)}
                                 <span className="text-xs text-fg-muted tabular-nums whitespace-nowrap">{timeAgo(item.created_at * 1000)} ago</span>
                             </div>
-                            {/* Fixed-width source column so arrows and destinations line up card to card. */}
-                            <div className="mt-3 grid grid-cols-[8rem_minmax(1.5rem,1fr)_minmax(8rem,1fr)] items-center gap-x-2 text-sm min-w-0">
+                            {/* Same route grid as the desktop table and the skeleton (lib/route-grid). */}
+                            <div className={`mt-3 text-sm ${ROUTE_GRID_CARD}`}>
                                 <div className="min-w-0">{Render.renderSrcHashLink(item, meta)}</div>
                                 <span aria-hidden="true" className="text-fg-muted text-center">&rarr;</span>
                                 <div className="min-w-0">{Render.renderDestHashLink(item, meta)}</div>

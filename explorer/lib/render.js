@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ROUTE_GRID } from './route-grid'
 import NetworkIcon from '@/components/network-icon'
 import CopyButton from '@/components/copy-button'
 import helper from "./helper"
@@ -66,7 +67,7 @@ function renderChain(network) {
     return (
         <div className="flex items-center gap-2 min-w-0">
             <NetworkIcon alt="" src={`/images/network-${name}.png`} />
-            <span className="capitalize truncate">{helper.networkDisplayName(name)}</span>
+            <span className="capitalize truncate" title={helper.networkDisplayName(name)}>{helper.networkDisplayName(name)}</span>
         </div>
     )
 }
@@ -165,7 +166,7 @@ function routeLeg(network, hash, extra = null) {
         <div className="flex items-center gap-2 min-w-0">
             <NetworkIcon alt="" src={`/images/network-${name}.png`} />
             <div className="min-w-0">
-                <div className="text-sm font-medium capitalize text-fg leading-5 truncate">{helper.networkDisplayName(name)}</div>
+                <div className="text-sm font-medium capitalize text-fg leading-5 truncate" title={helper.networkDisplayName(name)}>{helper.networkDisplayName(name)}</div>
                 {hashLine}
                 {extra}
             </div>
@@ -177,10 +178,7 @@ function routeLeg(network, hash, extra = null) {
 function renderRoute(item) {
     const fill = helper.isSolverMarketPlaceFill(item)
     return (
-        // Source in a fixed column, the arrow centred in a flexible middle column, then
-        // the destination: arrows and destinations line up, the arrow sits midway
-        // between the two chains, and no dead space is left before Action.
-        <div className="grid grid-cols-[9rem_minmax(1.5rem,1fr)_minmax(9rem,1fr)] xl:grid-cols-[10.5rem_minmax(2rem,1fr)_minmax(10.5rem,1fr)] items-center gap-x-2 xl:gap-x-3 min-w-0">
+        <div className={ROUTE_GRID}>
             {routeLeg(item.src_network, fill ? null : item.src_tx_hash)}
             <span aria-hidden="true" className="text-fg-muted leading-none text-center">&rarr;</span>
             {routeLeg(item.dest_network, routeDestHash(item), rollbackLine(item))}
@@ -216,7 +214,7 @@ function renderHashLink(scanUrl, network, hash, isFull = false) {
     }
     // Bare-hash chains display (and copy) without the 0x prefix, matching the link.
     const dispHash = isBareHash && typeof hash === 'string' && hash.startsWith('0x') ? hash.slice(2) : hash
-    networkImg = <NetworkIcon alt={helper.REV_NETWORK_MAPPINGS[network] || ""} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[network]}.png`} />
+    networkImg = <NetworkIcon alt={helper.REV_NETWORK_MAPPINGS[network] ? helper.networkDisplayName(helper.REV_NETWORK_MAPPINGS[network]) : ""} src={`/images/network-${helper.REV_NETWORK_MAPPINGS[network]}.png`} />
     link = !isFull || isOdHash ? (
         <div className={linkClass}><span className="tx-hash" data-hash={dispHash}>{isFull ? dispHash : truncateHash(dispHash)}</span></div>
     ) : (
